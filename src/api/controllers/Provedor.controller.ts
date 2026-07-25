@@ -83,7 +83,7 @@ export default class ProvedorController{
 
     async ObterManifest(req: AuthRequest, res: Response){
          
-        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const codigoProvedor = req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string;
 
         const tema = await this._provedorService.ObterManifest(codigoProvedor);
 
