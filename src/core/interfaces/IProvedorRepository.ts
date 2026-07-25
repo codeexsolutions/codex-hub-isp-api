@@ -23,4 +23,5 @@ export default interface IProvedorRepository{
     SalvarIndicacao(indicacao:indicacaoModel) : Promise<any>
     ObterIndicacoes(codigoProvedor:string) : Promise<any>;
     ObterProvedorPorCpfCnpj(cnpj: string): Promise<Provedor | null>
+    ObterManifest(codigo:string) : Promise<any>
 }

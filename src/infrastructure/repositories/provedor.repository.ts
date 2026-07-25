@@ -9,6 +9,7 @@ import { themeModel } from "../../core/models/themeModel";
 import { indicacaoModel } from "../../core/models/indicacaoModel";
 import { avaliacaoModel } from "../../core/models/avaliacaoModel";
 
+
 @injectable()
 export default class ProvedorRepository implements IProvedorRepository{
     
@@ -41,6 +42,7 @@ export default class ProvedorRepository implements IProvedorRepository{
             senha = $6 
             WHERE codigo_provedor = $7
             RETURNING id`
+        
         const alterado = await this._db.Execulte(update, [provedorEdite.nome_fantasia, provedorEdite.nome_administrador, provedorEdite.codigo_api_gerenciador, provedorEdite.chave_api_gerenciador, provedorEdite.usuario, provedorEdite.senha, provedorEdite.codigo_provedor])
         
         if(alterado.length == 0)
@@ -121,8 +123,36 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async ObterTema(codigo:string) : Promise<any> {
-        const select = `select p.codigo_provedor as codigo, p.nome_fantasia as nome, t.tag, t.accent, t.accent2, t.logo_url
-                        from theme t join provedores p on t.codigo_provedor_fk = p.codigo_provedor where p.codigo_provedor = $1;`;
+        const select = `SELECT p.codigo_provedor as codigo, p.nome_fantasia as nome, t.tag, t.accent, t.accent2, t.logo_url, 
+                        t.logo,
+                        t.favicon,
+                        t.icone192,
+                        t.icone512,
+                        t.maskable
+                        FROM theme t JOIN provedores p ON t.codigo_provedor_fk = p.codigo_provedor 
+                        WHERE p.codigo_provedor = $1;`;
+
+        const result = await this._db.Execulte<any>(select, [codigo])
+
+        const tema = result[0];
+
+        return tema;
+    }
+
+    async ObterManifest(codigo:string) : Promise<any> {
+        const select = `SELECT
+                        p.nome_fantasia as name,
+                        t.tag, 
+                        t.accent, 
+                        t.accent2, 
+                        t.logo_url, 
+                        t.logo,
+                        t.favicon,
+                        t.icone192,
+                        t.icone512,
+                        t.maskable
+                        FROM theme t JOIN provedores p ON t.codigo_provedor_fk = p.codigo_provedor 
+                        WHERE p.codigo_provedor = $1;`;
 
         const result = await this._db.Execulte<any>(select, [codigo])
 
@@ -175,23 +205,35 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async AlterarTema(themeModel:themeModel) : Promise<any> {
+
+        
         const update = `INSERT INTO theme (
                         tag,
                         accent,
                         accent2,
                         logo_url,
-                        codigo_provedor_fk
+                        codigo_provedor_fk,
+                        logo,
+                        favicon,
+                        icone192,
+                        icone512,
+                        maskable
                     )
-                    VALUES ($1,$2,$3,$4,$5)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
                     ON CONFLICT (codigo_provedor_fk)
                     DO UPDATE SET
                         tag = EXCLUDED.tag,
                         accent = EXCLUDED.accent,
                         accent2 = EXCLUDED.accent2,
-                        logo_url = EXCLUDED.logo_url
+                        logo_url = EXCLUDED.logo_url,
+                        logo = EXCLUDED.logo_url,
+                        favicon = EXCLUDED.favicon,
+                        icone192 = EXCLUDED.icone192,
+                        icone512 = EXCLUDED.icone512,
+                        maskable = EXCLUDED.maskable
                     RETURNING *;`;
 
-        const result = await this._db.Execulte<any>(update, [themeModel.tag, themeModel.accent, themeModel.accent2, themeModel.logo_url, themeModel.codigo_provedor_fk])
+        const result = await this._db.Execulte<any>(update, [themeModel.tag, themeModel.accent, themeModel.accent2, themeModel.logo_url, themeModel.codigo_provedor_fk, themeModel.logo_url, themeModel.favicon_url, themeModel.icone192_url, themeModel.icone512_url, themeModel.maskable_url])
         
         if(result)
             return result;

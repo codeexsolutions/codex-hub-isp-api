@@ -18,6 +18,11 @@ export type temaDto = {
     accent2: string;
     glyph: string;
     logo_url: string;
+    logo:string;
+    favicon:string;
+    icon192:string;
+    icon512:string;
+    masckable:string;
 }
 
 export type provedorPainelDto = {

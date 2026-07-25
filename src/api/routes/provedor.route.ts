@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { container } from "tsyringe";
 import ProvedorController from "../controllers/Provedor.controller";
-import { authMiddleware } from "../middleware/authMiddleware";
 
 const provedorRoute = Router();
 const provedorController = container.resolve(ProvedorController);
 
+provedorRoute.get('/manifest/:codigoProvedor', provedorController.ObterManifest.bind(provedorController));
 provedorRoute.get('/temas/:codigoProvedor', provedorController.ObterTema.bind(provedorController));
 provedorRoute.get('/banners/:codigoProvedor', provedorController.ObterBanner.bind(provedorController));
 provedorRoute.get('/anuncios/:codigoProvedor', provedorController.ObterAnuncios.bind(provedorController));

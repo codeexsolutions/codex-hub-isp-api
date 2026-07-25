@@ -7,6 +7,12 @@ import { cadastroProvedorModel } from "../../core/models/cadastroProvevedorModel
 import { themeModel } from "../../core/models/themeModel";
 import { indicacaoModel } from "../../core/models/indicacaoModel";
 import { avaliacaoModel } from "../../core/models/avaliacaoModel";
+//import Storage from "../../infrastructure/supabase/storage";
+import { ThemeFiles } from "../Dtos/temaFiles.dto";
+import Storage from "../../infrastructure/supabase/Storage";
+import UploadService from "./UploadServices";
+import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
+import { ManifestModel } from "../Dtos/manifest.dto";
 
 @injectable()
 export default class ProvedorServices implements IProvedorServices {
@@ -15,6 +21,7 @@ export default class ProvedorServices implements IProvedorServices {
     
     constructor(@inject("IProvedorRepository") provedorRepository:IProvedorRepository){
         this._provedorRepository = provedorRepository;
+        
     }    
     
     async Cadastrar(cadastro:cadastroProvedorDto): Promise<provedorPainelDto> {
@@ -70,7 +77,7 @@ export default class ProvedorServices implements IProvedorServices {
                 usuario: update.usuario,
                 senha: update.senha
 
-            })
+            })  
 
         return {
             id: provedorAtualizado.Id,
@@ -85,7 +92,6 @@ export default class ProvedorServices implements IProvedorServices {
             status: provedorAtualizado.Status,
             usuario: provedorAtualizado.Usuario,
             dominio_ixc: provedorAtualizado.DominioIxc,
-
         }
     }
 
@@ -118,7 +124,12 @@ export default class ProvedorServices implements IProvedorServices {
                 accent: result.accent,
                 accent2: result.accent2,
                 glyph: result.glyph,
-                logo_url: result.logo_url
+                logo_url: result.logo_url,
+                logo: result.logo,
+                favicon: result.favicon,
+                icon192: result.icone192,
+                icon512: result.icone512,
+                masckable: result.maskable
             }
 
             return tema;
@@ -131,8 +142,51 @@ export default class ProvedorServices implements IProvedorServices {
                 accent: "",
                 accent2: "",
                 glyph: "",
-                logo_url: ''
+                logo_url: '',
+                logo: '',
+                favicon: '',
+                icon192: '',
+                icon512: '',
+                masckable: ''
             }
+    }
+
+    async ObterManifest(codigo: string): Promise<ManifestModel> {
+        const result = await this._provedorRepository.ObterManifest(codigo);
+        return {
+            name: result.nome_fantasia,
+            short_name: result.nome_fantasia,
+            description: "Central do Assinante",
+            theme_color: result.accent,
+            background_color: "#FFFFFF",
+            display: "standalone",
+            orientation: "portrait",
+            scope: "/",
+            start_url: "/",
+            icons: [
+                {
+                    src: result.favicon,
+                    sizes: "32x32",
+                    type: "image/png"
+                },
+                {
+                    src: result.icone192,
+                    sizes: "192x192",
+                    type: "image/png"
+                },
+                {
+                    src: result.icone512,
+                    sizes: "512x512",
+                    type: "image/png"
+                },
+                {
+                    src: result.maskable,
+                    sizes: "512x512",
+                    type: "image/png",
+                    purpose: "maskable"
+                }
+            ]
+        }
     }
 
     async ObterBanners(codigo:string) : Promise<any> {
@@ -144,7 +198,45 @@ export default class ProvedorServices implements IProvedorServices {
         return await this._provedorRepository.ObterAnuncios(codigo);
     }
 
-    async AtualizarTema(tema:themeModel) : Promise<any> {
+    async AtualizarTema(tema:themeModel, files:ThemeFiles) : Promise<any> {
+
+       const _upload = new UploadService()
+        tema.logo_url = await _upload.UploadArquivo({
+            codigoProvedor: tema.codigo_provedor_fk.toString(),
+            file: files.logo![0].buffer,
+            nomeArquivo: "logo",
+            tipo: ETipoArquivo.LOGO
+        })
+
+       tema.favicon_url = await _upload.UploadArquivo({
+            codigoProvedor: tema.codigo_provedor_fk.toString(),
+            file: files.favicon![0].buffer,
+            nomeArquivo: "favicon",
+            tipo: ETipoArquivo.FAVICON
+        })
+
+       tema.icone192_url = await _upload.UploadArquivo({
+            codigoProvedor: tema.codigo_provedor_fk.toString(),
+            file: files.icon192![0].buffer,
+            nomeArquivo: "icon192",
+            tipo: ETipoArquivo.ICON192
+        })
+
+       tema.icone512_url = await _upload.UploadArquivo({
+            codigoProvedor: tema.codigo_provedor_fk.toString(),
+            file: files.icon512![0].buffer,
+            nomeArquivo: "icon512",
+            tipo: ETipoArquivo.ICON512
+        })
+
+       tema.maskable_url = await _upload.UploadArquivo({
+            codigoProvedor: tema.codigo_provedor_fk.toString(),
+            file: files.maskable![0].buffer,
+            nomeArquivo: "masckable",
+            tipo: ETipoArquivo.MASKABLE
+        })
+        
+
         return await this._provedorRepository.AlterarTema(tema);
     }
 

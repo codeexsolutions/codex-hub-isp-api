@@ -4,6 +4,7 @@ import { indicacaoModel } from "../../core/models/indicacaoModel";
 import { themeModel } from "../../core/models/themeModel";
 import { cadastroProvedorDto } from "../Dtos/cadastroProvedorDto";
 import { provedorDto, provedorPainelDto, temaDto } from "../Dtos/provedorDto";
+import { ThemeFiles } from "../Dtos/temaFiles.dto";
 
 export default interface IProvedorServices {
     Cadastrar(cadastro:cadastroProvedorDto): Promise<provedorPainelDto>
@@ -14,9 +15,10 @@ export default interface IProvedorServices {
     ObterAnuncios(codigo:string) : Promise<any> ;
     SalvarIndicacao(indicao:indicacaoModel) : Promise<number>
     ObterIndicacoes(codigoProvedor:string) : Promise<any>
-    AtualizarTema(tema:themeModel) : Promise<any> 
+    AtualizarTema(tema:themeModel, files: ThemeFiles) : Promise<any> 
     AvaliarServico(avaliacao:avaliacaoModel) : Promise<any> 
     ObterAvaliacoesServico(codigoProvedor:string) : Promise<any>
     AvaliarApp(avaliacao:avaliacaoModel) : Promise<any> 
     ObterAvaliacoesApp(codigoProvedor:string) : Promise<any>
+    ObterManifest(codigo:string) : Promise<any>
 }

@@ -13,6 +13,7 @@ import ITokenService from "../../application/interfaces/ITokenService";
 import IPainelServices from "../../application/interfaces/IPainelService";
 import { anuncioModel } from "../../core/models/anuncioModel";
 import { bannerModel } from "../../core/models/bannerModel";
+import { ThemeFiles } from "../../application/Dtos/temaFiles.dto";
 
 @injectable()
 export default class PainelController {
@@ -174,8 +175,10 @@ export default class PainelController {
     async AtualizarTema(req:AuthRequest, res:Response){
         
         const data = req.body as themeModel
+        const files = req.files as ThemeFiles
+        
         data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string);
-        const result = await this._provedorService.AtualizarTema(data);
+        const result = await this._provedorService.AtualizarTema(data, files);
         
         return res.json({data: result})
     }

@@ -5,16 +5,17 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../middleware/IAuthRequest";
 import { cadastroProvedorDto } from "../../application/Dtos/cadastroProvedorDto";
 import { cadastroProvedorModel } from "../../core/models/cadastroProvevedorModel";
-import { themeModel } from "../../core/models/themeModel";
 import { indicacaoModel } from "../../core/models/indicacaoModel";
 import { avaliacaoModel } from "../../core/models/avaliacaoModel";
+import { ThemeFiles } from "../../application/Dtos/temaFiles.dto";
+
 
 @injectable()
 export default class ProvedorController{
 
     private readonly _provedorService:IProvedorServices;
 
-    constructor(@inject("IProvedorServices")provedorServices:ProvedorServices){
+    constructor(@inject("IProvedorServices")provedorServices:IProvedorServices){
         this._provedorService = provedorServices;
     }
 
@@ -80,12 +81,24 @@ export default class ProvedorController{
         return res.status(200).json(result)
     }
 
+    async ObterManifest(req: AuthRequest, res: Response){
+         
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+
+        const tema = await this._provedorService.ObterManifest(codigoProvedor);
+
+        return res.json({data: tema})
+    }
+
     // PAINEL
 
     async AtualizarTema(req:AuthRequest, res:Response){
-        const data = req.body as themeModel
+        
+        const data = req.body
+        const files = req.files as ThemeFiles
         data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string);
-        const result = await this._provedorService.AtualizarTema(data);
+        
+        const result = await this._provedorService.AtualizarTema(data, files);
         return res.json({data: result})
     }
 
