@@ -28,15 +28,15 @@ export default class UploadService {
                 height:192,
                 quality:90,
                 fit:"cover",
-                path:`${upload.codigoProvedor}/icon192.webp`,
-                contentType: "image/webp"
+                path:`${upload.codigoProvedor}/icon192.png`,
+                contentType: "image/png"
             },
             [ETipoArquivo.ICON512]:{
                 width:512,
                 height:512,
                 quality:90,
                 fit:"cover",
-                path:`${upload.codigoProvedor}/icon512.webp`,
+                path:`${upload.codigoProvedor}/icon512.png`,
                 contentType: "image/png"
             },
             [ETipoArquivo.MASKABLE]:{
@@ -44,7 +44,7 @@ export default class UploadService {
                 height:512,
                 quality:90,
                 fit:"cover",
-                path:`${upload.codigoProvedor}/masckable.webp`,
+                path:`${upload.codigoProvedor}/maskable.png`,
                 contentType: "image/png"
             },
             [ETipoArquivo.FAVICON]:{

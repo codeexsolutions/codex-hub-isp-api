@@ -22,7 +22,7 @@ export type temaDto = {
     favicon:string;
     icon192:string;
     icon512:string;
-    masckable:string;
+    maskable:string;
 }
 
 export type provedorPainelDto = {

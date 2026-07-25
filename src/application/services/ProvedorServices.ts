@@ -129,7 +129,7 @@ export default class ProvedorServices implements IProvedorServices {
                 favicon: result.favicon,
                 icon192: result.icone192,
                 icon512: result.icone512,
-                masckable: result.maskable
+                maskable: result.maskable
             }
 
             return tema;
@@ -147,15 +147,15 @@ export default class ProvedorServices implements IProvedorServices {
                 favicon: '',
                 icon192: '',
                 icon512: '',
-                masckable: ''
+                maskable: ''
             }
     }
 
     async ObterManifest(codigo: string): Promise<ManifestModel> {
         const result = await this._provedorRepository.ObterManifest(codigo);
         return {
-            name: result.nome_fantasia,
-            short_name: result.nome_fantasia,
+            name: result.name,
+            short_name: result.name,
             description: "Central do Assinante",
             theme_color: result.accent,
             background_color: "#FFFFFF",

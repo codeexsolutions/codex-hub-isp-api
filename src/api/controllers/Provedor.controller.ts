@@ -85,9 +85,10 @@ export default class ProvedorController{
          
         const codigoProvedor = req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string;
 
-        const tema = await this._provedorService.ObterManifest(codigoProvedor);
+        const manifest = await this._provedorService.ObterManifest(codigoProvedor);
 
-        return res.json({data: tema})
+        return res.type("application/manifest+json")
+            .json(manifest);
     }
 
     // PAINEL
