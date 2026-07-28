@@ -19,8 +19,10 @@ import IPainelServices from "../../application/interfaces/IPainelService";
 import PainelService from "../../application/services/PainelServices";
 import PainelRepository from "../../infrastructure/repositories/painel.repository";
 import IPainelRepository from "../../core/interfaces/IPainelRepository";
-
-
+import IPushNotificationRepository from "../../core/interfaces/IPushNotificationRepository";
+import PushNotificationRepository from "../../infrastructure/repositories/PushNotificationRepository";
+import IPushNotificationServices from "../../application/interfaces/IPushNotificationServices";
+import PushNotificationServices from "../../application/services/PushNotificationServices";
 
 
 container.registerSingleton<IDBContext>("IDBContext", DBContext);
@@ -30,6 +32,8 @@ container.registerSingleton<IReceitanetServices>("IReceitanetServices", Receitan
 container.registerSingleton<IApiReceitanetServices>("IApiReceitanetServices", ApiReceitanetServices);
 container.registerSingleton<IApiIxcSoftService>("IApiIxcSoftService", ApiIxcSoftService);
 container.registerSingleton<IProvedorRepository>("IProvedorRepository", ProvedorRepository);
-container.registerSingleton<IProvedorServices>("IProvedorServices", ProvedorServices)
-container.registerSingleton<IPainelServices>("IPainelServices", PainelService)
-container.registerSingleton<IPainelRepository>("IPainelRepository", PainelRepository)
+container.registerSingleton<IProvedorServices>("IProvedorServices", ProvedorServices);
+container.registerSingleton<IPainelServices>("IPainelServices", PainelService);
+container.registerSingleton<IPainelRepository>("IPainelRepository", PainelRepository);
+container.registerSingleton<IPushNotificationRepository>("IPushNotificationRepository", PushNotificationRepository);
+container.registerSingleton<IPushNotificationServices>("IPushNotificationServices", PushNotificationServices);

@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-
+import webpush from "./infrastructure/notification/webpush.config";
 
 const app = express();
 
@@ -14,6 +14,7 @@ app.use(cors({
 
 
 app.use(express.json());
+
 
 
 

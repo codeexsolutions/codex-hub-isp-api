@@ -177,7 +177,7 @@ export default class PainelController {
         const data = req.body as themeModel
         const files = req.files as ThemeFiles
         
-        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string);
+        data.codigo = Number.parseInt(req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string);
         const result = await this._provedorService.AtualizarTema(data, files);
         
         return res.json({data: result})

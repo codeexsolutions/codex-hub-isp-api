@@ -6,10 +6,10 @@ export type themeModel = {
     accent?:string;
     accent2?:string;
     glyph?:string;
-    codigo_provedor_fk:number;
-    logo_url?:string;
-    favicon_url?:string;
-    icone192_url:string;
-    icone512_url:string;
-    maskable_url:string;
+    codigo:number;
+    logo?:string;
+    favicon?:string;
+    icone192:string;
+    icone512:string;
+    maskable:string;
 }

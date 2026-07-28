@@ -4,6 +4,7 @@ import tokenRoute from "./token.route";
 import provedorRoute from "./provedor.route";
 import chamadoRoute from "./chamado.route";
 import painelRouter from "./painel.route";
+import notificationRoute from "./notifications.route";
 
 const routes = Router();
 
@@ -12,5 +13,6 @@ routes.use("/", clienteRoute);
 routes.use("/provedores", provedorRoute);
 routes.use("/chamados", chamadoRoute);
 routes.use("/painel", painelRouter);
+routes.use('/notificacoes', notificationRoute)
 
 export default routes;

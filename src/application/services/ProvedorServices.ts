@@ -200,44 +200,62 @@ export default class ProvedorServices implements IProvedorServices {
 
     async AtualizarTema(tema:themeModel, files:ThemeFiles) : Promise<any> {
 
-       const _upload = new UploadService()
-        tema.logo_url = await _upload.UploadArquivo({
-            codigoProvedor: tema.codigo_provedor_fk.toString(),
-            file: files.logo![0].buffer,
-            nomeArquivo: "logo",
-            tipo: ETipoArquivo.LOGO
-        })
+        const _upload = new UploadService()
+        const temaAtual = await this._provedorRepository.ObterTema(tema.codigo.toString())
 
-       tema.favicon_url = await _upload.UploadArquivo({
-            codigoProvedor: tema.codigo_provedor_fk.toString(),
-            file: files.favicon![0].buffer,
-            nomeArquivo: "favicon",
-            tipo: ETipoArquivo.FAVICON
-        })
+        if(tema){
+            temaAtual.tag = tema.tag
+            temaAtual.accent = tema.accent;
+            temaAtual.accent2 = tema.accent2;
+            temaAtual.glyph = tema.glyph;
+            temaAtual.nome = tema.nome_fantasia
 
-       tema.icone192_url = await _upload.UploadArquivo({
-            codigoProvedor: tema.codigo_provedor_fk.toString(),
-            file: files.icon192![0].buffer,
-            nomeArquivo: "icon192",
-            tipo: ETipoArquivo.ICON192
-        })
+        }
 
-       tema.icone512_url = await _upload.UploadArquivo({
-            codigoProvedor: tema.codigo_provedor_fk.toString(),
-            file: files.icon512![0].buffer,
-            nomeArquivo: "icon512",
-            tipo: ETipoArquivo.ICON512
-        })
+        if(Object.keys(files).length > 0){
 
-       tema.maskable_url = await _upload.UploadArquivo({
-            codigoProvedor: tema.codigo_provedor_fk.toString(),
-            file: files.maskable![0].buffer,
-            nomeArquivo: "masckable",
-            tipo: ETipoArquivo.MASKABLE
-        })
-        
+            temaAtual.logo = await _upload.UploadArquivo({
+               codigoProvedor: tema.codigo.toString(),
+               file: files.logo![0].buffer,
+               nomeArquivo: "logo",
+               tipo: ETipoArquivo.LOGO
+           });
 
-        return await this._provedorRepository.AlterarTema(tema);
+           temaAtual.logo = tema.logo;
+           
+          temaAtual.favicon = await _upload.UploadArquivo({
+               codigoProvedor: tema.codigo.toString(),
+               file: files.favicon![0].buffer,
+               nomeArquivo: "favicon",
+               tipo: ETipoArquivo.FAVICON
+           })
+          
+          temaAtual.icon192 = await _upload.UploadArquivo({
+               codigoProvedor: tema.codigo.toString(),
+               file: files.icon192![0].buffer,
+               nomeArquivo: "icon192",
+               tipo: ETipoArquivo.ICON192
+           })
+   
+          temaAtual.icon512 = await _upload.UploadArquivo({
+               codigoProvedor: tema.codigo.toString(),
+               file: files.icon512![0].buffer,
+               nomeArquivo: "icon512",
+               tipo: ETipoArquivo.ICON512
+           })
+   
+          temaAtual.maskable = await _upload.UploadArquivo({
+               codigoProvedor: tema.codigo.toString(),
+               file: files.maskable![0].buffer,
+               nomeArquivo: "masckable",
+               tipo: ETipoArquivo.MASKABLE
+           })
+           
+        }  
+
+
+        return await this._provedorRepository.AlterarTema(temaAtual);
+       //return null; 
     }
 
     async SalvarIndicacao(indicao:indicacaoModel) : Promise<number> {

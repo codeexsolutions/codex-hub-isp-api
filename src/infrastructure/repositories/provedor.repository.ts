@@ -233,7 +233,7 @@ export default class ProvedorRepository implements IProvedorRepository{
                         maskable = EXCLUDED.maskable
                     RETURNING *;`;
 
-        const result = await this._db.Execulte<any>(update, [themeModel.tag, themeModel.accent, themeModel.accent2, themeModel.logo_url, themeModel.codigo_provedor_fk, themeModel.logo_url, themeModel.favicon_url, themeModel.icone192_url, themeModel.icone512_url, themeModel.maskable_url])
+        const result = await this._db.Execulte<any>(update, [themeModel.tag, themeModel.accent, themeModel.accent2, themeModel.logo, themeModel.codigo, themeModel.logo, themeModel.favicon, themeModel.icone192, themeModel.icone512, themeModel.maskable])
         
         if(result)
             return result;

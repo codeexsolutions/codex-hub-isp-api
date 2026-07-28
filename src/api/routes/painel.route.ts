@@ -3,6 +3,11 @@ import { container } from "tsyringe";
 import { authMiddleware } from "../middleware/authMiddleware";
 import PainelController from "../controllers/Painel.controller";
 import { uploadMiddleware } from "../middleware/uploadMiddleware";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+
 
 const painelRouter = Router()
 const painelController = container.resolve(PainelController);
@@ -17,7 +22,7 @@ painelRouter.put('/provedor/temas', authMiddleware, uploadMiddleware, painelCont
 // MARKETING - ALERTAS - INFORMATIVOS
 
 // ANUNCIOS
-painelRouter.post('/provedor/anuncios', authMiddleware, painelController.GravarAnuncio.bind(painelController));
+painelRouter.post('/provedor/anuncios', authMiddleware, upload.single("imagem"), painelController.GravarAnuncio.bind(painelController));
 painelRouter.get('/provedor/anuncios', authMiddleware, painelController.ObterAnuncios.bind(painelController) );
 painelRouter.patch('/provedor/anuncios/:id', authMiddleware, painelController.EditarAnuncio.bind(painelController));
 painelRouter.delete('/provedor/anuncios/:id', authMiddleware, painelController.ExcluirAnuncio.bind(painelController));
