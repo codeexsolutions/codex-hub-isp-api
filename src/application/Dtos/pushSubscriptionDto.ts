@@ -11,7 +11,21 @@ export type pushSubscriptionDto = {
 }
 
 export type notificacaoDto = {
-    titulo:string;
-    mensagem:string;
-    destino:string
+    title:string;
+    body:string;
+    icon:string;
+    image?:string;
+    badge?:string;
+    data?:data;
+    action?:action;
+    
+}
+
+export type data = {
+    url:string
+}
+
+export type action = {
+    action:string;
+    title:string
 }

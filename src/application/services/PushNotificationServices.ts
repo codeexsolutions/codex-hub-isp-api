@@ -4,13 +4,16 @@ import { notificacaoDto, pushSubscriptionDto } from "../Dtos/pushSubscriptionDto
 import IPushNotificationRepository from "../../core/interfaces/IPushNotificationRepository";
 import PushSubscription  from "../../core/domains/PushSubscription";
 import { WebPushProvider } from "../../infrastructure/notification/provider";
+import IProvedorRepository from "../../core/interfaces/IProvedorRepository";
 
 @injectable()
 export default class PushNotificationServices implements IPushNotificationServices {
 
     private readonly _pushRepository:IPushNotificationRepository;
-    constructor(@inject("IPushNotificationRepository")repository:IPushNotificationRepository){
+    private readonly _provedorRepository:IProvedorRepository;
+    constructor(@inject("IPushNotificationRepository")repository:IPushNotificationRepository, @inject("IProvedorRepository")provedorRepository:IProvedorRepository){
         this._pushRepository = repository;
+        this._provedorRepository = provedorRepository;
     }
 
     async Salvar(subscription: pushSubscriptionDto): Promise<string> {
@@ -69,26 +72,40 @@ export default class PushNotificationServices implements IPushNotificationServic
         await this._pushRepository.Remover(endpoint, codigoProvedor)
     }
 
-    async Notificar(subscription: pushSubscriptionDto, payload:notificacaoDto) : Promise<void> {
-        try{
-            const push = await new WebPushProvider().Enviar({
-                endpoint: subscription.endpoint,
-                keys: {
-                    auth: subscription.keys.auth,
-                    p256dh: subscription.keys.p256dh
-                },
-            }, payload);
+    async Notificar(codigoProvedor:string, payload:notificacaoDto) : Promise<void> {
+        
+        
+        const subscriptions = await this.BuscarTodos(codigoProvedor);
+        const webPush = new WebPushProvider()        
+            
+        const result = await this._provedorRepository.ObterTema(codigoProvedor);
+        if(result){
+            
+            payload.title = result.nome ?? "Hub ISP";
+            payload.icon = result.icone512 ?? "";
+            payload.badge = result.icone192 ?? result.icone512 ?? "";
+            payload.image = result.banner ?? "";
+        }            
 
-             console.log("Enviado com sucesso", push);
+        for (const sub of subscriptions) {
+            try {
+                await webPush.Enviar({
+                    endpoint: sub.endpoint,
+                    keys: {
+                        auth: sub.keys.auth,
+                        p256dh: sub.keys.p256dh
+                    }
+                }, payload);
 
-        }catch(error:any){
-            if (error.statusCode === 404 || error.statusCode === 410) {
+            } catch (error: any) {
 
-            await this.Remover(subscription.endpoint, subscription.codigoProvedor);
+                if (error.statusCode === 404 || error.statusCode === 410) {
+                    await this.Remover(sub.endpoint, codigoProvedor);
+                }
+
+                console.error(error);
+            }
         }
-
-        }
-
 
     }
     

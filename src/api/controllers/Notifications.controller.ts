@@ -60,9 +60,10 @@ export default class NotificationsController {
     }
     async EnviarNotificacao(req: AuthRequest, res: Response){
 
-        const data = req.body as any;
-
-        await this._service.Notificar(data.subs, data.payload);
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const data = req.body as any
+        
+        await this._service.Notificar(codigoProvedor, data.payload);
 
         return res.status(201).json({})
 

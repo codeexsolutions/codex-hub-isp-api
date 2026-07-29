@@ -6,5 +6,5 @@ export default interface IPushNotificationServices {
     BuscarPorCpf(cpf:string, codigoProvedor:string):Promise<pushSubscriptionDto[]>;
     BuscarTodos(codigoProvedor:string):Promise<pushSubscriptionDto[]>;
     Remover(endpoint: string, codigoProvedor:string): Promise<void> 
-    Notificar(subscription: pushSubscriptionDto, payload:notificacaoDto) : Promise<void> ;
+    Notificar(codigoProvedor:string, payload:notificacaoDto)  : Promise<void> ;
 }
