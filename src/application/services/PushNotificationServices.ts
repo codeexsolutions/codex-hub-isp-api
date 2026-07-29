@@ -79,6 +79,8 @@ export default class PushNotificationServices implements IPushNotificationServic
                 },
             }, payload);
 
+             console.log("Enviado com sucesso", push);
+
         }catch(error:any){
             if (error.statusCode === 404 || error.statusCode === 410) {
 

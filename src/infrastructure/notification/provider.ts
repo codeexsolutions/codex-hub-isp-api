@@ -2,9 +2,9 @@ import webpush from "./webpush.config";
 
 export class WebPushProvider {
 
-    async Enviar(subscription: webpush.PushSubscription, payload:any) : Promise<void> {
+    async Enviar(subscription: webpush.PushSubscription, payload:any) : Promise<webpush.SendResult> {
 
-        await webpush.sendNotification(
+        const response = await webpush.sendNotification(
             subscription,
             JSON.stringify({
                 title: payload.titulo,
@@ -12,7 +12,7 @@ export class WebPushProvider {
             })
         );
 
-        return;
+        return response;
     }
 
 }
