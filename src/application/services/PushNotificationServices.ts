@@ -65,19 +65,27 @@ export default class PushNotificationServices implements IPushNotificationServic
             }
         })
     }
-    Remover(endpoint: string): Promise<void> {
-        throw new Error("Method not implemented.");
+    async Remover(endpoint: string, codigoProvedor:string): Promise<void> {
+        await this._pushRepository.Remover(endpoint, codigoProvedor)
     }
 
     async Notificar(subscription: pushSubscriptionDto, payload:notificacaoDto) : Promise<void> {
-        
-        const push = await new WebPushProvider().Enviar({
-            endpoint: subscription.endpoint,
-            keys: {
-                auth: subscription.keys.auth,
-                p256dh: subscription.keys.p256dh
-            },
-        }, payload);
+        try{
+            const push = await new WebPushProvider().Enviar({
+                endpoint: subscription.endpoint,
+                keys: {
+                    auth: subscription.keys.auth,
+                    p256dh: subscription.keys.p256dh
+                },
+            }, payload);
+
+        }catch(error:any){
+            if (error.statusCode === 404 || error.statusCode === 410) {
+
+            await this.Remover(subscription.endpoint, subscription.codigoProvedor);
+        }
+
+        }
 
 
     }

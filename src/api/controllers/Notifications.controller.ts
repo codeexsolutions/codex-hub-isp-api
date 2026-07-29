@@ -1,7 +1,7 @@
 import { inject, injectable } from "tsyringe";
 import IPushNotificationServices from "../../application/interfaces/IPushNotificationServices";
 import { AuthRequest } from "../middleware/IAuthRequest";
-import { Response } from "express";
+import {Request, Response } from "express";
 import { notificacaoDto, pushSubscriptionDto } from "../../application/Dtos/pushSubscriptionDto";
 import { retornoPadrao } from "../../application/Dtos/retornoPadrao";
 
@@ -14,7 +14,7 @@ export default class NotificationsController {
         this._service = notificationService;
     }
 
-    async Salvar(req: AuthRequest, res: Response){
+    async Salvar(req: Request, res: Response){
 
         const data = req.body as pushSubscriptionDto;
 
@@ -28,9 +28,7 @@ export default class NotificationsController {
         return res.json(retorno);
     }
 
-    async ObterPublicKey(req: AuthRequest, res: Response){
-
-        const data = req.body as pushSubscriptionDto;
+    async ObterPublicKey(req: Request, res: Response){
 
         const result = this._service.ObterChavePublica();
 
@@ -64,9 +62,9 @@ export default class NotificationsController {
 
         const data = req.body as any;
 
-        this._service.Notificar(data.subs, data.payload);
+        await this._service.Notificar(data.subs, data.payload);
 
-        return res.status(201)
+        return res.status(201).json({})
 
     }
 }

@@ -67,8 +67,9 @@ export default class PushNotificationRepository implements IPushNotificationRepo
         })
     }
     
-    Remover(endpoint: string): Promise<void> {
-        throw new Error("Method not implemented.");
+    async Remover(endpoint: string, codigoProvedor:string): Promise<void> {
+        await this._db.Execulte<void>("DELETE FROM push_subscription WHERE endpoint = $1 AND codigo_provedor = $2", [endpoint, codigoProvedor]);
+
     }
 
 }

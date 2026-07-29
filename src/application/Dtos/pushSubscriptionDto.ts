@@ -7,7 +7,7 @@ export type pushSubscriptionDto = {
     keys: {
         p256dh: string;
         auth: string;
-    };
+    }
 }
 
 export type notificacaoDto = {

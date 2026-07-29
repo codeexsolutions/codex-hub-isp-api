@@ -4,6 +4,6 @@ export default interface IPushNotificationRepository{
     Salvar(subscription:PushSubscription):Promise<string>;
     BuscarPorCpf(cpf: string, codigoProvedor:string) : Promise<PushSubscription[]>;
     BuscarTodos(codigoProvedor:string) : Promise<PushSubscription[]>;
-    Remover(endpoint:string):Promise<void>;
+    Remover(endpoint: string, codigoProvedor:string): Promise<void>
 
 }

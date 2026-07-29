@@ -5,6 +5,6 @@ export default interface IPushNotificationServices {
     ObterChavePublica() : string;
     BuscarPorCpf(cpf:string, codigoProvedor:string):Promise<pushSubscriptionDto[]>;
     BuscarTodos(codigoProvedor:string):Promise<pushSubscriptionDto[]>;
-    Remover(endpoint:string):Promise<void>;
+    Remover(endpoint: string, codigoProvedor:string): Promise<void> 
     Notificar(subscription: pushSubscriptionDto, payload:notificacaoDto) : Promise<void> ;
 }
