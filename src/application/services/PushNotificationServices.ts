@@ -84,7 +84,7 @@ export default class PushNotificationServices implements IPushNotificationServic
             payload.title = result.nome ?? "Hub ISP";
             payload.icon = result.icone512 ?? "";
             payload.badge = result.icone192 ?? result.icone512 ?? "";
-            payload.image = result.banner ?? "";
+            payload.image = result.banner ?? undefined;
         }            
 
         for (const sub of subscriptions) {
