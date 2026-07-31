@@ -8,4 +8,5 @@ export type anuncioModel = {
     codigo_provedor_fk:number;
     tipo:string;
     ativo:boolean;
+    file?:  Express.Multer.File;
 }

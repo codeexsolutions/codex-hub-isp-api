@@ -69,7 +69,7 @@ export default class UploadService {
         
         const config = CONFIG[upload.tipo];
         
-        const buffer = await this._storage.Optimize(upload.file, config)
+        const buffer = await this._storage.Optimize(upload.file as Buffer, config)
 
         const publicUrl = await this._storage.Upload(buffer, config.path , config.contentType )
 

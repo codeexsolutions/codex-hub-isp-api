@@ -130,6 +130,7 @@ export default class PainelController {
     async GravarAnuncio(req:AuthRequest, res:Response){
         
         const data = req.body as anuncioModel
+        data.file = req.file;
         data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
         const anuncio = await this._painelService.GravarAnuncio(data);
         return res.status(200).json({data:anuncio})
@@ -140,6 +141,7 @@ export default class PainelController {
         
         const id = Number.parseInt(req.params.id as string);
         const data = req.body as anuncioModel;
+        data.file = req.file;
         const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
         data.codigo_provedor_fk = codigoProvedor;
         const anuncio = await this._painelService.EditarAnuncio(id, data);
@@ -174,7 +176,7 @@ export default class PainelController {
 
     async AtualizarTema(req:AuthRequest, res:Response){
         
-        const data = req.body as themeModel
+        const data = req.body as any
         const files = req.files as ThemeFiles
         
         data.codigo = Number.parseInt(req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string);

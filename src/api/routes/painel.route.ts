@@ -24,7 +24,7 @@ painelRouter.put('/provedor/temas', authMiddleware, uploadMiddleware, painelCont
 // ANUNCIOS
 painelRouter.post('/provedor/anuncios', authMiddleware, upload.single("imagem"), painelController.GravarAnuncio.bind(painelController));
 painelRouter.get('/provedor/anuncios', authMiddleware, painelController.ObterAnuncios.bind(painelController) );
-painelRouter.patch('/provedor/anuncios/:id', authMiddleware, painelController.EditarAnuncio.bind(painelController));
+painelRouter.patch('/provedor/anuncios/:id', authMiddleware, upload.single("imagem"), painelController.EditarAnuncio.bind(painelController));
 painelRouter.delete('/provedor/anuncios/:id', authMiddleware, painelController.ExcluirAnuncio.bind(painelController));
 
 // BANNERS

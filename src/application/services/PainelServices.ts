@@ -3,39 +3,57 @@ import IPainelRepository from "../../core/interfaces/IPainelRepository";
 import { anuncioModel } from "../../core/models/anuncioModel";
 import IPainelServices from "../interfaces/IPainelService";
 import { bannerModel } from "../../core/models/bannerModel";
+import UploadService from "./UploadServices";
+import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
 
 @injectable()
 export default class PainelService implements IPainelServices {
 
     private readonly _painelRepository:IPainelRepository;
-    
+
     constructor(@inject("IPainelRepository")painelRepository:IPainelRepository){
         this._painelRepository = painelRepository;
     }
     
     async GravarAnuncio(anuncio:anuncioModel) : Promise<anuncioModel> {
 
+        const _upload = new UploadService()
+        anuncio.imagem =  await _upload.UploadArquivo({
+                       codigoProvedor: anuncio.codigo_provedor_fk.toString(),
+                       file: anuncio.file?.buffer,
+                       nomeArquivo: "anuncio"+anuncio.file?.originalname,
+                       tipo: ETipoArquivo.ANUNCIO
+                   })
         return await this._painelRepository.GravarAnuncio(anuncio);
     }
 
     async ExcluirAnuncio(id:string, codigoProvedor:number) : Promise<any> {
-        return await this._painelRepository.ExcluiAnuncio(id, codigoProvedor)
+        await this._painelRepository.ExcluiAnuncio(id, codigoProvedor)
+
     }
 
     async EditarAnuncio(id:number, anuncioEdite:anuncioModel) : Promise<anuncioModel>  {
         const anuncio = await this._painelRepository.ObterAnuncioPorId(id, anuncioEdite.codigo_provedor_fk);
-
+        
         if(anuncioEdite.titulo)
             anuncio.titulo = anuncioEdite.titulo;
         if(anuncioEdite.subtitulo)
             anuncio.subtitulo = anuncioEdite.subtitulo;
         if(anuncioEdite.descricao)
             anuncio.descricao = anuncioEdite.descricao;
-        if(anuncioEdite.imagem)
-            anuncio.imagem = anuncioEdite.imagem;
+        if(anuncioEdite.file ){
+            
+            const _upload = new UploadService();
+            anuncio.imagem = await _upload.UploadArquivo({
+               codigoProvedor: anuncioEdite.codigo_provedor_fk.toString(),
+               file: anuncioEdite.file.buffer,
+               nomeArquivo: "anuncio",
+               tipo: ETipoArquivo.ANUNCIO
+           });
+        }
         if(anuncioEdite.link)
             anuncio.link = anuncioEdite.link;
-        //if(anuncioEdite.ativo)
+
         anuncio.ativo = anuncioEdite.ativo;
 
         const novoAnuncio = await this._painelRepository.EditarAnuncio(anuncio);

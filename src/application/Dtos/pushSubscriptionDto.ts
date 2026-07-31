@@ -17,8 +17,7 @@ export type notificacaoDto = {
     image?:string;
     badge?:string;
     data?:data;
-    action?:action;
-    
+    action?:action;    
 }
 
 export type data = {

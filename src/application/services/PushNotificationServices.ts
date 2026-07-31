@@ -81,10 +81,10 @@ export default class PushNotificationServices implements IPushNotificationServic
         const result = await this._provedorRepository.ObterTema(codigoProvedor);
         if(result){
             
-            payload.title = result.nome ?? "Hub ISP";
+            payload.title = payload.title ?? result.nome;
             payload.icon = result.icone512 ?? "";
             payload.badge = result.icone192 ?? result.icone512 ?? "";
-            payload.image = result.banner ?? undefined;
+            payload.image = result.icone512 ?? undefined;
         }            
 
         for (const sub of subscriptions) {
