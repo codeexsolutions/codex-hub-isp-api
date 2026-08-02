@@ -201,16 +201,31 @@ export default class ProvedorServices implements IProvedorServices {
     async AtualizarTema(tema:themeModel, files:ThemeFiles) : Promise<any> {
 
         const _upload = new UploadService()
-        const temaAtual = await this._provedorRepository.ObterTema(tema.codigo.toString())
+        let temaAtual = await this._provedorRepository.ObterTema(tema.codigo.toString())
+        
+        const temaNovo:themeModel = {
+            codigo:tema.codigo,
+            nome_fantasia: tema.nome_fantasia,
+            icone192:'',
+            icone512:'',
+            maskable:''
+        }
 
-        if(tema){
+        if(temaAtual === undefined){
+           temaAtual = temaNovo            
+        }
+        
+        
+        if(temaAtual !== undefined){
+            
             temaAtual.tag = tema.tag
             temaAtual.accent = tema.accent;
             temaAtual.accent2 = tema.accent2;
             temaAtual.glyph = tema.glyph;
-            temaAtual.nome = tema.nome_fantasia
-
+            temaAtual.nome_fantasia = tema.nome_fantasia
+            
         }
+
 
         if(Object.keys(files).length > 0){
 
@@ -221,30 +236,30 @@ export default class ProvedorServices implements IProvedorServices {
                tipo: ETipoArquivo.LOGO
            });
 
-           temaAtual.logo = tema.logo;
+           //temaAtual.logo = tema.logo;
            
-          temaAtual.favicon = await _upload.UploadArquivo({
+           temaAtual.favicon = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
                file: files.favicon![0].buffer,
                nomeArquivo: "favicon",
                tipo: ETipoArquivo.FAVICON
            })
           
-          temaAtual.icon192 = await _upload.UploadArquivo({
+           temaAtual.icone192 = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
                file: files.icon192![0].buffer,
                nomeArquivo: "icon192",
                tipo: ETipoArquivo.ICON192
            })
    
-          temaAtual.icon512 = await _upload.UploadArquivo({
+           temaAtual.icone512 = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
                file: files.icon512![0].buffer,
                nomeArquivo: "icon512",
                tipo: ETipoArquivo.ICON512
            })
    
-          temaAtual.maskable = await _upload.UploadArquivo({
+           temaAtual.maskable = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
                file: files.maskable![0].buffer,
                nomeArquivo: "masckable",
