@@ -8,7 +8,7 @@ export default class DBContext implements IDBContext {
     
     constructor(){
         this._pool = new Pool({
-            connectionString: process.env.DATABASE_URL
+            connectionString: process.env.USE_HML === "false" ? process.env.DATABASE_URL : process.env.DATABASE_URL_HML
         });
     }
 
