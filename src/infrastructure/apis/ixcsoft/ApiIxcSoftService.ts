@@ -104,7 +104,7 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
         return response.json();
     }
 
-    async ObterContratoPorId(id: number, codigoProvedor:string): Promise<any> {
+    async ObterContratoPorIdCliente(id: number, codigoProvedor:string): Promise<any> {
         
         const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
         const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
@@ -122,6 +122,41 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
             body: 
             { grid_param: JSON.stringify([{
                 TB: "cliente_contrato.id_cliente",
+                OP: operadores.IGUAL,
+                P: id
+            }])}
+            
+           /*  {
+
+                qtype: "cliente.cnpj_cpf",
+                query: PadronizarCpf(cpfcnpj),
+                oper: "=",
+                page: 1,
+                rp: 10,
+            } */
+        }
+
+        const response = await service.Requst(configRequest)
+        return await response.json();
+    }
+    async ObterContratoPorId(id: number, codigoProvedor:string): Promise<any> {
+        
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configRequest:configRequest = {
+            method: emethodHttp.POST,
+            resource: "cliente_contrato",
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: 
+            { grid_param: JSON.stringify([{
+                TB: "cliente_contrato.id",
                 OP: operadores.IGUAL,
                 P: id
             }])}

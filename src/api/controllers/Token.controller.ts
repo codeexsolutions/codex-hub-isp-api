@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import { retornoPadrao } from "../../application/Dtos/retornoPadrao";
 import { loginPainel, tokenDto } from "../../application/Dtos/tokenDto";
 import { tokenPainelDto } from "../../application/Dtos/tokenPainelDto";
+import { eGerenciador } from "../../common/enuns/egerenciador";
 
 @injectable()
 export default class TokenController{
@@ -32,33 +33,45 @@ export default class TokenController{
             }
 
             if(token.provedorAtivo){
+                if(token.gerenciador === eGerenciador.RECEITANET.toString()){
 
-                if(token.multiploCadastro){
+                    if(token.multiploCadastro){
+                        const retorno: retornoPadrao<tokenDto> = {
+                            statusCode: 200,
+                            message: "Multiplos Cadastros. Escolha um contrato para continuar.",
+                            data: token
+                        }
+                        return res.json(retorno);
+                    }else{
+            
+                        const retorno: retornoPadrao<tokenDto> = {
+                               statusCode: 200,
+                               message: "Token retornado com sucesso.",
+                               data: token
+                           }
+                       return res.json(retorno);
+                    }
+                }                
+                
+                
+                if(token.gerenciador === eGerenciador.IXCSOFT.toString()){
                     const retorno: retornoPadrao<tokenDto> = {
                         statusCode: 200,
-                        message: "Multiplos Cadastros. Escolha um contrato para continuar.",
+                        message: "Token retornado com sucesso.",
                         data: token
                     }
-                    return res.json(retorno);
-                }else{
-        
-                    const retorno: retornoPadrao<tokenDto> = {
-                           statusCode: 200,
-                           message: "Token retornado com sucesso.",
-                           data: token
-                       }
-                   return res.json(retorno);
+                    return res.status(200).json(retorno);
                 }
+                
             }
             
             const retorno: retornoPadrao<string> = {
-                    statusCode: 401,
-                    message: "Não Autorizado",
-                    data: 'Provedor não está ativo.'
-                }
+                statusCode: 401,
+                message: "Não Autorizado",
+                data: 'Provedor não está ativo.'
+            }
             return res.status(401).json(retorno);
-    
-
+            
         } catch (error:any) {
             const retorno: retornoPadrao<string> = {
                        statusCode: 401,

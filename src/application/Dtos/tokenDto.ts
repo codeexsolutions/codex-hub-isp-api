@@ -3,10 +3,12 @@ export type tokenDto = {
     codigoProvedor:number;
     token?:string;
     nome?:string;
+    cpfCnpj?:string;
     isContrassenha?:boolean
     contratos?: contratoLoginDto[]
     multiploCadastro?:boolean;
     provedorAtivo?:boolean;
+    contratoId?:number
 }
 
 export type contratoLoginDto = {

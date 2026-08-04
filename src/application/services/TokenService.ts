@@ -95,13 +95,39 @@ export default class TokenService implements ITokenService {
             token: ""
         };
 
-        const token = await this._apiReceitaNet.ObterTokenPorContrato(codigoProvedor, cpf, idContrato);
-        tokenDto.token = token.access_token;
-        tokenDto.nome = token.name;
-        tokenDto.isContrassenha = token.isContrassenha;
-        tokenDto.multiploCadastro = false;
+        if(provedor.Gerenciador === eGerenciador.RECEITANET.toString()){
 
-        return tokenDto;
+    
+            const token = await this._apiReceitaNet.ObterTokenPorContrato(codigoProvedor, cpf, idContrato);
+            tokenDto.token = token.access_token;
+            tokenDto.nome = token.name;
+            tokenDto.isContrassenha = token.isContrassenha;
+            tokenDto.multiploCadastro = false;
+    
+            return tokenDto;
+        }
+
+        if(provedor.Gerenciador === eGerenciador.IXCSOFT.toString()){
+
+            const tokenDto: tokenDto = {
+                gerenciador: provedor.Gerenciador,
+                codigoProvedor: provedor.ObterCodigoProvedor(),
+                token: "",
+                cpfCnpj: cpf
+            };
+    
+            const token = this._apiIxcSoft.Token(provedor);
+            tokenDto.token = token;
+            tokenDto.nome = "";
+            tokenDto.isContrassenha = false;
+            tokenDto.multiploCadastro = false;
+            tokenDto.contratoId = Number.parseInt(idContrato);
+            return tokenDto;
+        
+        }
+
+        return tokenDto
+
     }
 
     async TokenAcessoPainel(loginPainel:loginPainel): Promise<tokenPainelDto> {

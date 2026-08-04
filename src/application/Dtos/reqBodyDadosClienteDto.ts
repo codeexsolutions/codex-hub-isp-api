@@ -4,5 +4,6 @@ export type reqBodyDadosClienteDto = {
     token:string,
     name:string,
     isContrassenha:boolean,
-    codigoProvedor:string
+    codigoProvedor:string,
+    contratoId?:number
 }

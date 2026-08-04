@@ -5,7 +5,8 @@ export default interface IApiIxcSoftService {
     ObterClientePorCpfCnpj(cpfcnpj:string, codigoProvedor:string):Promise<any>
     ObterCidade(id:number,codigoProvedor:string):Promise<any>
     ObterUf(id:number,codigoProvedor:string):Promise<any>
-    ObterContratoPorId(id:number, codigoProvedor:string) : Promise<any>
+    ObterContratoPorIdCliente(id:number, codigoProvedor:string) : Promise<any>
+    ObterContratoPorId(id: number, codigoProvedor:string): Promise<any>
     ObterProdutoContrato(id:number, codigoProvedor:string) : Promise<any>
     ObterFaturas(idContrato:number, codigoProvedor:string) : Promise<any> 
 }

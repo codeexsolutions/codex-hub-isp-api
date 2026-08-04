@@ -4,6 +4,7 @@ import { clienteDto, faturaDto } from "../Dtos/clienteDto";
 import IIxcSoftServices from "../interfaces/IIxcSoftServices";
 import IProvedorRepository from "../../core/interfaces/IProvedorRepository";
 import { boletos } from "../Dtos/boletosDto";
+import { contrato, multiplos } from "../../infrastructure/apis/receitanet/responseModels/responseMultiContratos";
 
 @injectable()
 export default class IxcSoftServices implements IIxcSoftServices{
@@ -15,7 +16,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
         this._provedroRepository = provedorRepository;
     }
 
-    async ObterDadosCliente(cpf: string, codigoProvedor: string): Promise<clienteDto> {
+    async ObterDadosCliente(cpf:string, codigoProvedor: string, idContrato:number): Promise<clienteDto | multiplos> {
 
         const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
         const cliente = await responseCliente.registros[0]
@@ -25,12 +26,42 @@ export default class IxcSoftServices implements IIxcSoftServices{
         
         const responseUf = await this._apiIxcSoft.ObterUf(cliente.uf, codigoProvedor);
         const uf = await responseUf.registros[0]
-
-        const responseContrato = await this._apiIxcSoft.ObterContratoPorId(cliente.id, codigoProvedor);
-        const contrato = await responseContrato.registros[0].filter((s:any) => s.status === 'A');
         
-        const produto = await this._apiIxcSoft.ObterProdutoContrato(contrato.id_vd_contrato, codigoProvedor);
-        const faturas = await this._apiIxcSoft.ObterFaturas(contrato.id, codigoProvedor);
+        let responseContrato: any = null
+        
+        if(idContrato === undefined)
+            responseContrato = await this._apiIxcSoft.ObterContratoPorIdCliente(cliente.id, codigoProvedor);
+        else
+            responseContrato = await this._apiIxcSoft.ObterContratoPorId(idContrato, codigoProvedor);        
+        
+        const contratos = await responseContrato.registros.filter((s:any) => s.status === 'A');
+
+        if(contratos.length < 1)
+            throw new Error("Cliente com contratos inativos")
+        
+        if(contratos.length > 1){
+
+            const multiplos:multiplos = {
+                multiploCadastro:true,
+                contratos: contratos.map((c:any) : contrato => {
+                    return {
+                        id: c.id,
+                       nome: cliente.razao,
+                       endereco: `${cliente.endereco} - ${cliente.numero}`,
+                       bairro: cliente.bairro,
+                       complemento: cliente.complemento,
+                       cidade: cidade.nome,
+                       uf: uf.sigla,
+                       login: cpf
+                       
+                    }
+                } )
+            }
+            return multiplos
+        }
+
+        const produto = await this._apiIxcSoft.ObterProdutoContrato(contratos[0].id_vd_contrato, codigoProvedor);
+        const faturas = await this._apiIxcSoft.ObterFaturas(idContrato, codigoProvedor);
 
 
         const clienteDto:clienteDto = {
@@ -110,6 +141,28 @@ export default class IxcSoftServices implements IIxcSoftServices{
         };
 
         return boletos;    
+    }
+
+    async ObterContratos(cpf:string, codigoProvedor: string ) : Promise<string | multiplos> {
+        
+        const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
+        const cliente = await responseCliente.registros[0]
+
+        const responseContrato = await this._apiIxcSoft.ObterContratoPorId(cliente.id, codigoProvedor);
+        const contratos = await responseContrato.registros.filter((s:any) => s.status === 'A');   
+        
+        if(contratos.length > 1){
+
+            const multiplos:multiplos = {
+                multiploCadastro: true,
+                contratos: contratos
+            }
+
+            return multiplos
+        }        
+
+        return cpf;
+        
     }
     
     async ObterToken(codigoProvedor: string): Promise<string> {

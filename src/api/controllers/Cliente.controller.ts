@@ -6,6 +6,7 @@ import { eGerenciador } from "../../common/enuns/egerenciador";
 import { retornoPadrao } from "../../application/Dtos/retornoPadrao";
 import { clienteDto } from "../../application/Dtos/clienteDto";
 import IIxcSoftServices from "../../application/interfaces/IIxcSoftServices";
+import { multiplos } from "../../infrastructure/apis/receitanet/responseModels/responseMultiContratos";
 
 @injectable()
 export default class ClienteController {
@@ -36,9 +37,9 @@ export default class ClienteController {
             }
     
             if(data.gerenciador === eGerenciador.IXCSOFT){
-                const result = await this._ixcSoftService.ObterDadosCliente(data.cpfCnpj, data.codigoProvedor)
+                const result = await this._ixcSoftService.ObterDadosCliente(data.cpfCnpj, data.codigoProvedor, data.contratoId as number)
                 
-                const retorno: retornoPadrao<clienteDto> = {
+                const retorno: retornoPadrao<clienteDto|multiplos> = {
                     statusCode:200,
                     message:"Dados Cliente "+ data.gerenciador,
                     data: result 
