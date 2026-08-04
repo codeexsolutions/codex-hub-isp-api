@@ -39,6 +39,17 @@ export default class ClienteController {
             if(data.gerenciador === eGerenciador.IXCSOFT){
                 const result = await this._ixcSoftService.ObterDadosCliente(data.cpfCnpj, data.codigoProvedor, data.contratoId as number)
                 
+                if(result === null){
+                    const retorno: retornoPadrao<any> = {
+                        statusCode:400,
+                        message:"Dados Cliente "+ data.gerenciador,
+                        data: "Cliente com contrato inativo"
+                }
+                
+                return res.status(400).json(retorno);
+                }
+           
+
                 const retorno: retornoPadrao<clienteDto|multiplos> = {
                     statusCode:200,
                     message:"Dados Cliente "+ data.gerenciador,
@@ -55,7 +66,7 @@ export default class ClienteController {
                 data: error.message
             }
             
-            return res.json(retorno);
+            return res.status(500).json(retorno);
         }
     }
 

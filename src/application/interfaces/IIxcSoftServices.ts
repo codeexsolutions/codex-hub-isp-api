@@ -7,5 +7,5 @@ export default interface IIxcSoftServices {
     //ObterDadosCliente(cpf:string, token:string) : Promise<clienteDto>;    
     ObterFaturas(cpf:string, codigoProvedor:string) : Promise<boletos>
     ObterContratos(cpf:string, codigoProvedor: string ) : Promise<string | multiplos>
-    ObterDadosCliente(cpf:string, codigoProvedor: string, idContrato:number): Promise<clienteDto | multiplos> 
+    ObterDadosCliente(cpf:string, codigoProvedor: string, idContrato:number): Promise<clienteDto | multiplos | null> 
 }

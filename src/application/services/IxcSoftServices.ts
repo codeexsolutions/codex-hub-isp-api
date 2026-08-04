@@ -16,7 +16,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
         this._provedroRepository = provedorRepository;
     }
 
-    async ObterDadosCliente(cpf:string, codigoProvedor: string, idContrato:number): Promise<clienteDto | multiplos> {
+    async ObterDadosCliente(cpf:string, codigoProvedor: string, idContrato:number): Promise<clienteDto | multiplos | null> {
 
         const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
         const cliente = await responseCliente.registros[0]
@@ -37,8 +37,8 @@ export default class IxcSoftServices implements IIxcSoftServices{
         const contratos = await responseContrato.registros.filter((s:any) => s.status === 'A');
 
         if(contratos.length < 1)
-            throw new Error("Cliente com contratos inativos")
-        
+            return null;
+
         if(contratos.length > 1){
 
             const multiplos:multiplos = {
@@ -62,7 +62,6 @@ export default class IxcSoftServices implements IIxcSoftServices{
 
         const produto = await this._apiIxcSoft.ObterProdutoContrato(contratos[0].id_vd_contrato, codigoProvedor);
         const faturas = await this._apiIxcSoft.ObterFaturas(idContrato, codigoProvedor);
-
 
         const clienteDto:clienteDto = {
             dadosCadastrais :{
