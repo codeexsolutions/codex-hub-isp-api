@@ -82,9 +82,10 @@ export default class PushNotificationServices implements IPushNotificationServic
         if(result){
             
             payload.title = payload.title ?? result.nome;
-            payload.icon = result.icone512 ?? "";
-            payload.badge = result.icone192 ?? result.icone512 ?? "";
+            payload.icon = result.icone512 ?? undefined;
+            payload.badge = result.icone192 ?? result.icone512 ?? undefined;
             payload.image = result.icone512 ?? undefined;
+            payload.data = result.icone192 ?? undefined;
         }            
 
         for (const sub of subscriptions) {

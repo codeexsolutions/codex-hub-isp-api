@@ -5,6 +5,7 @@ import IPainelServices from "../interfaces/IPainelService";
 import { bannerModel } from "../../core/models/bannerModel";
 import UploadService from "./UploadServices";
 import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
+import { anuncioEditeDto } from "../Dtos/anuncioEditeDto";
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -18,7 +19,7 @@ export default class PainelService implements IPainelServices {
     async GravarAnuncio(anuncio:anuncioModel) : Promise<anuncioModel> {
 
         const _upload = new UploadService()
-        anuncio.imagem =  await _upload.UploadArquivo({
+        anuncio.link_imagem =  await _upload.UploadArquivo({
                        codigoProvedor: anuncio.codigo_provedor_fk.toString(),
                        file: anuncio.file?.buffer,
                        nomeArquivo: "anuncio"+anuncio.file?.originalname,
@@ -32,27 +33,30 @@ export default class PainelService implements IPainelServices {
 
     }
 
-    async EditarAnuncio(id:number, anuncioEdite:anuncioModel) : Promise<anuncioModel>  {
+    async EditarAnuncio(id:number, anuncioEdite:anuncioEditeDto) : Promise<anuncioModel>  {
         const anuncio = await this._painelRepository.ObterAnuncioPorId(id, anuncioEdite.codigo_provedor_fk);
         
-        if(anuncioEdite.titulo)
+        if(anuncioEdite.titulo !== undefined)
             anuncio.titulo = anuncioEdite.titulo;
-        if(anuncioEdite.subtitulo)
+        if(anuncioEdite.subtitulo !== undefined)
             anuncio.subtitulo = anuncioEdite.subtitulo;
-        if(anuncioEdite.descricao)
+        if(anuncioEdite.descricao !== undefined)
             anuncio.descricao = anuncioEdite.descricao;
-        if(anuncioEdite.file ){
+             
+        
+        if(anuncioEdite.file !== undefined){
             
             const _upload = new UploadService();
-            anuncio.imagem = await _upload.UploadArquivo({
+            anuncio.link_imagem = await _upload.UploadArquivo({
                codigoProvedor: anuncioEdite.codigo_provedor_fk.toString(),
                file: anuncioEdite.file.buffer,
                nomeArquivo: "anuncio",
                tipo: ETipoArquivo.ANUNCIO
            });
         }
-        if(anuncioEdite.link)
-            anuncio.link = anuncioEdite.link;
+        
+        if(anuncioEdite.link !== undefined)
+            anuncio.link_acao = anuncioEdite.link;
 
         anuncio.ativo = anuncioEdite.ativo;
 

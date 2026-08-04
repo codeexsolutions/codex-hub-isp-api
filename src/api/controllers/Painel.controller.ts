@@ -14,6 +14,7 @@ import IPainelServices from "../../application/interfaces/IPainelService";
 import { anuncioModel } from "../../core/models/anuncioModel";
 import { bannerModel } from "../../core/models/bannerModel";
 import { ThemeFiles } from "../../application/Dtos/temaFiles.dto";
+import { anuncioEditeDto } from "../../application/Dtos/anuncioEditeDto";
 
 @injectable()
 export default class PainelController {
@@ -140,7 +141,7 @@ export default class PainelController {
     async EditarAnuncio(req:AuthRequest, res:Response){
         
         const id = Number.parseInt(req.params.id as string);
-        const data = req.body as anuncioModel;
+        const data = req.body as anuncioEditeDto;
         data.file = req.file;
         const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
         data.codigo_provedor_fk = codigoProvedor;
