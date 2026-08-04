@@ -57,11 +57,12 @@ export default class IxcSoftServices implements IIxcSoftServices{
                     }
                 } )
             }
+
             return multiplos
         }
 
         const produto = await this._apiIxcSoft.ObterProdutoContrato(contratos[0].id_vd_contrato, codigoProvedor);
-        const faturas = await this._apiIxcSoft.ObterFaturas(idContrato, codigoProvedor);
+        const faturas = await this._apiIxcSoft.ObterFaturas(contratos[0].id, codigoProvedor);
 
         const clienteDto:clienteDto = {
             dadosCadastrais :{
