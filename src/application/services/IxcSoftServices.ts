@@ -1,6 +1,6 @@
 import { container, inject, injectable } from "tsyringe";
 import IApiIxcSoftService from "../../infrastructure/apis/ixcsoft/interfaces/IApiIxcSoftService";
-import { clienteDto, faturaDto } from "../Dtos/clienteDto";
+import { clienteDto, consumosDto, faturaDto } from "../Dtos/clienteDto";
 import IIxcSoftServices from "../interfaces/IIxcSoftServices";
 import IProvedorRepository from "../../core/interfaces/IProvedorRepository";
 import { boletos } from "../Dtos/boletosDto";
@@ -45,7 +45,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
                 multiploCadastro:true,
                 contratos: contratos.map((c:any) : contrato => {
                     return {
-                        id: c.id,
+                       id: c.id,
                        nome: cliente.razao,
                        endereco: `${cliente.endereco} - ${cliente.numero}`,
                        bairro: cliente.bairro,
@@ -63,14 +63,29 @@ export default class IxcSoftServices implements IIxcSoftServices{
 
         const produto = await this._apiIxcSoft.ObterProdutoContrato(contratos[0].id_vd_contrato, codigoProvedor);
         const faturas = await this._apiIxcSoft.ObterFaturas(contratos[0].id, codigoProvedor);
+        const loginUsuario = await this._apiIxcSoft.ObterLogin(codigoProvedor, contratos[0].id);
+        const consumos = await this._apiIxcSoft.ObterConsumo(loginUsuario.registros[0].id, codigoProvedor);
+        const agora = new Date();
+        const consumoMes = consumos.registros.filter((c: any) => {
+                const data = new Date(c.data);
 
+                return (
+                    data.getMonth() === agora.getMonth() &&
+                    data.getFullYear() === agora.getFullYear()
+                );
+            });
+       
+        const download = (Number(consumoMes[0].consumo) / (1024 ** 3)).toFixed(1); 
+        const upload = (Number(consumoMes[0].consumo_upload) / (1024 ** 3)).toFixed(1); 
         const clienteDto:clienteDto = {
+            idContrato : contratos[0].id,
             dadosCadastrais :{
                 nome: cliente.razao,
                 cpfCnpj: cliente.cnpj_cpf,
                 dataNascimento: cliente.data_nascimento,
                 email: cliente.email,
-                inscricao: cliente.ie_identidade
+                inscricao: cliente.ie_identidade,
+        
             },
             endereco:{
                 logradouro: `${cliente.endereco} - ${cliente.numero}`,
@@ -88,9 +103,9 @@ export default class IxcSoftServices implements IIxcSoftServices{
                 total: produto.total,
             }],
             consumos: {
-                consumoMensalLabels: [`01/${new Date().getFullYear()}`],
-                consumoMensalDown: [0.1],
-                consumoMensalUp: [0.1]
+                consumoMensalLabels :  [`${new Date(consumoMes[0].data).getMonth()}/${new Date(consumoMes[0].data).getFullYear()}`],
+                consumoMensalDown :  [Number.parseInt(download)],
+                consumoMensalUp : [Number.parseInt(upload)]
             },
             ultimasFaturas: faturas.registros.map((fat:any) => {
                 const fatura:faturaDto = {
@@ -113,11 +128,9 @@ export default class IxcSoftServices implements IIxcSoftServices{
         return clienteDto;
     }
 
-    async ObterFaturas(cpf:string, codigoProvedor:string) : Promise<boletos> {
-        const cliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
-        const contrato = await this._apiIxcSoft.ObterContratoPorId(cliente.registros[0].id, codigoProvedor);
+    async ObterFaturas(idContrato:string, codigoProvedor:string) : Promise<boletos> {     
 
-        const faturasResponse = await this._apiIxcSoft.ObterFaturas(contrato.registros[0].id, codigoProvedor);
+        const faturasResponse = await this._apiIxcSoft.ObterFaturas(Number.parseInt(idContrato), codigoProvedor);
         
         const faturas =  faturasResponse.registros.map((fat:any) => {
             const fatura:faturaDto = {
@@ -169,4 +182,5 @@ export default class IxcSoftServices implements IIxcSoftServices{
         const provedor = await this._provedroRepository.ObterProvedor(codigoProvedor);
         return this._apiIxcSoft.Token(provedor);
     }
+
 }

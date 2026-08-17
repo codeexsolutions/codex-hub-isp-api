@@ -139,6 +139,7 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
         const response = await service.Requst(configRequest)
         return await response.json();
     }
+
     async ObterContratoPorId(id: number, codigoProvedor:string): Promise<any> {
         
         const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
@@ -277,6 +278,72 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
         const response = await service.Requst(configReques);
 
         return response.json();
+    }
+
+    async ObterConsumo(idLogin: number, codigoProvedor: string): Promise<any> {
+        
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+        
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: "radusuarios_consumo_m",
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: {
+                qtype: "radusuarios_consumo_m.id_login",
+                query: idLogin,
+                oper: operadores.IGUAL,
+                page: 1,
+                rp: 1000,
+                sortname: "radusuarios_consumo_m.id_login",
+                sortorder: ordenacao.MAIOR_MENOR
+            }
+        }
+
+        const response = await service.Requst(configReques);
+
+        return response.json();
+    }
+
+    async ObterLogin(codigoProvedor:string, contrato:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'radusuarios',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: {
+                qtype: 'radusuarios.id_contrato',
+                query: contrato,
+                oper: operadores.IGUAL,
+                page: 1,
+                sortname: 'radusuarios.id',
+                sortorder: ordenacao.MENOR_MAIOR
+            }
+        }
+        
+        const response = await service.Requst(configReques);
+        return response.json();
+    }
+
+    async NewRequestService(codigoProvedor:string) : Promise<RequestService> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+        return service;
     }
 
     public Token(provedor:Provedor): string {

@@ -7,6 +7,7 @@ export type clienteDto = {
     ultimasFaturas?:faturaDto[];
     isBloqueado?: boolean;
     data_bloqueio?: Date;
+    idContrato?: number;
 }
 
 export type dadosCadastrais = {

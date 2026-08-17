@@ -9,4 +9,6 @@ export default interface IApiIxcSoftService {
     ObterContratoPorId(id: number, codigoProvedor:string): Promise<any>
     ObterProdutoContrato(id:number, codigoProvedor:string) : Promise<any>
     ObterFaturas(idContrato:number, codigoProvedor:string) : Promise<any> 
+    ObterConsumo(idUsuario:number, codigoProvedor:string) : Promise<any> 
+    ObterLogin(codigoProvedor:string, contrato:string) : Promise<any>
 }

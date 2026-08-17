@@ -92,6 +92,7 @@ export default class ProvedorServices implements IProvedorServices {
             status: provedorAtualizado.Status,
             usuario: provedorAtualizado.Usuario,
             dominio_ixc: provedorAtualizado.DominioIxc,
+            senha: provedorAtualizado.Senha()
         }
     }
 

@@ -75,7 +75,7 @@ export default class ClienteController {
         const data = req.body;
         if(data.gerenciador === eGerenciador.RECEITANET){
 
-            const faturas = await this._receitaNetService.ObterFaturas(data.token)
+            const faturas = await this._receitaNetService.ObterFaturas(data.data.token)
             const retorno: retornoPadrao<any> = {
                     statusCode:200,
                     message:"Faturas "+ data.gerenciador,
@@ -85,16 +85,16 @@ export default class ClienteController {
                 return res.json(retorno);
         }
 
-        if(data.gerenciador === eGerenciador.IXCSOFT){
+        if(data.token.gerenciador === eGerenciador.IXCSOFT){
 
-            const faturas = await this._ixcSoftService.ObterFaturas(data.cpfCnpj, data.codigoProvedor);
+            const faturas = await this._ixcSoftService.ObterFaturas(data.idContrato, data.token.codigoProvedor);
             const retorno: retornoPadrao<any> = {
                     statusCode:200,
                     message:"Faturas "+ data.gerenciador,
                     data: faturas 
                 }
     
-                return res.json(retorno);
+            return res.json(retorno);
         }
     }
 }
