@@ -104,8 +104,8 @@ export default class IxcSoftServices implements IIxcSoftServices{
             }],
             consumos: {
                 consumoMensalLabels :  [`${new Date(consumoMes[0].data).getMonth()}/${new Date(consumoMes[0].data).getFullYear()}`],
-                consumoMensalDown :  [Number.parseInt(download)],
-                consumoMensalUp : [Number.parseInt(upload)]
+                consumoMensalDown :  [Number.parseFloat(download)],
+                consumoMensalUp : [Number.parseFloat(upload)]
             },
             ultimasFaturas: faturas.registros.map((fat:any) => {
                 const fatura:faturaDto = {
