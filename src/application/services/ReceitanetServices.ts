@@ -50,6 +50,30 @@ export default class ReceitanetServices implements IReceitanetServices {
     
     }
 
+    // O endpoint cliente/contrato do ReceitaNet pode devolver o PDF direto (binário)
+    // ou um JSON com o link do arquivo — normaliza os dois formatos possíveis pra
+    // sempre entregar algo que o app consiga abrir/baixar.
+    async ObterContrato(token:string) : Promise<{ link?:string; buffer?:Buffer; contentType?:string }> {
+
+        const resposta = await this._servicesReceitaNet.ObterContrato(token);
+
+        if (resposta?.buffer) {
+            return { buffer: resposta.buffer, contentType: resposta.contentType };
+        }
+
+        const link = resposta?.link_contrato ?? resposta?.link ?? resposta?.url
+            ?? resposta?.contrato_pdf ?? resposta?.link_pdf ?? resposta?.arquivo;
+
+        if (!link)
+            throw new Error("Contrato não disponível para este cliente.");
+
+        return { link };
+    }
+
+    async NotificarPagamento(token:string) : Promise<{ success:boolean; date:string }> {
+        return await this._servicesReceitaNet.NotificarPagamento(token);
+    }
+
     async ObterChamados(token:string) : Promise<chamadoDto[]> {
 
         const chamados = await this._servicesReceitaNet.ObterChamados(token);

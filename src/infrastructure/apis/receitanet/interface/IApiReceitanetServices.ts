@@ -9,6 +9,8 @@ export default interface IApiReceitanetServices {
     ObterTokenPorContrato(codigoProvedor:string, cpf:string, idContrato:string): Promise<responseToken>;
     ObterResumoCliente(token: string): Promise<responseClienteResumo>;
     ObterFaturas(token: string) : Promise<any>;
+    ObterContrato(token: string) : Promise<any>;
+    NotificarPagamento(token: string) : Promise<{ success:boolean; date:string }>;
     ObterChamados(token:string) : Promise<responseChamados>;
     AbrirChamado(token:string, descricao:string) : Promise<boolean>;
     EnviarRespostaChamado(token:string, idChamado:number, mensagem:string) : Promise<any>;

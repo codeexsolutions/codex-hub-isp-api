@@ -23,6 +23,10 @@ import IPushNotificationRepository from "../../core/interfaces/IPushNotification
 import PushNotificationRepository from "../../infrastructure/repositories/PushNotificationRepository";
 import IPushNotificationServices from "../../application/interfaces/IPushNotificationServices";
 import PushNotificationServices from "../../application/services/PushNotificationServices";
+import IParceiroRepository from "../../core/interfaces/IParceiroRepository";
+import ParceiroRepository from "../../infrastructure/repositories/parceiro.repository";
+import IParceiroServices from "../../application/interfaces/IParceiroServices";
+import ParceiroServices from "../../application/services/ParceiroServices";
 
 
 container.registerSingleton<IDBContext>("IDBContext", DBContext);
@@ -37,3 +41,5 @@ container.registerSingleton<IPainelServices>("IPainelServices", PainelService);
 container.registerSingleton<IPainelRepository>("IPainelRepository", PainelRepository);
 container.registerSingleton<IPushNotificationRepository>("IPushNotificationRepository", PushNotificationRepository);
 container.registerSingleton<IPushNotificationServices>("IPushNotificationServices", PushNotificationServices);
+container.registerSingleton<IParceiroRepository>("IParceiroRepository", ParceiroRepository);
+container.registerSingleton<IParceiroServices>("IParceiroServices", ParceiroServices);

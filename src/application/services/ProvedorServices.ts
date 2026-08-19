@@ -13,6 +13,8 @@ import Storage from "../../infrastructure/supabase/Storage";
 import UploadService from "./UploadServices";
 import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
 import { ManifestModel } from "../Dtos/manifest.dto";
+import { compraModel } from "../../core/models/compraModel";
+import { gerarCupom } from "../../common/utilities/cupom";
 
 @injectable()
 export default class ProvedorServices implements IProvedorServices {
@@ -197,6 +199,121 @@ export default class ProvedorServices implements IProvedorServices {
 
     async ObterAnuncios(codigo: string): Promise<any> {
         return await this._provedorRepository.ObterAnuncios(codigo);
+    }
+
+    async ObterBeneficios(codigo: string): Promise<any> {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if(!modulos.includes("beneficios"))
+            return [];
+        return await this._provedorRepository.ObterBeneficios(codigo);
+    }
+
+    async ObterModulosAtivos(codigo: string): Promise<string[]> {
+        return await this._provedorRepository.ObterModulosAtivos(codigo);
+    }
+
+    async RegistrarCliqueBeneficio(idBeneficio: number, codigoProvedor: number): Promise<void> {
+        await this._provedorRepository.RegistrarCliqueBeneficio(idBeneficio, codigoProvedor);
+    }
+
+    async ComprarBeneficio(idBeneficio: number, codigoProvedor: number, clienteNome: string, clienteCpfCnpj: string): Promise<compraModel> {
+
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigoProvedor.toString());
+        if (!modulos.includes("beneficios"))
+            throw new Error("Módulo de benefícios não está ativo para este provedor.");
+
+        const beneficio = await this._provedorRepository.ObterBeneficioPorId(idBeneficio, codigoProvedor);
+        if (!beneficio)
+            throw new Error("Benefício não encontrado.");
+        if (beneficio.valor == null)
+            throw new Error("Este benefício não está disponível para compra.");
+        if (!clienteNome || !clienteCpfCnpj)
+            throw new Error("Dados do cliente incompletos.");
+
+        const config = await this._provedorRepository.ObterConfigComissao();
+        const valor = Number(beneficio.valor);
+        const arredonda = (v: number) => Math.round(v * 100) / 100;
+
+        const compra: compraModel = {
+            id: 0,
+            beneficio_id: idBeneficio,
+            codigo_provedor_fk: codigoProvedor,
+            cliente_nome: clienteNome,
+            cliente_cpf_cnpj: clienteCpfCnpj,
+            cupom_codigo: "",
+            valor,
+            percentual_parceiro: Number(config.percentual_parceiro),
+            percentual_synk: Number(config.percentual_synk),
+            percentual_provedor: Number(config.percentual_provedor),
+            valor_parceiro: arredonda(valor * Number(config.percentual_parceiro) / 100),
+            valor_synk: arredonda(valor * Number(config.percentual_synk) / 100),
+            valor_provedor: arredonda(valor * Number(config.percentual_provedor) / 100),
+        };
+
+        // tenta algumas vezes em caso de colisão de cupom (extremamente raro)
+        let compraGravada: compraModel|null = null;
+        for (let tentativa = 0; tentativa < 5; tentativa++) {
+            compra.cupom_codigo = gerarCupom();
+            try {
+                compraGravada = await this._provedorRepository.RegistrarCompra(compra);
+                break;
+            } catch (error: any) {
+                const ultimaTentativa = tentativa === 4;
+                if (ultimaTentativa || !String(error.message).includes("cupom_codigo"))
+                    throw error;
+            }
+        }
+
+        if (!compraGravada)
+            throw new Error("Não foi possível gerar o cupom da compra.");
+
+        // compra nasce "pendente" — pontos só são creditados quando o parceiro validar o
+        // cupom (ParceiroServices.ValidarCupom) ou o admin confirmar manualmente.
+        return compraGravada;
+    }
+
+    async ObterMinhasCompras(codigoProvedor: string, cpfCnpj: string): Promise<compraModel[]> {
+        return await this._provedorRepository.ObterComprasCliente(codigoProvedor, cpfCnpj);
+    }
+
+    async RegistrarLoginCliente(codigoProvedor: string, cpfCnpj: string, nome: string): Promise<void> {
+        await this._provedorRepository.RegistrarLoginCliente(codigoProvedor, cpfCnpj, nome);
+    }
+
+    async ObterMeusPontos(codigo: string, cpfCnpj: string) {
+        const [saldo, extrato] = await Promise.all([
+            this._provedorRepository.ObterSaldoPontos(codigo, cpfCnpj),
+            this._provedorRepository.ObterExtratoPontos(codigo, cpfCnpj),
+        ]);
+        return { saldo, extrato };
+    }
+
+    async ObterRecompensas(codigo: string) {
+        return await this._provedorRepository.ObterRecompensasAtivas(codigo);
+    }
+
+    async ResgatarRecompensa(codigo: string, cpfCnpj: string, clienteNome: string, idRecompensa: number) {
+
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("beneficios"))
+            throw new Error("Módulo de benefícios não está ativo para este provedor.");
+
+        const recompensa = await this._provedorRepository.ObterRecompensaPorIdPublico(idRecompensa, Number.parseInt(codigo));
+        if (!recompensa)
+            throw new Error("Recompensa não encontrada.");
+        if (!cpfCnpj || !clienteNome)
+            throw new Error("Dados do cliente incompletos.");
+
+        const saldo = await this._provedorRepository.ObterSaldoPontos(codigo, cpfCnpj);
+        if (saldo < recompensa.pontos_necessarios)
+            throw new Error("Saldo de pontos insuficiente para essa recompensa.");
+
+        const cupom = gerarCupom();
+        return await this._provedorRepository.RegistrarResgate(Number.parseInt(codigo), cpfCnpj, clienteNome, recompensa, cupom);
+    }
+
+    async ListarParceirosAtivos(codigoProvedor:string) {
+        return await this._provedorRepository.ListarParceirosAtivos(codigoProvedor);
     }
 
     async AtualizarTema(tema:themeModel, files:ThemeFiles) : Promise<any> {

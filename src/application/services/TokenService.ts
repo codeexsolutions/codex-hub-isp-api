@@ -9,6 +9,7 @@ import ITokenService from "../interfaces/ITokenService";
 import JwtService from "./JwtServices";
 import { tokenPainelDto } from "../Dtos/tokenPainelDto";
 import { estatus } from "../../common/enuns/estatus";
+import { adminLoginDto } from "../Dtos/adminLoginDto";
 
 @injectable()
 export default class TokenService implements ITokenService {
@@ -145,6 +146,20 @@ export default class TokenService implements ITokenService {
         }
 
         throw new Error("Usuario ou senha invalido")
-            
+
+    }
+
+    async TokenAcessoAdmin(login:adminLoginDto): Promise<string> {
+
+        const usuario = process.env.ADMIN_USUARIO;
+        const senha = process.env.ADMIN_SENHA;
+
+        if(!usuario || !senha)
+            throw new Error("Admin não configurado no servidor.");
+
+        if(login.usuario !== usuario || login.senha !== senha)
+            throw new Error("Usuario ou senha invalido");
+
+        return this._jwtService.GerarToken({ id: "admin", codigoProvedor: "", role: "admin" });
     }
 }

@@ -4,6 +4,12 @@ import IDBContext from "../interfaces/IDbContext";
 import { anuncioModel } from "../../core/models/anuncioModel";
 import IPainelRepository from "../../core/interfaces/IPainelRepository";
 import { bannerModel } from "../../core/models/bannerModel";
+import { beneficioModel } from "../../core/models/beneficioModel";
+import { compraModel } from "../../core/models/compraModel";
+import { configComissaoModel } from "../../core/models/configComissaoModel";
+import { recompensaModel } from "../../core/models/recompensaModel";
+import { configPontosModel } from "../../core/models/configPontosModel";
+import { parceiroModel } from "../../core/models/parceiroModel";
 
 @injectable()
 export default class PainelRepository implements IPainelRepository {
@@ -16,13 +22,22 @@ export default class PainelRepository implements IPainelRepository {
     // ANUNCIOS
     async  GravarAnuncio(anuncio:anuncioModel) : Promise<anuncioModel>{
 
-        const insert =  `INSERT INTO marketing_anuncios 
+        const quantidadeAnunciosSalvos = await this.QuantidadeAnuncios(anuncio.codigo_provedor_fk);
+        
+        if(quantidadeAnunciosSalvos < 5){
+
+            const insert =  `INSERT INTO marketing_anuncios 
             (titulo, subtitulo, descricao, link_imagem, link_acao, codigo_provedor_fk, tipo, ativo) 
             VALUES ($1,$2,$3,$4,$5,$6,$7, $8) RETURNING id`;
+    
+            const id = await this._db.Execulte<any>(insert, [anuncio.titulo, anuncio.subtitulo, anuncio.descricao, anuncio.link_imagem, anuncio.link_acao, anuncio.codigo_provedor_fk, anuncio.tipo, anuncio.ativo]);
+            
+            return this.ObterAnuncioPorId(id[0].id, anuncio.codigo_provedor_fk)
+        }
 
-        const id = await this._db.Execulte<any>(insert, [anuncio.titulo, anuncio.subtitulo, anuncio.descricao, anuncio.link_imagem, anuncio.link_acao, anuncio.codigo_provedor_fk, anuncio.tipo, anuncio.ativo]);
+        throw new Error("Quantidade de Anuncios excede o limite.")
+        
 
-        return this.ObterAnuncioPorId(id[0].id, anuncio.codigo_provedor_fk)
 
     }
 
@@ -31,6 +46,13 @@ export default class PainelRepository implements IPainelRepository {
         const select = `SELECT * FROM marketing_anuncios WHERE codigo_provedor_fk = $1;`
         const anuncios = await this._db.Execulte<anuncioModel>(select, [codigoProvedor]);
         return anuncios;
+    }
+
+    async QuantidadeAnuncios(codigoProvedor: number) : Promise<number> {
+
+        const select = `SELECT * FROM marketing_anuncios WHERE codigo_provedor_fk = $1;`
+        const anuncios = await this._db.Execulte<anuncioModel>(select, [codigoProvedor]);
+        return anuncios.length;
     }
 
     async ObterAnuncioPorId(idAnuncio:number, codigoProvedor: number) : Promise<anuncioModel>{
@@ -112,9 +134,307 @@ export default class PainelRepository implements IPainelRepository {
         return await this._db.Execulte<any>(exclui, [idAnuncio, codigoProvedor])
     }
 
+    // BENEFICIOS
 
+    async GravarBeneficio(beneficio:beneficioModel) : Promise<beneficioModel>{
 
+        const insert =  `INSERT INTO marketing_beneficios
+        (categoria, parceiro, titulo, subtitulo, descricao, link_imagem, link_acao, codigo_provedor_fk, ativo, valor, parceiro_id_fk)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`;
 
+        const id = await this._db.Execulte<any>(insert, [beneficio.categoria, beneficio.parceiro, beneficio.titulo, beneficio.subtitulo, beneficio.descricao, beneficio.link_imagem, beneficio.link_acao, beneficio.codigo_provedor_fk, beneficio.ativo, beneficio.valor ?? null, beneficio.parceiro_id_fk ?? null]);
 
-    
+        return this.ObterBeneficioPorId(id[0].id, beneficio.codigo_provedor_fk)
+    }
+
+    async ObterBeneficios(codigoProvedor: number) : Promise<beneficioModel[]>{
+
+        const select = `SELECT * FROM marketing_beneficios WHERE codigo_provedor_fk = $1;`
+        const beneficios = await this._db.Execulte<beneficioModel>(select, [codigoProvedor]);
+        return beneficios;
+    }
+
+    async ObterBeneficioPorId(idBeneficio:number, codigoProvedor: number) : Promise<beneficioModel>{
+        const select = `SELECT * FROM marketing_beneficios WHERE codigo_provedor_fk = $1 AND id = $2;`
+        const beneficios = await this._db.Execulte<beneficioModel>(select, [codigoProvedor, idBeneficio]);
+        return beneficios[0];
+    }
+
+    async EditarBeneficio(beneficio:beneficioModel) : Promise<beneficioModel> {
+
+        const update = `UPDATE marketing_beneficios SET
+                            categoria = $1,
+                            parceiro = $2,
+                            titulo = $3,
+                            subtitulo = $4,
+                            descricao = $5,
+                            link_imagem = $6,
+                            link_acao = $7,
+                            ativo = $8,
+                            valor = $9,
+                            parceiro_id_fk = $10
+                        WHERE codigo_provedor_fk = $11 and id = $12 RETURNING id;
+                        `;
+
+        const result = await this._db.Execulte<any>(update, [beneficio.categoria, beneficio.parceiro, beneficio.titulo, beneficio.subtitulo, beneficio.descricao, beneficio.link_imagem, beneficio.link_acao, beneficio.ativo, beneficio.valor ?? null, beneficio.parceiro_id_fk ?? null, beneficio.codigo_provedor_fk, beneficio.id])
+
+        const id = result[0].id
+        return await this.ObterBeneficioPorId(id, beneficio.codigo_provedor_fk)
+    }
+
+    async ExcluiBeneficio(idBeneficio:string, codigoProvedor:number) : Promise<{ removido:boolean }> {
+        const usoCount = `SELECT
+            (SELECT count(*) FROM beneficio_cliques WHERE beneficio_id = $1) +
+            (SELECT count(*) FROM beneficio_compras WHERE beneficio_id = $1) AS total`;
+        const uso = await this._db.Execulte<{ total:string }>(usoCount, [idBeneficio]);
+        const temHistorico = Number.parseInt(uso[0]?.total ?? "0") > 0;
+
+        if (temHistorico) {
+            // preserva o histórico (cliques/compras/comissão) usado nos relatórios;
+            // só desativa, pra sumir do app e da tela de benefícios válidos.
+            const desativar = `UPDATE marketing_beneficios SET ativo = false WHERE id = $1 AND codigo_provedor_fk = $2`;
+            await this._db.Execulte<any>(desativar, [idBeneficio, codigoProvedor]);
+            return { removido: false };
+        }
+
+        const exclui = `DELETE FROM marketing_beneficios WHERE id = $1 AND codigo_provedor_fk = $2`;
+        await this._db.Execulte<any>(exclui, [idBeneficio, codigoProvedor]);
+        return { removido: true };
+    }
+
+    // METRICAS
+
+    async ContarCliquesBeneficios(codigoProvedor:number) : Promise<number> {
+        const select = `SELECT COUNT(*) AS total FROM beneficio_cliques WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<{ total:string }>(select, [codigoProvedor]);
+        return Number.parseInt(result[0]?.total ?? "0");
+    }
+
+    async ObterResumoCompras(codigoProvedor:number) : Promise<{ compras:number; vendasGeradas:number; comissao:number }> {
+        const select = `
+            SELECT COUNT(*) AS compras,
+                   COALESCE(SUM(valor), 0) AS vendas_geradas,
+                   COALESCE(SUM(valor_provedor), 0) AS comissao
+            FROM beneficio_compras
+            WHERE codigo_provedor_fk = $1 AND status = 'utilizado';
+        `;
+        const result = await this._db.Execulte<{ compras:string; vendas_geradas:string; comissao:string }>(select, [codigoProvedor]);
+        const linha = result[0];
+        return {
+            compras: Number.parseInt(linha?.compras ?? "0"),
+            vendasGeradas: Number.parseFloat(linha?.vendas_geradas ?? "0"),
+            comissao: Number.parseFloat(linha?.comissao ?? "0"),
+        };
+    }
+
+    async ContarUsuariosAtivos(codigoProvedor:number) : Promise<number> {
+        const select = `
+            SELECT COUNT(*) AS total FROM cliente_atividade
+            WHERE codigo_provedor_fk = $1 AND ultimo_login > now() - interval '30 days';
+        `;
+        const result = await this._db.Execulte<{ total:string }>(select, [codigoProvedor]);
+        return Number.parseInt(result[0]?.total ?? "0");
+    }
+
+    // COMPRAS
+
+    async ObterCompras(codigoProvedor:number) : Promise<compraModel[]> {
+        const select = `
+            SELECT c.*, b.titulo AS beneficio_titulo, b.parceiro AS beneficio_parceiro
+            FROM beneficio_compras c
+            JOIN marketing_beneficios b ON b.id = c.beneficio_id
+            WHERE c.codigo_provedor_fk = $1
+            ORDER BY c.criado_em DESC;
+        `;
+        return await this._db.Execulte<any>(select, [codigoProvedor]);
+    }
+
+    async ObterConfigComissao() : Promise<configComissaoModel> {
+        const select = `SELECT percentual_parceiro, percentual_synk, percentual_provedor FROM config_comissao WHERE id = 1;`;
+        const result = await this._db.Execulte<configComissaoModel>(select, []);
+        return result[0];
+    }
+
+    async ObterComprasTodos() : Promise<compraModel[]> {
+        const select = `
+            SELECT c.*, b.titulo AS beneficio_titulo, b.parceiro AS beneficio_parceiro,
+                   p.nome_fantasia AS provedor_nome, p.empresa AS provedor_empresa
+            FROM beneficio_compras c
+            JOIN marketing_beneficios b ON b.id = c.beneficio_id
+            JOIN provedores p ON p.codigo_provedor = c.codigo_provedor_fk
+            ORDER BY c.criado_em DESC;
+        `;
+        return await this._db.Execulte<any>(select, []);
+    }
+
+    async ObterResumoComprasGlobal() : Promise<{ compras:number; totalVendas:number; totalParceiro:number; totalSynk:number; totalProvedor:number }> {
+        const select = `
+            SELECT COUNT(*) AS compras,
+                   COALESCE(SUM(valor), 0) AS total_vendas,
+                   COALESCE(SUM(valor_parceiro), 0) AS total_parceiro,
+                   COALESCE(SUM(valor_synk), 0) AS total_synk,
+                   COALESCE(SUM(valor_provedor), 0) AS total_provedor
+            FROM beneficio_compras
+            WHERE status = 'utilizado';
+        `;
+        const result = await this._db.Execulte<{ compras:string; total_vendas:string; total_parceiro:string; total_synk:string; total_provedor:string }>(select, []);
+        const linha = result[0];
+        return {
+            compras: Number.parseInt(linha?.compras ?? "0"),
+            totalVendas: Number.parseFloat(linha?.total_vendas ?? "0"),
+            totalParceiro: Number.parseFloat(linha?.total_parceiro ?? "0"),
+            totalSynk: Number.parseFloat(linha?.total_synk ?? "0"),
+            totalProvedor: Number.parseFloat(linha?.total_provedor ?? "0"),
+        };
+    }
+
+    async AtualizarConfigComissao(config:configComissaoModel) : Promise<configComissaoModel> {
+        const update = `
+            UPDATE config_comissao SET
+                percentual_parceiro = $1,
+                percentual_synk = $2,
+                percentual_provedor = $3,
+                atualizado_em = now()
+            WHERE id = 1
+            RETURNING percentual_parceiro, percentual_synk, percentual_provedor;
+        `;
+        const result = await this._db.Execulte<configComissaoModel>(update, [config.percentual_parceiro, config.percentual_synk, config.percentual_provedor]);
+        return result[0];
+    }
+
+    // RECOMPENSAS (pontos)
+
+    async GravarRecompensa(recompensa:recompensaModel) : Promise<recompensaModel> {
+        const insert = `INSERT INTO pontos_recompensas
+            (codigo_provedor_fk, titulo, descricao, pontos_necessarios, ativo)
+            VALUES ($1,$2,$3,$4,$5) RETURNING id`;
+        const id = await this._db.Execulte<any>(insert, [recompensa.codigo_provedor_fk, recompensa.titulo, recompensa.descricao, recompensa.pontos_necessarios, recompensa.ativo]);
+        return this.ObterRecompensaPorId(id[0].id, recompensa.codigo_provedor_fk);
+    }
+
+    async ObterRecompensas(codigoProvedor:number) : Promise<recompensaModel[]> {
+        const select = `SELECT * FROM pontos_recompensas WHERE codigo_provedor_fk = $1 ORDER BY pontos_necessarios ASC;`;
+        return await this._db.Execulte<recompensaModel>(select, [codigoProvedor]);
+    }
+
+    async ObterRecompensaPorId(idRecompensa:number, codigoProvedor:number) : Promise<recompensaModel> {
+        const select = `SELECT * FROM pontos_recompensas WHERE id = $1 AND codigo_provedor_fk = $2;`;
+        const result = await this._db.Execulte<recompensaModel>(select, [idRecompensa, codigoProvedor]);
+        return result[0];
+    }
+
+    async EditarRecompensa(recompensa:recompensaModel) : Promise<recompensaModel> {
+        const update = `UPDATE pontos_recompensas SET
+                titulo = $1, descricao = $2, pontos_necessarios = $3, ativo = $4
+            WHERE codigo_provedor_fk = $5 AND id = $6 RETURNING id;`;
+        const result = await this._db.Execulte<any>(update, [recompensa.titulo, recompensa.descricao, recompensa.pontos_necessarios, recompensa.ativo, recompensa.codigo_provedor_fk, recompensa.id]);
+        return this.ObterRecompensaPorId(result[0].id, recompensa.codigo_provedor_fk);
+    }
+
+    async ExcluiRecompensa(idRecompensa:string, codigoProvedor:number) : Promise<any> {
+        const exclui = `DELETE FROM pontos_recompensas WHERE id = $1 AND codigo_provedor_fk = $2`;
+        return await this._db.Execulte<any>(exclui, [idRecompensa, codigoProvedor]);
+    }
+
+    async ObterConfigPontos() : Promise<configPontosModel> {
+        const select = `SELECT pontos_por_real FROM config_pontos WHERE id = 1;`;
+        const result = await this._db.Execulte<configPontosModel>(select, []);
+        return result[0];
+    }
+
+    async AtualizarConfigPontos(config:configPontosModel) : Promise<configPontosModel> {
+        const update = `UPDATE config_pontos SET pontos_por_real = $1, atualizado_em = now() WHERE id = 1 RETURNING pontos_por_real;`;
+        const result = await this._db.Execulte<configPontosModel>(update, [config.pontos_por_real]);
+        return result[0];
+    }
+
+    // MODULOS
+
+    async ObterModulosAtivos(codigoProvedor:number) : Promise<string[]> {
+        const select = `SELECT modulo FROM provedor_modulos WHERE codigo_provedor_fk = $1 AND ativo = true;`;
+        const result = await this._db.Execulte<{ modulo:string }>(select, [codigoProvedor]);
+        return result.map((r) => r.modulo);
+    }
+
+    async PossuiModulo(codigoProvedor:number, modulo:string) : Promise<boolean> {
+        const select = `SELECT 1 FROM provedor_modulos WHERE codigo_provedor_fk = $1 AND modulo = $2 AND ativo = true;`;
+        const result = await this._db.Execulte<any>(select, [codigoProvedor, modulo]);
+        return result.length > 0;
+    }
+
+    async ListarProvedoresComModulos() : Promise<any[]> {
+        const select = `
+            SELECT p.codigo_provedor, p.empresa, p.nome_fantasia, p.status,
+                   COALESCE(array_agg(pm.modulo) FILTER (WHERE pm.ativo = true), '{}') AS modulos
+            FROM provedores p
+            LEFT JOIN provedor_modulos pm ON pm.codigo_provedor_fk = p.codigo_provedor
+            GROUP BY p.codigo_provedor, p.empresa, p.nome_fantasia, p.status
+            ORDER BY p.empresa;
+        `;
+        return await this._db.Execulte<any>(select, []);
+    }
+
+    async DefinirModulo(codigoProvedor:number, modulo:string, ativo:boolean) : Promise<void> {
+        const upsert = `
+            INSERT INTO provedor_modulos (codigo_provedor_fk, modulo, ativo)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (codigo_provedor_fk, modulo)
+            DO UPDATE SET ativo = EXCLUDED.ativo;
+        `;
+        await this._db.Execulte<any>(upsert, [codigoProvedor, modulo, ativo]);
+    }
+
+    async DefinirStatusProvedor(codigoProvedor:number, status:string) : Promise<void> {
+        const update = `UPDATE provedores SET status = $1 WHERE codigo_provedor = $2;`;
+        await this._db.Execulte<any>(update, [status, codigoProvedor]);
+    }
+
+    // PARCEIROS (admin)
+
+    async CriarParceiro(parceiro:parceiroModel) : Promise<parceiroModel> {
+        const insert = `INSERT INTO parceiros (nome_parceiro, usuario, senha, ativo, codigo_provedor_fk)
+            VALUES ($1,$2,$3,$4,$5) RETURNING id, nome_parceiro AS nome, usuario, ativo, codigo_provedor_fk, created_at AS criado_em;`;
+        const result = await this._db.Execulte<parceiroModel>(insert, [parceiro.nome, parceiro.usuario, parceiro.senha, parceiro.ativo, parceiro.codigo_provedor_fk ?? null]);
+        return result[0];
+    }
+
+    async ListarParceiros() : Promise<parceiroModel[]> {
+        const select = `SELECT pa.id, pa.nome_parceiro AS nome, pa.usuario, pa.ativo, pa.codigo_provedor_fk,
+                   pa.created_at AS criado_em, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome
+            FROM parceiros pa
+            LEFT JOIN provedores p ON p.codigo_provedor = pa.codigo_provedor_fk
+            ORDER BY pa.nome_parceiro ASC;`;
+        return await this._db.Execulte<parceiroModel>(select, []);
+    }
+
+    async DefinirStatusParceiro(id:number, ativo:boolean) : Promise<void> {
+        const update = `UPDATE parceiros SET ativo = $1 WHERE id = $2;`;
+        await this._db.Execulte<any>(update, [ativo, id]);
+    }
+
+    async DefinirProvedorParceiro(id:number, codigoProvedorFk:number|null) : Promise<void> {
+        const update = `UPDATE parceiros SET codigo_provedor_fk = $1 WHERE id = $2;`;
+        await this._db.Execulte<any>(update, [codigoProvedorFk, id]);
+    }
+
+    async ValidarCompraAdmin(idCompra:number) : Promise<compraModel> {
+        const update = `UPDATE beneficio_compras SET status = 'utilizado', validado_em = now()
+            WHERE id = $1 AND status = 'pendente' RETURNING *;`;
+        const result = await this._db.Execulte<compraModel>(update, [idCompra]);
+        const compra = result[0];
+        if (!compra) return compra;
+
+        try {
+            const configPontos = await this.ObterConfigPontos();
+            const pontos = Math.round(Number(compra.valor) * Number(configPontos.pontos_por_real));
+            if (pontos > 0) {
+                const insertPontos = `INSERT INTO pontos_extrato
+                    (codigo_provedor_fk, cliente_cpf_cnpj, cliente_nome, tipo, pontos, origem_compra_id)
+                    VALUES ($1,$2,$3,'ganho',$4,$5);`;
+                await this._db.Execulte<any>(insertPontos, [compra.codigo_provedor_fk, compra.cliente_cpf_cnpj, compra.cliente_nome, pontos, compra.id]);
+            }
+        } catch { /* pontos são bônus — não bloqueia a validação */ }
+
+        return compra;
+    }
 }

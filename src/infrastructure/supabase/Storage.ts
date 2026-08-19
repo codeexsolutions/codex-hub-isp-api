@@ -37,7 +37,29 @@ export default class Storage {
             .from("provedores")
             .getPublicUrl(path);
 
-        return data.publicUrl;  
+        return data.publicUrl;
+    }
+
+    // Remove um arquivo antigo do bucket a partir da URL pública salva no banco
+    // (ex.: ao trocar a imagem de um benefício/anúncio, evita ficar acumulando
+    // arquivos órfãos no storage). Se a URL não for desse bucket, não faz nada.
+    public async RemoveByPublicUrl(publicUrl?:string|null): Promise<void> {
+
+        if (!publicUrl)
+            return;
+
+        const marcador = "/storage/v1/object/public/provedores/";
+        const indice = publicUrl.indexOf(marcador);
+
+        if (indice === -1)
+            return;
+
+        const path = publicUrl.slice(indice + marcador.length);
+
+        if (!path)
+            return;
+
+        await this.client.storage.from("provedores").remove([path]);
     }
 
     public async Optimize(buffer:Buffer, config:configImage): Promise<Buffer> {

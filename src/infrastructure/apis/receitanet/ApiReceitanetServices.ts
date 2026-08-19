@@ -122,6 +122,44 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
         return await response.json() as fatura[];
     }
 
+    // GET cliente/contrato — devolve os dados/link do PDF do contrato assinado.
+    async ObterContrato(token: string) : Promise<any> {
+        const configRequest:configRequest = {
+            method: emethodHttp.GET,
+            resource: "cliente/contrato",
+             headers: {
+                'accept': 'application/pdf',
+                'Authorization': `Bearer ${token}`
+            }
+        }
+
+        const response = await this.requestService.Requst(configRequest);
+        console.log("RESPONSE ", response)
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/pdf")) {
+            const buffer = Buffer.from(await response.arrayBuffer());
+            return { buffer, contentType: "application/pdf" };
+        }
+
+        return await response.json();
+    }
+
+    // POST cliente/notificar-pagamento — "Desbloqueio de confiança": cliente avisa que
+    // já pagou pra liberar o acesso antes da baixa automática confirmar.
+    async NotificarPagamento(token: string) : Promise<{ success:boolean; date:string }> {
+        const configRequest:configRequest = {
+            method: emethodHttp.GET,
+            resource: "cliente/notificar-pagamento",
+            headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        }
+
+        const response = await this.requestService.Requst(configRequest);
+        return await response.json();
+    }
+
     async AbrirChamado(token:string, motivo:string) : Promise<boolean> {
 
         const configRequest:configRequest = {

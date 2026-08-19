@@ -9,6 +9,15 @@ provedorRoute.get('/manifest/:codigoProvedor', provedorController.ObterManifest.
 provedorRoute.get('/temas/:codigoProvedor', provedorController.ObterTema.bind(provedorController));
 provedorRoute.get('/banners/:codigoProvedor', provedorController.ObterBanner.bind(provedorController));
 provedorRoute.get('/anuncios/:codigoProvedor', provedorController.ObterAnuncios.bind(provedorController));
+provedorRoute.get('/beneficios/:codigoProvedor', provedorController.ObterBeneficios.bind(provedorController));
+provedorRoute.get('/modulos/:codigoProvedor', provedorController.ObterModulos.bind(provedorController));
+provedorRoute.post('/beneficios/:id/clique', provedorController.RegistrarCliqueBeneficio.bind(provedorController));
+provedorRoute.post('/beneficios/:id/comprar', provedorController.ComprarBeneficio.bind(provedorController));
+provedorRoute.get('/beneficios/compras/:codigoProvedor', provedorController.ObterMinhasCompras.bind(provedorController));
+provedorRoute.get('/pontos/recompensas/:codigoProvedor', provedorController.ObterRecompensas.bind(provedorController));
+provedorRoute.post('/pontos/resgatar', provedorController.ResgatarRecompensa.bind(provedorController));
+provedorRoute.get('/pontos/:codigoProvedor', provedorController.ObterMeusPontos.bind(provedorController));
+provedorRoute.get('/parceiros/:codigoProvedor', provedorController.ListarParceirosAtivos.bind(provedorController));
 provedorRoute.get('/:codigo', provedorController.ObterProvedorPorCodigo.bind(provedorController));
 provedorRoute.post('/indicacao', provedorController.SalvarIndicacao.bind(provedorController))
 provedorRoute.post('/avaliacao/servico/me', provedorController.AvaliarServico.bind(provedorController))

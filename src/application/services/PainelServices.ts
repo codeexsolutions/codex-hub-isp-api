@@ -1,11 +1,18 @@
 import { inject, injectable } from "tsyringe";
 import IPainelRepository from "../../core/interfaces/IPainelRepository";
 import { anuncioModel } from "../../core/models/anuncioModel";
-import IPainelServices from "../interfaces/IPainelService";
+import IPainelServices, { metricasModel } from "../interfaces/IPainelService";
 import { bannerModel } from "../../core/models/bannerModel";
 import UploadService from "./UploadServices";
 import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
 import { anuncioEditeDto } from "../Dtos/anuncioEditeDto";
+import { beneficioModel } from "../../core/models/beneficioModel";
+import { beneficioEditeDto } from "../Dtos/beneficioEditeDto";
+import { compraModel } from "../../core/models/compraModel";
+import { configComissaoModel } from "../../core/models/configComissaoModel";
+import { recompensaModel } from "../../core/models/recompensaModel";
+import { configPontosModel } from "../../core/models/configPontosModel";
+import { parceiroModel } from "../../core/models/parceiroModel";
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -105,6 +112,199 @@ export default class PainelService implements IPainelServices {
 
     async ExcluiBanner(idBanner: string, codigoProvedor: number): Promise<any> {
         return await this._painelRepository.ExcluiBanner(idBanner, codigoProvedor)
+    }
+
+    async GravarBeneficio(beneficio:beneficioModel) : Promise<beneficioModel> {
+
+        if(beneficio.file !== undefined){
+            const _upload = new UploadService()
+            beneficio.link_imagem = await _upload.UploadArquivo({
+                           codigoProvedor: beneficio.codigo_provedor_fk.toString(),
+                           file: beneficio.file?.buffer,
+                           nomeArquivo: "beneficio"+beneficio.file?.originalname,
+                           tipo: ETipoArquivo.BENEFICIO
+                       })
+        }
+        return await this._painelRepository.GravarBeneficio(beneficio);
+    }
+
+    async ObterBeneficios(codigoProvedor: number): Promise<beneficioModel[]> {
+        const beneficios = await this._painelRepository.ObterBeneficios(codigoProvedor);
+        if(beneficios)
+            return beneficios;
+        return [];
+    }
+
+    async EditarBeneficio(id:number, beneficioEdite:beneficioEditeDto) : Promise<beneficioModel> {
+        const beneficio = await this._painelRepository.ObterBeneficioPorId(id, beneficioEdite.codigo_provedor_fk);
+
+        if(beneficioEdite.categoria !== undefined)
+            beneficio.categoria = beneficioEdite.categoria;
+        if(beneficioEdite.parceiro !== undefined)
+            beneficio.parceiro = beneficioEdite.parceiro;
+        if(beneficioEdite.titulo !== undefined)
+            beneficio.titulo = beneficioEdite.titulo;
+        if(beneficioEdite.subtitulo !== undefined)
+            beneficio.subtitulo = beneficioEdite.subtitulo;
+        if(beneficioEdite.descricao !== undefined)
+            beneficio.descricao = beneficioEdite.descricao;
+        if(beneficioEdite.valor !== undefined)
+            beneficio.valor = beneficioEdite.valor;
+        if(beneficioEdite.parceiro_id_fk !== undefined)
+            beneficio.parceiro_id_fk = beneficioEdite.parceiro_id_fk;
+
+        if(beneficioEdite.file !== undefined){
+
+            const imagemAnterior = beneficio.link_imagem;
+            const _upload = new UploadService();
+            beneficio.link_imagem = await _upload.UploadArquivo({
+               codigoProvedor: beneficioEdite.codigo_provedor_fk.toString(),
+               file: beneficioEdite.file.buffer,
+               nomeArquivo: "beneficio",
+               tipo: ETipoArquivo.BENEFICIO
+           });
+
+            // só remove a antiga depois que a nova subiu com sucesso, e mantém
+            // apenas a última imagem enviada no storage.
+            await _upload.RemoverArquivo(imagemAnterior);
+        }
+
+        if(beneficioEdite.link !== undefined)
+            beneficio.link_acao = beneficioEdite.link;
+
+        beneficio.ativo = beneficioEdite.ativo;
+
+        const novoBeneficio = await this._painelRepository.EditarBeneficio(beneficio);
+
+        return novoBeneficio;
+    }
+
+    async ExcluirBeneficio(id:string, codigoProvedor:number) : Promise<any> {
+        return await this._painelRepository.ExcluiBeneficio(id, codigoProvedor)
+    }
+
+    async ObterMetricas(codigoProvedor:number) : Promise<metricasModel> {
+
+        const beneficiosUtilizados = await this._painelRepository.ContarCliquesBeneficios(codigoProvedor);
+        const resumoCompras = await this._painelRepository.ObterResumoCompras(codigoProvedor);
+        const usuariosAtivos = await this._painelRepository.ContarUsuariosAtivos(codigoProvedor);
+
+        // clientesConectados (base total de assinantes do provedor) é impossível de obter:
+        // ReceitaNet/IXC só respondem consulta por cliente individual (CPF/token), não existe
+        // endpoint de listagem em massa — permanece 0 enquanto a API for só uma ponte.
+        return {
+            clientesConectados: 0,
+            usuariosAtivos,
+            compras: resumoCompras.compras,
+            vendasGeradas: resumoCompras.vendasGeradas,
+            comissao: resumoCompras.comissao,
+            beneficiosUtilizados,
+        };
+    }
+
+    async ObterCompras(codigoProvedor:number) : Promise<compraModel[]> {
+        return await this._painelRepository.ObterCompras(codigoProvedor);
+    }
+
+    async ObterConfigComissao() : Promise<configComissaoModel> {
+        return await this._painelRepository.ObterConfigComissao();
+    }
+
+    async DefinirConfigComissao(config:configComissaoModel) : Promise<configComissaoModel> {
+        const soma = Number(config.percentual_parceiro) + Number(config.percentual_synk) + Number(config.percentual_provedor);
+        if (Math.round(soma * 100) / 100 !== 100)
+            throw new Error("Os percentuais precisam somar 100%.");
+        return await this._painelRepository.AtualizarConfigComissao(config);
+    }
+
+    async GravarRecompensa(recompensa:recompensaModel) : Promise<recompensaModel> {
+        return await this._painelRepository.GravarRecompensa(recompensa);
+    }
+
+    async ObterRecompensas(codigoProvedor:number) : Promise<recompensaModel[]> {
+        const recompensas = await this._painelRepository.ObterRecompensas(codigoProvedor);
+        return recompensas || [];
+    }
+
+    async EditarRecompensa(id:number, recompensaEdite:recompensaModel) : Promise<recompensaModel> {
+        const recompensa = await this._painelRepository.ObterRecompensaPorId(id, recompensaEdite.codigo_provedor_fk);
+        if(!recompensa)
+            throw new Error("Recompensa não encontrada.");
+
+        if(recompensaEdite.titulo !== undefined)
+            recompensa.titulo = recompensaEdite.titulo;
+        if(recompensaEdite.descricao !== undefined)
+            recompensa.descricao = recompensaEdite.descricao;
+        if(recompensaEdite.pontos_necessarios !== undefined)
+            recompensa.pontos_necessarios = recompensaEdite.pontos_necessarios;
+        recompensa.ativo = recompensaEdite.ativo;
+
+        return await this._painelRepository.EditarRecompensa(recompensa);
+    }
+
+    async ExcluirRecompensa(id:string, codigoProvedor:number) : Promise<any> {
+        await this._painelRepository.ExcluiRecompensa(id, codigoProvedor);
+    }
+
+    async ObterConfigPontos() : Promise<configPontosModel> {
+        return await this._painelRepository.ObterConfigPontos();
+    }
+
+    async DefinirConfigPontos(config:configPontosModel) : Promise<configPontosModel> {
+        if (Number(config.pontos_por_real) <= 0)
+            throw new Error("A taxa de pontos por real precisa ser maior que zero.");
+        return await this._painelRepository.AtualizarConfigPontos(config);
+    }
+
+    async ObterRelatorioComprasAdmin() {
+        const [resumo, compras] = await Promise.all([
+            this._painelRepository.ObterResumoComprasGlobal(),
+            this._painelRepository.ObterComprasTodos(),
+        ]);
+        return { resumo, compras };
+    }
+
+    async ObterModulosAtivos(codigoProvedor:number) : Promise<string[]> {
+        return await this._painelRepository.ObterModulosAtivos(codigoProvedor);
+    }
+
+    async ListarProvedoresComModulos() : Promise<any[]> {
+        return await this._painelRepository.ListarProvedoresComModulos();
+    }
+
+    async DefinirModulo(codigoProvedor:number, modulo:string, ativo:boolean) : Promise<void> {
+        await this._painelRepository.DefinirModulo(codigoProvedor, modulo, ativo);
+    }
+
+    async DefinirStatusProvedor(codigoProvedor:number, status:string) : Promise<void> {
+        if(status !== "ATIVO" && status !== "INATIVO")
+            throw new Error("Status inválido.");
+        await this._painelRepository.DefinirStatusProvedor(codigoProvedor, status);
+    }
+
+    async CriarParceiro(parceiro:parceiroModel) : Promise<parceiroModel> {
+        if(!parceiro.nome || !parceiro.usuario || !parceiro.senha)
+            throw new Error("Informe nome, usuário e senha do parceiro.");
+        return await this._painelRepository.CriarParceiro(parceiro);
+    }
+
+    async ListarParceiros() : Promise<parceiroModel[]> {
+        return await this._painelRepository.ListarParceiros();
+    }
+
+    async DefinirStatusParceiro(id:number, ativo:boolean) : Promise<void> {
+        await this._painelRepository.DefinirStatusParceiro(id, ativo);
+    }
+
+    async DefinirProvedorParceiro(id:number, codigoProvedorFk:number|null) : Promise<void> {
+        await this._painelRepository.DefinirProvedorParceiro(id, codigoProvedorFk);
+    }
+
+    async ValidarCompraAdmin(idCompra:number) : Promise<compraModel> {
+        const compra = await this._painelRepository.ValidarCompraAdmin(idCompra);
+        if(!compra)
+            throw new Error("Compra não encontrada ou já processada.");
+        return compra;
     }
 
 }

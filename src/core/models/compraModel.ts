@@ -1,0 +1,18 @@
+export type compraModel = {
+    id:number;
+    beneficio_id:number;
+    codigo_provedor_fk:number;
+    cliente_nome:string;
+    cliente_cpf_cnpj:string;
+    cupom_codigo:string;
+    valor:number;
+    percentual_parceiro:number;
+    percentual_synk:number;
+    percentual_provedor:number;
+    valor_parceiro:number;
+    valor_synk:number;
+    valor_provedor:number;
+    status?:"pendente"|"utilizado"|"cancelado";
+    validado_em?:string|null;
+    criado_em?:string;
+}

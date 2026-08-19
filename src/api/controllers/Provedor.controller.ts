@@ -60,12 +60,100 @@ export default class ProvedorController{
     }
 
     async ObterAnuncios(req:AuthRequest, res:Response){
-        
+
         const codigoProvedor = req.params.codigoProvedor as string
         const banners = await this._provedorService.ObterAnuncios(codigoProvedor);
 
         return res.json({data: banners})
-    } 
+    }
+
+    async ObterBeneficios(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string
+        const beneficios = await this._provedorService.ObterBeneficios(codigoProvedor);
+
+        return res.json({data: beneficios})
+    }
+
+    async ObterModulos(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string
+        const modulos = await this._provedorService.ObterModulosAtivos(codigoProvedor);
+
+        return res.json({data: modulos})
+    }
+
+    async RegistrarCliqueBeneficio(req:Request, res:Response){
+
+        const idBeneficio = Number.parseInt(req.params.id as string);
+        const codigoProvedor = Number.parseInt(req.body?.codigoProvedor as string);
+
+        await this._provedorService.RegistrarCliqueBeneficio(idBeneficio, codigoProvedor);
+
+        return res.status(200).json({ data: true });
+    }
+
+    async ComprarBeneficio(req:Request, res:Response){
+
+        const idBeneficio = Number.parseInt(req.params.id as string);
+        const { codigoProvedor, clienteNome, clienteCpfCnpj } = req.body || {};
+
+        try {
+            const compra = await this._provedorService.ComprarBeneficio(
+                idBeneficio, Number.parseInt(codigoProvedor), clienteNome, clienteCpfCnpj
+            );
+            return res.status(200).json({ data: compra });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ObterMinhasCompras(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string;
+        const cpfCnpj = req.query.cpfCnpj as string;
+
+        const compras = await this._provedorService.ObterMinhasCompras(codigoProvedor, cpfCnpj);
+
+        return res.json({ data: compras });
+    }
+
+    async ObterMeusPontos(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string;
+        const cpfCnpj = req.query.cpfCnpj as string;
+
+        const pontos = await this._provedorService.ObterMeusPontos(codigoProvedor, cpfCnpj);
+
+        return res.json({ data: pontos });
+    }
+
+    async ObterRecompensas(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string;
+        const recompensas = await this._provedorService.ObterRecompensas(codigoProvedor);
+
+        return res.json({ data: recompensas });
+    }
+
+    async ResgatarRecompensa(req:Request, res:Response){
+
+        const { codigoProvedor, cpfCnpj, clienteNome, recompensaId } = req.body || {};
+
+        try {
+            const resgate = await this._provedorService.ResgatarRecompensa(codigoProvedor, cpfCnpj, clienteNome, Number.parseInt(recompensaId));
+            return res.status(200).json({ data: resgate });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ListarParceirosAtivos(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string;
+        const parceiros = await this._provedorService.ListarParceirosAtivos(codigoProvedor);
+        return res.json({ data: parceiros });
+    }
 
     async AvaliarApp(req: Request, res: Response){
 

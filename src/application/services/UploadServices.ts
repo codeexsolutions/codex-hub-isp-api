@@ -64,16 +64,31 @@ export default class UploadService {
                 path:`${upload.codigoProvedor}/anuncios/${uuidv4()}.webp`,
                 contentType: "image/webp"
             },
+            [ETipoArquivo.BENEFICIO]:{
+                width:1080,
+                height:1080,
+                quality:90,
+                fit:"cover",
+                position:"centre",
+                path:`${upload.codigoProvedor}/beneficios/${uuidv4()}.webp`,
+                contentType: "image/webp"
+            },
 
         }
         
         const config = CONFIG[upload.tipo];
-        
+
         const buffer = await this._storage.Optimize(upload.file as Buffer, config)
 
         const publicUrl = await this._storage.Upload(buffer, config.path , config.contentType )
 
         return publicUrl;
+    }
+
+    // Apaga um arquivo antigo do storage a partir da URL pública salva no banco
+    // (ex.: ao trocar a imagem de um benefício/anúncio, evita acumular arquivo órfão).
+    async RemoverArquivo(publicUrl?:string|null) : Promise<void> {
+        await this._storage.RemoveByPublicUrl(publicUrl);
     }
 
 }

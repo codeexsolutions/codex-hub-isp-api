@@ -4,5 +4,6 @@ export enum ETipoArquivo {
     ICON512,
     MASKABLE,
     FAVICON,
-    ANUNCIO
+    ANUNCIO,
+    BENEFICIO
 }

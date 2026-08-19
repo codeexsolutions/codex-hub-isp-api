@@ -8,6 +8,12 @@ import { cadastroProvedorModel } from "../../core/models/cadastroProvevedorModel
 import { themeModel } from "../../core/models/themeModel";
 import { indicacaoModel } from "../../core/models/indicacaoModel";
 import { avaliacaoModel } from "../../core/models/avaliacaoModel";
+import { beneficioModel } from "../../core/models/beneficioModel";
+import { compraModel } from "../../core/models/compraModel";
+import { configComissaoModel } from "../../core/models/configComissaoModel";
+import { recompensaModel } from "../../core/models/recompensaModel";
+import { extratoPontosModel } from "../../core/models/extratoPontosModel";
+import { parceiroModel } from "../../core/models/parceiroModel";
 
 
 @injectable()
@@ -173,12 +179,133 @@ export default class ProvedorRepository implements IProvedorRepository{
 
     async ObterAnuncios(codigo:string) : Promise<any> {
         const select = "SELECT * FROM marketing_anuncios WHERE codigo_provedor_fk = $1";
-        
+
         const result = await this._db.Execulte<any>(select, [codigo])
 
         const parceiros = result;
 
         return parceiros;
+    }
+
+    async ObterBeneficios(codigo:string) : Promise<any> {
+        const select = "SELECT * FROM marketing_beneficios WHERE codigo_provedor_fk = $1 AND ativo = true";
+
+        const result = await this._db.Execulte<any>(select, [codigo])
+
+        return result;
+    }
+
+    async ObterModulosAtivos(codigo:string) : Promise<string[]> {
+        const select = `SELECT modulo FROM provedor_modulos WHERE codigo_provedor_fk = $1 AND ativo = true;`;
+        const result = await this._db.Execulte<{ modulo:string }>(select, [codigo]);
+        return result.map((r) => r.modulo);
+    }
+
+    async RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void> {
+        // só grava se o benefício realmente pertencer a esse provedor (evita log cruzado/forjado)
+        const insert = `
+            INSERT INTO beneficio_cliques (beneficio_id, codigo_provedor_fk)
+            SELECT id, codigo_provedor_fk FROM marketing_beneficios
+            WHERE id = $1 AND codigo_provedor_fk = $2;
+        `;
+        await this._db.Execulte<any>(insert, [idBeneficio, codigoProvedor]);
+    }
+
+    async ObterBeneficioPorId(idBeneficio:number, codigoProvedor:number) : Promise<beneficioModel> {
+        const select = `SELECT * FROM marketing_beneficios WHERE id = $1 AND codigo_provedor_fk = $2 AND ativo = true;`;
+        const result = await this._db.Execulte<beneficioModel>(select, [idBeneficio, codigoProvedor]);
+        return result[0];
+    }
+
+    async ObterConfigComissao() : Promise<configComissaoModel> {
+        const select = `SELECT percentual_parceiro, percentual_synk, percentual_provedor FROM config_comissao WHERE id = 1;`;
+        const result = await this._db.Execulte<configComissaoModel>(select, []);
+        return result[0];
+    }
+
+    async RegistrarCompra(compra:compraModel) : Promise<compraModel> {
+        const insert = `
+            INSERT INTO beneficio_compras
+            (beneficio_id, codigo_provedor_fk, cliente_nome, cliente_cpf_cnpj, cupom_codigo, valor,
+             percentual_parceiro, percentual_synk, percentual_provedor, valor_parceiro, valor_synk, valor_provedor, status)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pendente')
+            RETURNING *;
+        `;
+        const result = await this._db.Execulte<compraModel>(insert, [
+            compra.beneficio_id, compra.codigo_provedor_fk, compra.cliente_nome, compra.cliente_cpf_cnpj,
+            compra.cupom_codigo, compra.valor, compra.percentual_parceiro, compra.percentual_synk,
+            compra.percentual_provedor, compra.valor_parceiro, compra.valor_synk, compra.valor_provedor,
+        ]);
+        return result[0];
+    }
+
+    async ObterComprasCliente(codigoProvedor:string, cpfCnpj:string) : Promise<compraModel[]> {
+        const select = `
+            SELECT c.*, b.titulo AS beneficio_titulo, b.parceiro AS beneficio_parceiro
+            FROM beneficio_compras c
+            JOIN marketing_beneficios b ON b.id = c.beneficio_id
+            WHERE c.codigo_provedor_fk = $1 AND c.cliente_cpf_cnpj = $2
+            ORDER BY c.criado_em DESC;
+        `;
+        return await this._db.Execulte<any>(select, [codigoProvedor, cpfCnpj]);
+    }
+
+    async RegistrarLoginCliente(codigoProvedor:string, cpfCnpj:string, nome:string) : Promise<void> {
+        const upsert = `
+            INSERT INTO cliente_atividade (codigo_provedor_fk, cliente_cpf_cnpj, cliente_nome, ultimo_login)
+            VALUES ($1, $2, $3, now())
+            ON CONFLICT (codigo_provedor_fk, cliente_cpf_cnpj)
+            DO UPDATE SET ultimo_login = now(), cliente_nome = EXCLUDED.cliente_nome;
+        `;
+        await this._db.Execulte<any>(upsert, [codigoProvedor, cpfCnpj, nome]);
+    }
+
+    async ObterSaldoPontos(codigoProvedor:string, cpfCnpj:string) : Promise<number> {
+        const select = `SELECT COALESCE(SUM(pontos), 0) AS saldo FROM pontos_extrato WHERE codigo_provedor_fk = $1 AND cliente_cpf_cnpj = $2;`;
+        const result = await this._db.Execulte<{ saldo:string }>(select, [codigoProvedor, cpfCnpj]);
+        return Number.parseInt(result[0]?.saldo ?? "0");
+    }
+
+    async ObterExtratoPontos(codigoProvedor:string, cpfCnpj:string) : Promise<extratoPontosModel[]> {
+        const select = `
+            SELECT e.*, b.titulo AS beneficio_titulo, r.titulo AS recompensa_titulo
+            FROM pontos_extrato e
+            LEFT JOIN beneficio_compras c ON c.id = e.origem_compra_id
+            LEFT JOIN marketing_beneficios b ON b.id = c.beneficio_id
+            LEFT JOIN pontos_recompensas r ON r.id = e.origem_recompensa_id
+            WHERE e.codigo_provedor_fk = $1 AND e.cliente_cpf_cnpj = $2
+            ORDER BY e.criado_em DESC;
+        `;
+        return await this._db.Execulte<any>(select, [codigoProvedor, cpfCnpj]);
+    }
+
+    async ObterRecompensasAtivas(codigoProvedor:string) : Promise<recompensaModel[]> {
+        const select = `SELECT * FROM pontos_recompensas WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY pontos_necessarios ASC;`;
+        return await this._db.Execulte<recompensaModel>(select, [codigoProvedor]);
+    }
+
+    async ObterRecompensaPorIdPublico(idRecompensa:number, codigoProvedor:number) : Promise<recompensaModel> {
+        const select = `SELECT * FROM pontos_recompensas WHERE id = $1 AND codigo_provedor_fk = $2 AND ativo = true;`;
+        const result = await this._db.Execulte<recompensaModel>(select, [idRecompensa, codigoProvedor]);
+        return result[0];
+    }
+
+    async RegistrarResgate(codigoProvedor:number, cpfCnpj:string, nome:string, recompensa:recompensaModel, cupom:string) : Promise<extratoPontosModel> {
+        const insert = `INSERT INTO pontos_extrato
+            (codigo_provedor_fk, cliente_cpf_cnpj, cliente_nome, tipo, pontos, origem_recompensa_id, cupom_codigo)
+            VALUES ($1,$2,$3,'resgate',$4,$5,$6) RETURNING *;`;
+        const result = await this._db.Execulte<extratoPontosModel>(insert, [
+            codigoProvedor, cpfCnpj, nome, -recompensa.pontos_necessarios, recompensa.id, cupom,
+        ]);
+        return result[0];
+    }
+
+    async ListarParceirosAtivos(codigoProvedor:string) : Promise<parceiroModel[]> {
+        // vê os parceiros do próprio provedor + os nacionais (codigo_provedor_fk nulo)
+        const select = `SELECT id, nome_parceiro as nome FROM parceiros
+            WHERE ativo = true AND (codigo_provedor_fk = $1 OR codigo_provedor_fk IS NULL)
+            ORDER BY nome ASC;`;
+        return await this._db.Execulte<parceiroModel>(select, [codigoProvedor]);
     }
 
     // PAINEL
