@@ -369,21 +369,21 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async SalvarIndicacao(indicacao:indicacaoModel) : Promise<any> {
-        const insert = `INSERT INTO indicacoes 
-                        (nome_cliente, indicado, contato, mensagem, codigo_provedor_fk)
-                        VALUES ($1, $2, $3, $4, $5) RETURNING id`;
-        const result = await this._db.Execulte<any>(insert, [indicacao.cliente, indicacao.nome, indicacao.contato, indicacao.mensagem, indicacao.codigo_provedor])
-        
+        const insert = `INSERT INTO indicacoes
+                        (nome_cliente, cliente_cpf_cnpj, indicado, contato, mensagem, codigo_provedor_fk)
+                        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`;
+        const result = await this._db.Execulte<any>(insert, [indicacao.cliente, indicacao.cliente_cpf_cnpj ?? null, indicacao.nome, indicacao.contato, indicacao.mensagem, indicacao.codigo_provedor])
+
         if(result)
             return result;
 
         throw new Error("Não foi possivle salvar")
-                     
+
     }
 
     async ObterIndicacoes(codigoProvedor:string) : Promise<any> {
-        
-        return await this._db.Execulte("SELECT * FROM indicacoes WHERE codigo_provedor_fk = $1", [codigoProvedor]);
+
+        return await this._db.Execulte("SELECT * FROM indicacoes WHERE codigo_provedor_fk = $1 ORDER BY created_at DESC", [codigoProvedor]);
     }
 
     async AvaliarServico(avaliacao:avaliacaoModel) : Promise<any> {

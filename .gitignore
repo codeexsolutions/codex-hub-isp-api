@@ -6,4 +6,3 @@ build/
 *.env
 .vscode
 src/infrastructure/firebase/chave/*.json
-src/infrastructure/database/sql

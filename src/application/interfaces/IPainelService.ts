@@ -8,6 +8,7 @@ import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 
 export default interface IPainelServices {
 
@@ -48,6 +49,10 @@ export default interface IPainelServices {
     ExcluirRecompensa(id:string, codigoProvedor:number) : Promise<any>
     ObterConfigPontos() : Promise<configPontosModel>
     DefinirConfigPontos(config:configPontosModel) : Promise<configPontosModel>
+
+    // PONTOS MANUAIS (pagamento em dia / indicação efetivada)
+    ConcederPontosManual(codigoProvedor:number, clienteCpfCnpj:string, clienteNome:string, pontos:number, motivo:string) : Promise<extratoPontosModel>
+    MarcarIndicacaoEfetivada(idIndicacao:number, codigoProvedor:number) : Promise<{ indicacao:any; extrato:extratoPontosModel }>
 
     // MODULOS
     ObterModulosAtivos(codigoProvedor:number) : Promise<string[]>

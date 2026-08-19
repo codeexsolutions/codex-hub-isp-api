@@ -13,6 +13,7 @@ import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -253,7 +254,23 @@ export default class PainelService implements IPainelServices {
     async DefinirConfigPontos(config:configPontosModel) : Promise<configPontosModel> {
         if (Number(config.pontos_por_real) <= 0)
             throw new Error("A taxa de pontos por real precisa ser maior que zero.");
+        if (config.pontos_indicacao_efetivada != null && Number(config.pontos_indicacao_efetivada) < 0)
+            throw new Error("Os pontos por indicação efetivada não podem ser negativos.");
         return await this._painelRepository.AtualizarConfigPontos(config);
+    }
+
+    async ConcederPontosManual(codigoProvedor:number, clienteCpfCnpj:string, clienteNome:string, pontos:number, motivo:string) : Promise<extratoPontosModel> {
+        if(!clienteCpfCnpj?.trim() || !clienteNome?.trim())
+            throw new Error("Informe o CPF/CNPJ e o nome do cliente.");
+        if(!Number.isFinite(pontos) || pontos <= 0)
+            throw new Error("Informe uma quantidade de pontos válida.");
+        if(!motivo?.trim())
+            throw new Error("Informe o motivo da concessão.");
+        return await this._painelRepository.ConcederPontosManual(codigoProvedor, clienteCpfCnpj.trim(), clienteNome.trim(), pontos, motivo.trim());
+    }
+
+    async MarcarIndicacaoEfetivada(idIndicacao:number, codigoProvedor:number) : Promise<{ indicacao:any; extrato:extratoPontosModel }> {
+        return await this._painelRepository.MarcarIndicacaoEfetivada(idIndicacao, codigoProvedor);
     }
 
     async ObterRelatorioComprasAdmin() {

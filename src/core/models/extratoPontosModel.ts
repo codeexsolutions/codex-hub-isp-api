@@ -7,6 +7,8 @@ export type extratoPontosModel = {
     pontos:number;
     origem_compra_id:number|null;
     origem_recompensa_id:number|null;
+    origem_indicacao_id?:number|null;
+    motivo?:string|null;
     cupom_codigo:string|null;
     criado_em?:string;
 }

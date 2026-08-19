@@ -10,6 +10,7 @@ import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 
 @injectable()
 export default class PainelRepository implements IPainelRepository {
@@ -337,15 +338,54 @@ export default class PainelRepository implements IPainelRepository {
     }
 
     async ObterConfigPontos() : Promise<configPontosModel> {
-        const select = `SELECT pontos_por_real FROM config_pontos WHERE id = 1;`;
+        const select = `SELECT pontos_por_real, pontos_indicacao_efetivada FROM config_pontos WHERE id = 1;`;
         const result = await this._db.Execulte<configPontosModel>(select, []);
         return result[0];
     }
 
     async AtualizarConfigPontos(config:configPontosModel) : Promise<configPontosModel> {
-        const update = `UPDATE config_pontos SET pontos_por_real = $1, atualizado_em = now() WHERE id = 1 RETURNING pontos_por_real;`;
-        const result = await this._db.Execulte<configPontosModel>(update, [config.pontos_por_real]);
+        const update = `UPDATE config_pontos SET pontos_por_real = $1, pontos_indicacao_efetivada = $2, atualizado_em = now()
+            WHERE id = 1 RETURNING pontos_por_real, pontos_indicacao_efetivada;`;
+        const result = await this._db.Execulte<configPontosModel>(update, [config.pontos_por_real, config.pontos_indicacao_efetivada ?? 50]);
         return result[0];
+    }
+
+    // PONTOS MANUAIS (pagamento em dia / indicação efetivada)
+
+    async ConcederPontosManual(codigoProvedor:number, clienteCpfCnpj:string, clienteNome:string, pontos:number, motivo:string) : Promise<extratoPontosModel> {
+        const insert = `INSERT INTO pontos_extrato
+            (codigo_provedor_fk, cliente_cpf_cnpj, cliente_nome, tipo, pontos, motivo)
+            VALUES ($1,$2,$3,'ganho',$4,$5) RETURNING *;`;
+        const result = await this._db.Execulte<extratoPontosModel>(insert, [codigoProvedor, clienteCpfCnpj, clienteNome, pontos, motivo]);
+        return result[0];
+    }
+
+    async MarcarIndicacaoEfetivada(idIndicacao:number, codigoProvedor:number) : Promise<{ indicacao:any; extrato:extratoPontosModel }> {
+        const selectIndicacao = `SELECT * FROM indicacoes WHERE id = $1 AND codigo_provedor_fk = $2;`;
+        const rows = await this._db.Execulte<any>(selectIndicacao, [idIndicacao, codigoProvedor]);
+        const indicacao = rows[0];
+
+        if (!indicacao)
+            throw new Error("Indicação não encontrada.");
+        if (indicacao.status === "efetivada")
+            throw new Error("Essa indicação já foi marcada como efetivada.");
+        if (!indicacao.cliente_cpf_cnpj)
+            throw new Error("Essa indicação é antiga e não tem o CPF/CNPJ de quem indicou — conceda os pontos manualmente em vez de efetivar.");
+
+        const configPontos = await this.ObterConfigPontos();
+        const pontos = configPontos?.pontos_indicacao_efetivada ?? 50;
+
+        const update = `UPDATE indicacoes SET status = 'efetivada', pontos_creditados = true WHERE id = $1 RETURNING *;`;
+        const atualizada = await this._db.Execulte<any>(update, [idIndicacao]);
+
+        const insertExtrato = `INSERT INTO pontos_extrato
+            (codigo_provedor_fk, cliente_cpf_cnpj, cliente_nome, tipo, pontos, origem_indicacao_id, motivo)
+            VALUES ($1,$2,$3,'ganho',$4,$5,'Indicação de amigo efetivada') RETURNING *;`;
+        const extrato = await this._db.Execulte<extratoPontosModel>(insertExtrato, [
+            codigoProvedor, indicacao.cliente_cpf_cnpj, indicacao.nome_cliente, pontos, idIndicacao,
+        ]);
+
+        return { indicacao: atualizada[0], extrato: extrato[0] };
     }
 
     // MODULOS

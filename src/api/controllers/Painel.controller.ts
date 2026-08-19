@@ -397,6 +397,37 @@ export default class PainelController {
         }
     }
 
+    // "Já paga em dia" — o provedor digita a quantidade e o motivo (ex.: "Pagamento em dia").
+    async ConcederPontos(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const { cliente_cpf_cnpj, cliente_nome, pontos, motivo } = req.body || {};
+
+        try {
+            const extrato = await this._painelService.ConcederPontosManual(
+                codigoProvedor, cliente_cpf_cnpj, cliente_nome, Number.parseInt(pontos), motivo
+            );
+            return res.status(200).json({ data: extrato });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    // Marca a indicação como efetivada (o amigo indicado virou cliente de fato) e credita
+    // os pontos padrão configurados automaticamente pro cliente que indicou.
+    async MarcarIndicacaoEfetivada(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            const resultado = await this._painelService.MarcarIndicacaoEfetivada(id, codigoProvedor);
+            return res.status(200).json({ data: resultado });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
     async CriarParceiroAdmin(req:AuthRequest, res:Response){
 
         const data = req.body as parceiroModel;

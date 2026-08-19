@@ -52,11 +52,13 @@ painelRouter.post('/provedor/pontos/recompensas', authMiddleware, moduloMiddlewa
 painelRouter.get('/provedor/pontos/recompensas', authMiddleware, moduloMiddleware("beneficios"), painelController.ObterRecompensasPainel.bind(painelController));
 painelRouter.patch('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("beneficios"), painelController.EditarRecompensa.bind(painelController));
 painelRouter.delete('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("beneficios"), painelController.ExcluirRecompensa.bind(painelController));
+painelRouter.post('/provedor/pontos/conceder', authMiddleware, moduloMiddleware("beneficios"), painelController.ConcederPontos.bind(painelController));
 
 // MODULOS (o próprio provedor consultando quais módulos ele tem ativos)
 painelRouter.get('/provedor/modulos', authMiddleware, painelController.ObterModulosProprio.bind(painelController));
 
 painelRouter.get('/provedor/indicacoes', authMiddleware, painelController.ObterIndicacoes.bind(painelController));
+painelRouter.patch('/provedor/indicacoes/:id/efetivar', authMiddleware, moduloMiddleware("beneficios"), painelController.MarcarIndicacaoEfetivada.bind(painelController));
 painelRouter.get('/provedor/avaliacoes', authMiddleware, painelController.ObterAvaliacaoServico.bind(painelController));
 
 // ADMIN (tela interna de ativação de módulos — login separado do provedor)
