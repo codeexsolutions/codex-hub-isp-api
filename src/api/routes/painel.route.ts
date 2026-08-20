@@ -35,11 +35,10 @@ painelRouter.get('/provedor/banners', authMiddleware, painelController.ObterBann
 painelRouter.patch('/provedor/banners/:id', authMiddleware, painelController.EditarBanner.bind(painelController))
 painelRouter.delete('/provedor/banners/:id', authMiddleware, painelController.ExcluirBanner.bind(painelController))
 
-// BENEFICIOS (módulo vendável — precisa estar ativo pra esse provedor)
-painelRouter.post('/provedor/beneficios', authMiddleware, moduloMiddleware("beneficios"), upload.single("imagem"), painelController.GravarBeneficio.bind(painelController));
-painelRouter.get('/provedor/beneficios', authMiddleware, moduloMiddleware("beneficios"), painelController.ObterBeneficios.bind(painelController));
-painelRouter.patch('/provedor/beneficios/:id', authMiddleware, moduloMiddleware("beneficios"), upload.single("imagem"), painelController.EditarBeneficio.bind(painelController));
-painelRouter.delete('/provedor/beneficios/:id', authMiddleware, moduloMiddleware("beneficios"), painelController.ExcluirBeneficio.bind(painelController));
+// OFERTAS (módulo vendável — precisa estar ativo pra esse provedor). Criadas pelo
+// parceiro (ver /v1/parceiros/ofertas) — o provedor só vê o catálogo e ativa.
+painelRouter.get('/provedor/ofertas/catalogo', authMiddleware, moduloMiddleware("beneficios"), painelController.ObterCatalogoOfertas.bind(painelController));
+painelRouter.patch('/provedor/ofertas/:id/ativar', authMiddleware, moduloMiddleware("beneficios"), painelController.AtivarOferta.bind(painelController));
 
 // METRICAS
 painelRouter.get('/provedor/metricas', authMiddleware, painelController.ObterMetricas.bind(painelController));
@@ -48,11 +47,13 @@ painelRouter.get('/provedor/metricas', authMiddleware, painelController.ObterMet
 painelRouter.get('/provedor/compras', authMiddleware, moduloMiddleware("beneficios"), painelController.ObterCompras.bind(painelController));
 
 // RECOMPENSAS (pontos — mesmo módulo de Benefícios)
-painelRouter.post('/provedor/pontos/recompensas', authMiddleware, moduloMiddleware("beneficios"), painelController.GravarRecompensa.bind(painelController));
-painelRouter.get('/provedor/pontos/recompensas', authMiddleware, moduloMiddleware("beneficios"), painelController.ObterRecompensasPainel.bind(painelController));
-painelRouter.patch('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("beneficios"), painelController.EditarRecompensa.bind(painelController));
-painelRouter.delete('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("beneficios"), painelController.ExcluirRecompensa.bind(painelController));
-painelRouter.post('/provedor/pontos/conceder', authMiddleware, moduloMiddleware("beneficios"), painelController.ConcederPontos.bind(painelController));
+// RECOMPENSAS — módulo próprio (o cliente pode ganhar pontos por comprar um benefício
+// mesmo sem esse módulo ativo; "recompensas" só controla o catálogo de resgate).
+painelRouter.post('/provedor/pontos/recompensas', authMiddleware, moduloMiddleware("recompensas"), painelController.GravarRecompensa.bind(painelController));
+painelRouter.get('/provedor/pontos/recompensas', authMiddleware, moduloMiddleware("recompensas"), painelController.ObterRecompensasPainel.bind(painelController));
+painelRouter.patch('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("recompensas"), painelController.EditarRecompensa.bind(painelController));
+painelRouter.delete('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("recompensas"), painelController.ExcluirRecompensa.bind(painelController));
+painelRouter.post('/provedor/pontos/conceder', authMiddleware, moduloMiddleware("recompensas"), painelController.ConcederPontos.bind(painelController));
 
 // MODULOS (o próprio provedor consultando quais módulos ele tem ativos)
 painelRouter.get('/provedor/modulos', authMiddleware, painelController.ObterModulosProprio.bind(painelController));
@@ -75,6 +76,8 @@ painelRouter.post('/admin/parceiros', authMiddleware, adminMiddleware, painelCon
 painelRouter.get('/admin/parceiros', authMiddleware, adminMiddleware, painelController.ListarParceirosAdmin.bind(painelController));
 painelRouter.patch('/admin/parceiros/:id/status', authMiddleware, adminMiddleware, painelController.DefinirStatusParceiroAdmin.bind(painelController));
 painelRouter.patch('/admin/parceiros/:id/provedor', authMiddleware, adminMiddleware, painelController.DefinirProvedorParceiroAdmin.bind(painelController));
+painelRouter.patch('/admin/parceiros/:id/localizacao', authMiddleware, adminMiddleware, painelController.DefinirLocalizacaoParceiroAdmin.bind(painelController));
+painelRouter.patch('/admin/parceiros/:id/contato', authMiddleware, adminMiddleware, painelController.DefinirContatoParceiroAdmin.bind(painelController));
 painelRouter.patch('/admin/compras/:id/validar', authMiddleware, adminMiddleware, painelController.ValidarCompraAdmin.bind(painelController));
 
 export default painelRouter;

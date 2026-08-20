@@ -2,7 +2,11 @@ import { inject, injectable } from "tsyringe";
 import IParceiroRepository from "../../core/interfaces/IParceiroRepository";
 import IParceiroServices from "../interfaces/IParceiroServices";
 import { compraModel } from "../../core/models/compraModel";
+import { beneficioModel } from "../../core/models/beneficioModel";
+import { ofertaEditeDto } from "../Dtos/ofertaEditeDto";
 import JwtService from "./JwtServices";
+import UploadService from "./UploadServices";
+import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
 
 @injectable()
 export default class ParceiroServices implements IParceiroServices {
@@ -75,5 +79,66 @@ export default class ParceiroServices implements IParceiroServices {
             throw new Error(`Este cupom já está com status "${compra.status}".`);
 
         return await this._parceiroRepository.CancelarCupom(cupom);
+    }
+
+    // OFERTAS
+
+    async CriarOferta(oferta:beneficioModel) : Promise<beneficioModel> {
+        if(!oferta.titulo?.trim() || !oferta.categoria?.trim())
+            throw new Error("Informe pelo menos a categoria e o título da oferta.");
+
+        if(oferta.file !== undefined){
+            const _upload = new UploadService();
+            oferta.link_imagem = await _upload.UploadArquivo({
+                codigoProvedor: `parceiro-${oferta.parceiro_id_fk}`,
+                file: oferta.file.buffer,
+                nomeArquivo: "oferta"+oferta.file.originalname,
+                tipo: ETipoArquivo.BENEFICIO,
+            });
+        }
+
+        return await this._parceiroRepository.CriarOferta(oferta);
+    }
+
+    async ObterMinhasOfertas(parceiroId:number) : Promise<beneficioModel[]> {
+        return await this._parceiroRepository.ObterMinhasOfertas(parceiroId);
+    }
+
+    async EditarOferta(id:number, ofertaEdite:ofertaEditeDto) : Promise<beneficioModel> {
+        const oferta = await this._parceiroRepository.ObterOfertaPorId(id, ofertaEdite.parceiroId);
+        if (!oferta)
+            throw new Error("Oferta não encontrada.");
+
+        if(ofertaEdite.categoria !== undefined) oferta.categoria = ofertaEdite.categoria;
+        if(ofertaEdite.parceiro !== undefined) oferta.parceiro = ofertaEdite.parceiro;
+        if(ofertaEdite.titulo !== undefined) oferta.titulo = ofertaEdite.titulo;
+        if(ofertaEdite.subtitulo !== undefined) oferta.subtitulo = ofertaEdite.subtitulo;
+        if(ofertaEdite.descricao !== undefined) oferta.descricao = ofertaEdite.descricao;
+        if(ofertaEdite.valor !== undefined) oferta.valor = ofertaEdite.valor;
+        if(ofertaEdite.valor_original !== undefined) oferta.valor_original = ofertaEdite.valor_original;
+        if(ofertaEdite.validade_fim !== undefined) oferta.validade_fim = ofertaEdite.validade_fim;
+        if(ofertaEdite.regras !== undefined) oferta.regras = ofertaEdite.regras;
+
+        if(ofertaEdite.file !== undefined){
+            const imagemAnterior = oferta.link_imagem;
+            const _upload = new UploadService();
+            oferta.link_imagem = await _upload.UploadArquivo({
+                codigoProvedor: `parceiro-${ofertaEdite.parceiroId}`,
+                file: ofertaEdite.file.buffer,
+                nomeArquivo: "oferta",
+                tipo: ETipoArquivo.BENEFICIO,
+            });
+            // só remove a antiga depois que a nova subiu com sucesso.
+            await _upload.RemoverArquivo(imagemAnterior);
+        }
+
+        if(ofertaEdite.link !== undefined) oferta.link_acao = ofertaEdite.link;
+        oferta.ativo = ofertaEdite.ativo;
+
+        return await this._parceiroRepository.EditarOferta(oferta);
+    }
+
+    async ExcluirOferta(id:string, parceiroId:number) : Promise<{ removido:boolean }> {
+        return await this._parceiroRepository.ExcluirOferta(id, parceiroId);
     }
 }

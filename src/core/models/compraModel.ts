@@ -6,6 +6,7 @@ export type compraModel = {
     cliente_cpf_cnpj:string;
     cupom_codigo:string;
     valor:number;
+    valor_original?:number|null;
     percentual_parceiro:number;
     percentual_synk:number;
     percentual_provedor:number;

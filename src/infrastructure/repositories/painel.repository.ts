@@ -135,72 +135,31 @@ export default class PainelRepository implements IPainelRepository {
         return await this._db.Execulte<any>(exclui, [idAnuncio, codigoProvedor])
     }
 
-    // BENEFICIOS
+    // OFERTAS (o parceiro cria — ver parceiro.repository.ts — o provedor só ativa)
 
-    async GravarBeneficio(beneficio:beneficioModel) : Promise<beneficioModel>{
-
-        const insert =  `INSERT INTO marketing_beneficios
-        (categoria, parceiro, titulo, subtitulo, descricao, link_imagem, link_acao, codigo_provedor_fk, ativo, valor, parceiro_id_fk)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`;
-
-        const id = await this._db.Execulte<any>(insert, [beneficio.categoria, beneficio.parceiro, beneficio.titulo, beneficio.subtitulo, beneficio.descricao, beneficio.link_imagem, beneficio.link_acao, beneficio.codigo_provedor_fk, beneficio.ativo, beneficio.valor ?? null, beneficio.parceiro_id_fk ?? null]);
-
-        return this.ObterBeneficioPorId(id[0].id, beneficio.codigo_provedor_fk)
+    async ObterCatalogoOfertas(codigoProvedor: number) : Promise<beneficioModel[]>{
+        const select = `
+            SELECT mb.*, COALESCE(bp.ativo, false) AS ativo_para_mim,
+                   pa.cidade AS parceiro_cidade, pa.uf AS parceiro_uf,
+                   pa.endereco AS parceiro_endereco, pa.contato AS parceiro_contato
+            FROM marketing_beneficios mb
+            LEFT JOIN beneficio_provedores bp
+                ON bp.beneficio_id = mb.id AND bp.codigo_provedor_fk = $1
+            LEFT JOIN parceiros pa ON pa.id = mb.parceiro_id_fk
+            WHERE mb.ativo = true AND mb.parceiro_id_fk IS NOT NULL
+            ORDER BY mb.id DESC;
+        `;
+        return await this._db.Execulte<beneficioModel>(select, [codigoProvedor]);
     }
 
-    async ObterBeneficios(codigoProvedor: number) : Promise<beneficioModel[]>{
-
-        const select = `SELECT * FROM marketing_beneficios WHERE codigo_provedor_fk = $1;`
-        const beneficios = await this._db.Execulte<beneficioModel>(select, [codigoProvedor]);
-        return beneficios;
-    }
-
-    async ObterBeneficioPorId(idBeneficio:number, codigoProvedor: number) : Promise<beneficioModel>{
-        const select = `SELECT * FROM marketing_beneficios WHERE codigo_provedor_fk = $1 AND id = $2;`
-        const beneficios = await this._db.Execulte<beneficioModel>(select, [codigoProvedor, idBeneficio]);
-        return beneficios[0];
-    }
-
-    async EditarBeneficio(beneficio:beneficioModel) : Promise<beneficioModel> {
-
-        const update = `UPDATE marketing_beneficios SET
-                            categoria = $1,
-                            parceiro = $2,
-                            titulo = $3,
-                            subtitulo = $4,
-                            descricao = $5,
-                            link_imagem = $6,
-                            link_acao = $7,
-                            ativo = $8,
-                            valor = $9,
-                            parceiro_id_fk = $10
-                        WHERE codigo_provedor_fk = $11 and id = $12 RETURNING id;
-                        `;
-
-        const result = await this._db.Execulte<any>(update, [beneficio.categoria, beneficio.parceiro, beneficio.titulo, beneficio.subtitulo, beneficio.descricao, beneficio.link_imagem, beneficio.link_acao, beneficio.ativo, beneficio.valor ?? null, beneficio.parceiro_id_fk ?? null, beneficio.codigo_provedor_fk, beneficio.id])
-
-        const id = result[0].id
-        return await this.ObterBeneficioPorId(id, beneficio.codigo_provedor_fk)
-    }
-
-    async ExcluiBeneficio(idBeneficio:string, codigoProvedor:number) : Promise<{ removido:boolean }> {
-        const usoCount = `SELECT
-            (SELECT count(*) FROM beneficio_cliques WHERE beneficio_id = $1) +
-            (SELECT count(*) FROM beneficio_compras WHERE beneficio_id = $1) AS total`;
-        const uso = await this._db.Execulte<{ total:string }>(usoCount, [idBeneficio]);
-        const temHistorico = Number.parseInt(uso[0]?.total ?? "0") > 0;
-
-        if (temHistorico) {
-            // preserva o histórico (cliques/compras/comissão) usado nos relatórios;
-            // só desativa, pra sumir do app e da tela de benefícios válidos.
-            const desativar = `UPDATE marketing_beneficios SET ativo = false WHERE id = $1 AND codigo_provedor_fk = $2`;
-            await this._db.Execulte<any>(desativar, [idBeneficio, codigoProvedor]);
-            return { removido: false };
-        }
-
-        const exclui = `DELETE FROM marketing_beneficios WHERE id = $1 AND codigo_provedor_fk = $2`;
-        await this._db.Execulte<any>(exclui, [idBeneficio, codigoProvedor]);
-        return { removido: true };
+    async AtivarOferta(idBeneficio:number, codigoProvedor:number, ativo:boolean) : Promise<void> {
+        const upsert = `
+            INSERT INTO beneficio_provedores (beneficio_id, codigo_provedor_fk, ativo)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (beneficio_id, codigo_provedor_fk)
+            DO UPDATE SET ativo = EXCLUDED.ativo;
+        `;
+        await this._db.Execulte<any>(upsert, [idBeneficio, codigoProvedor, ativo]);
     }
 
     // METRICAS
@@ -432,15 +391,18 @@ export default class PainelRepository implements IPainelRepository {
     // PARCEIROS (admin)
 
     async CriarParceiro(parceiro:parceiroModel) : Promise<parceiroModel> {
-        const insert = `INSERT INTO parceiros (nome_parceiro, usuario, senha, ativo, codigo_provedor_fk)
-            VALUES ($1,$2,$3,$4,$5) RETURNING id, nome_parceiro AS nome, usuario, ativo, codigo_provedor_fk, created_at AS criado_em;`;
-        const result = await this._db.Execulte<parceiroModel>(insert, [parceiro.nome, parceiro.usuario, parceiro.senha, parceiro.ativo, parceiro.codigo_provedor_fk ?? null]);
+        const insert = `INSERT INTO parceiros (nome_parceiro, usuario, senha, ativo, codigo_provedor_fk, cidade, uf, endereco, contato)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, nome_parceiro AS nome, usuario, ativo, codigo_provedor_fk, cidade, uf, endereco, contato, created_at AS criado_em;`;
+        const result = await this._db.Execulte<parceiroModel>(insert, [
+            parceiro.nome, parceiro.usuario, parceiro.senha, parceiro.ativo, parceiro.codigo_provedor_fk ?? null,
+            parceiro.cidade ?? null, parceiro.uf ?? null, parceiro.endereco ?? null, parceiro.contato ?? null,
+        ]);
         return result[0];
     }
 
     async ListarParceiros() : Promise<parceiroModel[]> {
         const select = `SELECT pa.id, pa.nome_parceiro AS nome, pa.usuario, pa.ativo, pa.codigo_provedor_fk,
-                   pa.created_at AS criado_em, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome
+                   pa.cidade, pa.uf, pa.endereco, pa.contato, pa.created_at AS criado_em, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome
             FROM parceiros pa
             LEFT JOIN provedores p ON p.codigo_provedor = pa.codigo_provedor_fk
             ORDER BY pa.nome_parceiro ASC;`;
@@ -455,6 +417,16 @@ export default class PainelRepository implements IPainelRepository {
     async DefinirProvedorParceiro(id:number, codigoProvedorFk:number|null) : Promise<void> {
         const update = `UPDATE parceiros SET codigo_provedor_fk = $1 WHERE id = $2;`;
         await this._db.Execulte<any>(update, [codigoProvedorFk, id]);
+    }
+
+    async DefinirLocalizacaoParceiro(id:number, cidade:string|null, uf:string|null) : Promise<void> {
+        const update = `UPDATE parceiros SET cidade = $1, uf = $2 WHERE id = $3;`;
+        await this._db.Execulte<any>(update, [cidade, uf, id]);
+    }
+
+    async DefinirContatoParceiro(id:number, endereco:string|null, contato:string|null) : Promise<void> {
+        const update = `UPDATE parceiros SET endereco = $1, contato = $2 WHERE id = $3;`;
+        await this._db.Execulte<any>(update, [endereco, contato, id]);
     }
 
     async ValidarCompraAdmin(idCompra:number) : Promise<compraModel> {

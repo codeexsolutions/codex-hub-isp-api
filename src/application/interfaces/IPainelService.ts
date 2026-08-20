@@ -2,7 +2,6 @@ import { anuncioModel } from "../../core/models/anuncioModel";
 import { bannerModel } from "../../core/models/bannerModel";
 import { anuncioEditeDto } from "../Dtos/anuncioEditeDto";
 import { beneficioModel } from "../../core/models/beneficioModel";
-import { beneficioEditeDto } from "../Dtos/beneficioEditeDto";
 import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
@@ -22,11 +21,9 @@ export default interface IPainelServices {
     EditarBanner(id:number, banner:bannerModel) : Promise<bannerModel>
     ExcluiBanner(idAnuncio:string, codigoProvedor:number) : Promise<any>
 
-    // BENEFICIOS
-    GravarBeneficio(beneficio:beneficioModel) : Promise<beneficioModel>
-    ObterBeneficios(codigoProvedor: number) : Promise<beneficioModel[]>
-    EditarBeneficio(id:number, beneficio:beneficioEditeDto) : Promise<beneficioModel>
-    ExcluirBeneficio(id:string, codigoProvedor:number) : Promise<any>
+    // OFERTAS (criadas pelo parceiro — provedor só vê o catálogo e ativa/desativa)
+    ObterCatalogoOfertas(codigoProvedor: number) : Promise<beneficioModel[]>
+    AtivarOferta(idBeneficio:number, codigoProvedor:number, ativo:boolean) : Promise<void>
 
     // METRICAS
     ObterMetricas(codigoProvedor:number) : Promise<metricasModel>
@@ -65,6 +62,8 @@ export default interface IPainelServices {
     ListarParceiros() : Promise<parceiroModel[]>
     DefinirStatusParceiro(id:number, ativo:boolean) : Promise<void>
     DefinirProvedorParceiro(id:number, codigoProvedorFk:number|null) : Promise<void>
+    DefinirLocalizacaoParceiro(id:number, cidade:string|null, uf:string|null) : Promise<void>
+    DefinirContatoParceiro(id:number, endereco:string|null, contato:string|null) : Promise<void>
     ValidarCompraAdmin(idCompra:number) : Promise<compraModel>
 }
 

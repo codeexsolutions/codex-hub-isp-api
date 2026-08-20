@@ -15,8 +15,6 @@ import { anuncioModel } from "../../core/models/anuncioModel";
 import { bannerModel } from "../../core/models/bannerModel";
 import { ThemeFiles } from "../../application/Dtos/temaFiles.dto";
 import { anuncioEditeDto } from "../../application/Dtos/anuncioEditeDto";
-import { beneficioModel } from "../../core/models/beneficioModel";
-import { beneficioEditeDto } from "../../application/Dtos/beneficioEditeDto";
 import { adminLoginDto } from "../../application/Dtos/adminLoginDto";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
@@ -213,39 +211,27 @@ export default class PainelController {
         return res.status(200).json(avaliacoes)
     }
 
-    async GravarBeneficio(req:AuthRequest, res:Response){
+    // Ofertas são criadas/editadas pelo parceiro (ver ParceiroController) — aqui o
+    // provedor só enxerga o catálogo e ativa/desativa pra própria base.
+    async ObterCatalogoOfertas(req:AuthRequest, res:Response){
 
-        const data = req.body as beneficioModel
-        data.file = req.file;
-        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
-        data.valor = req.body.valor ? Number.parseFloat(req.body.valor) : null;
-        data.parceiro_id_fk = req.body.parceiro_id_fk ? Number.parseInt(req.body.parceiro_id_fk) : null;
-        const beneficio = await this._painelService.GravarBeneficio(data);
-        return res.status(200).json({data:beneficio})
-
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const ofertas = await this._painelService.ObterCatalogoOfertas(codigoProvedor);
+        return res.json({ data: ofertas });
     }
 
-    async EditarBeneficio(req:AuthRequest, res:Response){
+    async AtivarOferta(req:AuthRequest, res:Response){
 
         const id = Number.parseInt(req.params.id as string);
-        const data = req.body as beneficioEditeDto;
-        data.file = req.file;
         const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
-        data.codigo_provedor_fk = codigoProvedor;
-        data.valor = req.body.valor ? Number.parseFloat(req.body.valor) : null;
-        data.parceiro_id_fk = req.body.parceiro_id_fk ? Number.parseInt(req.body.parceiro_id_fk) : null;
-        const beneficio = await this._painelService.EditarBeneficio(id, data);
-        return res.status(201).json({data:beneficio})
+        const ativo = Boolean(req.body?.ativo);
 
-    }
-
-    async ExcluirBeneficio(req:AuthRequest, res:Response){
-
-        const id = req.params.id as string;
-        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
-        const beneficio = await this._painelService.ExcluirBeneficio(id, codigoProvedor);
-        return res.status(201).json({data:beneficio})
-
+        try {
+            await this._painelService.AtivarOferta(id, codigoProvedor, ativo);
+            return res.status(200).json({ data: { id, ativo } });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
     }
 
     async GravarRecompensa(req:AuthRequest, res:Response){
@@ -278,14 +264,6 @@ export default class PainelController {
         const codigoProvedor = req.usuario?.codigoProvedor as string
         const recompensas = await this._painelService.ObterRecompensas(Number.parseInt(codigoProvedor));
         return res.json({data: recompensas})
-    }
-
-    async ObterBeneficios(req:AuthRequest, res:Response){
-
-        const codigoProvedor = req.usuario?.codigoProvedor as string
-        const beneficios = await this._painelService.ObterBeneficios(Number.parseInt(codigoProvedor));
-
-        return res.json({data: beneficios})
     }
 
     async ObterMetricas(req:AuthRequest, res:Response){
@@ -462,6 +440,26 @@ export default class PainelController {
 
         await this._painelService.DefinirProvedorParceiro(id, codigoProvedorFk);
         return res.status(200).json({data: { id, codigo_provedor_fk: codigoProvedorFk }})
+    }
+
+    async DefinirLocalizacaoParceiroAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const cidade = req.body?.cidade || null;
+        const uf = req.body?.uf || null;
+
+        await this._painelService.DefinirLocalizacaoParceiro(id, cidade, uf);
+        return res.status(200).json({data: { id, cidade, uf }})
+    }
+
+    async DefinirContatoParceiroAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const endereco = req.body?.endereco || null;
+        const contato = req.body?.contato || null;
+
+        await this._painelService.DefinirContatoParceiro(id, endereco, contato);
+        return res.status(200).json({data: { id, endereco, contato }})
     }
 
     async ValidarCompraAdmin(req:AuthRequest, res:Response){

@@ -188,7 +188,14 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async ObterBeneficios(codigo:string) : Promise<any> {
-        const select = "SELECT * FROM marketing_beneficios WHERE codigo_provedor_fk = $1 AND ativo = true";
+        const select = `
+            SELECT mb.*, pa.cidade AS parceiro_cidade, pa.uf AS parceiro_uf,
+                   pa.endereco AS parceiro_endereco, pa.contato AS parceiro_contato
+            FROM marketing_beneficios mb
+            JOIN beneficio_provedores bp ON bp.beneficio_id = mb.id
+            LEFT JOIN parceiros pa ON pa.id = mb.parceiro_id_fk
+            WHERE bp.codigo_provedor_fk = $1 AND bp.ativo = true AND mb.ativo = true;
+        `;
 
         const result = await this._db.Execulte<any>(select, [codigo])
 
@@ -202,17 +209,23 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void> {
-        // só grava se o benefício realmente pertencer a esse provedor (evita log cruzado/forjado)
+        // só grava se a oferta realmente estiver ativada pra esse provedor (evita log cruzado/forjado)
         const insert = `
             INSERT INTO beneficio_cliques (beneficio_id, codigo_provedor_fk)
-            SELECT id, codigo_provedor_fk FROM marketing_beneficios
-            WHERE id = $1 AND codigo_provedor_fk = $2;
+            SELECT mb.id, bp.codigo_provedor_fk
+            FROM marketing_beneficios mb
+            JOIN beneficio_provedores bp ON bp.beneficio_id = mb.id
+            WHERE mb.id = $1 AND bp.codigo_provedor_fk = $2 AND bp.ativo = true;
         `;
         await this._db.Execulte<any>(insert, [idBeneficio, codigoProvedor]);
     }
 
     async ObterBeneficioPorId(idBeneficio:number, codigoProvedor:number) : Promise<beneficioModel> {
-        const select = `SELECT * FROM marketing_beneficios WHERE id = $1 AND codigo_provedor_fk = $2 AND ativo = true;`;
+        const select = `
+            SELECT mb.* FROM marketing_beneficios mb
+            JOIN beneficio_provedores bp ON bp.beneficio_id = mb.id
+            WHERE mb.id = $1 AND bp.codigo_provedor_fk = $2 AND bp.ativo = true AND mb.ativo = true;
+        `;
         const result = await this._db.Execulte<beneficioModel>(select, [idBeneficio, codigoProvedor]);
         return result[0];
     }
@@ -226,14 +239,14 @@ export default class ProvedorRepository implements IProvedorRepository{
     async RegistrarCompra(compra:compraModel) : Promise<compraModel> {
         const insert = `
             INSERT INTO beneficio_compras
-            (beneficio_id, codigo_provedor_fk, cliente_nome, cliente_cpf_cnpj, cupom_codigo, valor,
+            (beneficio_id, codigo_provedor_fk, cliente_nome, cliente_cpf_cnpj, cupom_codigo, valor, valor_original,
              percentual_parceiro, percentual_synk, percentual_provedor, valor_parceiro, valor_synk, valor_provedor, status)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pendente')
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pendente')
             RETURNING *;
         `;
         const result = await this._db.Execulte<compraModel>(insert, [
             compra.beneficio_id, compra.codigo_provedor_fk, compra.cliente_nome, compra.cliente_cpf_cnpj,
-            compra.cupom_codigo, compra.valor, compra.percentual_parceiro, compra.percentual_synk,
+            compra.cupom_codigo, compra.valor, compra.valor_original ?? null, compra.percentual_parceiro, compra.percentual_synk,
             compra.percentual_provedor, compra.valor_parceiro, compra.valor_synk, compra.valor_provedor,
         ]);
         return result[0];

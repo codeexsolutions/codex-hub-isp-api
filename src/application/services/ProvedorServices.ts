@@ -242,6 +242,7 @@ export default class ProvedorServices implements IProvedorServices {
             cliente_cpf_cnpj: clienteCpfCnpj,
             cupom_codigo: "",
             valor,
+            valor_original: beneficio.valor_original != null ? Number(beneficio.valor_original) : null,
             percentual_parceiro: Number(config.percentual_parceiro),
             percentual_synk: Number(config.percentual_synk),
             percentual_provedor: Number(config.percentual_provedor),
@@ -289,14 +290,17 @@ export default class ProvedorServices implements IProvedorServices {
     }
 
     async ObterRecompensas(codigo: string) {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("recompensas"))
+            return [];
         return await this._provedorRepository.ObterRecompensasAtivas(codigo);
     }
 
     async ResgatarRecompensa(codigo: string, cpfCnpj: string, clienteNome: string, idRecompensa: number) {
 
         const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
-        if (!modulos.includes("beneficios"))
-            throw new Error("Módulo de benefícios não está ativo para este provedor.");
+        if (!modulos.includes("recompensas"))
+            throw new Error("Módulo de recompensas não está ativo para este provedor.");
 
         const recompensa = await this._provedorRepository.ObterRecompensaPorIdPublico(idRecompensa, Number.parseInt(codigo));
         if (!recompensa)

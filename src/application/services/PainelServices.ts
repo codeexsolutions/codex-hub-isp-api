@@ -7,7 +7,6 @@ import UploadService from "./UploadServices";
 import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
 import { anuncioEditeDto } from "../Dtos/anuncioEditeDto";
 import { beneficioModel } from "../../core/models/beneficioModel";
-import { beneficioEditeDto } from "../Dtos/beneficioEditeDto";
 import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
@@ -115,73 +114,14 @@ export default class PainelService implements IPainelServices {
         return await this._painelRepository.ExcluiBanner(idBanner, codigoProvedor)
     }
 
-    async GravarBeneficio(beneficio:beneficioModel) : Promise<beneficioModel> {
-
-        if(beneficio.file !== undefined){
-            const _upload = new UploadService()
-            beneficio.link_imagem = await _upload.UploadArquivo({
-                           codigoProvedor: beneficio.codigo_provedor_fk.toString(),
-                           file: beneficio.file?.buffer,
-                           nomeArquivo: "beneficio"+beneficio.file?.originalname,
-                           tipo: ETipoArquivo.BENEFICIO
-                       })
-        }
-        return await this._painelRepository.GravarBeneficio(beneficio);
+    // Ofertas são criadas/editadas pelo parceiro (ver ParceiroServices) — o provedor só
+    // enxerga o catálogo e ativa/desativa pra própria base.
+    async ObterCatalogoOfertas(codigoProvedor: number): Promise<beneficioModel[]> {
+        return await this._painelRepository.ObterCatalogoOfertas(codigoProvedor);
     }
 
-    async ObterBeneficios(codigoProvedor: number): Promise<beneficioModel[]> {
-        const beneficios = await this._painelRepository.ObterBeneficios(codigoProvedor);
-        if(beneficios)
-            return beneficios;
-        return [];
-    }
-
-    async EditarBeneficio(id:number, beneficioEdite:beneficioEditeDto) : Promise<beneficioModel> {
-        const beneficio = await this._painelRepository.ObterBeneficioPorId(id, beneficioEdite.codigo_provedor_fk);
-
-        if(beneficioEdite.categoria !== undefined)
-            beneficio.categoria = beneficioEdite.categoria;
-        if(beneficioEdite.parceiro !== undefined)
-            beneficio.parceiro = beneficioEdite.parceiro;
-        if(beneficioEdite.titulo !== undefined)
-            beneficio.titulo = beneficioEdite.titulo;
-        if(beneficioEdite.subtitulo !== undefined)
-            beneficio.subtitulo = beneficioEdite.subtitulo;
-        if(beneficioEdite.descricao !== undefined)
-            beneficio.descricao = beneficioEdite.descricao;
-        if(beneficioEdite.valor !== undefined)
-            beneficio.valor = beneficioEdite.valor;
-        if(beneficioEdite.parceiro_id_fk !== undefined)
-            beneficio.parceiro_id_fk = beneficioEdite.parceiro_id_fk;
-
-        if(beneficioEdite.file !== undefined){
-
-            const imagemAnterior = beneficio.link_imagem;
-            const _upload = new UploadService();
-            beneficio.link_imagem = await _upload.UploadArquivo({
-               codigoProvedor: beneficioEdite.codigo_provedor_fk.toString(),
-               file: beneficioEdite.file.buffer,
-               nomeArquivo: "beneficio",
-               tipo: ETipoArquivo.BENEFICIO
-           });
-
-            // só remove a antiga depois que a nova subiu com sucesso, e mantém
-            // apenas a última imagem enviada no storage.
-            await _upload.RemoverArquivo(imagemAnterior);
-        }
-
-        if(beneficioEdite.link !== undefined)
-            beneficio.link_acao = beneficioEdite.link;
-
-        beneficio.ativo = beneficioEdite.ativo;
-
-        const novoBeneficio = await this._painelRepository.EditarBeneficio(beneficio);
-
-        return novoBeneficio;
-    }
-
-    async ExcluirBeneficio(id:string, codigoProvedor:number) : Promise<any> {
-        return await this._painelRepository.ExcluiBeneficio(id, codigoProvedor)
+    async AtivarOferta(idBeneficio:number, codigoProvedor:number, ativo:boolean) : Promise<void> {
+        await this._painelRepository.AtivarOferta(idBeneficio, codigoProvedor, ativo);
     }
 
     async ObterMetricas(codigoProvedor:number) : Promise<metricasModel> {
@@ -315,6 +255,14 @@ export default class PainelService implements IPainelServices {
 
     async DefinirProvedorParceiro(id:number, codigoProvedorFk:number|null) : Promise<void> {
         await this._painelRepository.DefinirProvedorParceiro(id, codigoProvedorFk);
+    }
+
+    async DefinirLocalizacaoParceiro(id:number, cidade:string|null, uf:string|null) : Promise<void> {
+        await this._painelRepository.DefinirLocalizacaoParceiro(id, cidade, uf);
+    }
+
+    async DefinirContatoParceiro(id:number, endereco:string|null, contato:string|null) : Promise<void> {
+        await this._painelRepository.DefinirContatoParceiro(id, endereco, contato);
     }
 
     async ValidarCompraAdmin(idCompra:number) : Promise<compraModel> {
