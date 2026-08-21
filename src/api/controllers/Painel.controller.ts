@@ -18,6 +18,7 @@ import { anuncioEditeDto } from "../../application/Dtos/anuncioEditeDto";
 import { adminLoginDto } from "../../application/Dtos/adminLoginDto";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
+import { pixConfigModel } from "../../core/models/pixConfigModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 
@@ -469,6 +470,94 @@ export default class PainelController {
         try {
             const compra = await this._painelService.ValidarCompraAdmin(idCompra);
             return res.status(200).json({data: compra})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    // FATURAMENTO SYNK (mensalidade que o provedor paga pra Synk)
+
+    async ObterFaturamentoProvedor(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+
+        try {
+            const faturamento = await this._painelService.ObterFaturamentoProvedor(codigoProvedor);
+            return res.json({data: faturamento})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ListarFaturamentoAdmin(req:AuthRequest, res:Response){
+
+        const lista = await this._painelService.ListarFaturamentoTodos();
+        return res.json({data: lista})
+    }
+
+    async ConfigurarAssinaturaAdmin(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.params.codigoProvedor as string);
+        const valorMensalidade = Number.parseFloat(req.body?.valor_mensalidade);
+        const dataAdesao = req.body?.data_adesao as string;
+
+        try {
+            const assinatura = await this._painelService.CriarOuEditarAssinatura(codigoProvedor, valorMensalidade, dataAdesao);
+            return res.status(200).json({data: assinatura})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async MarcarFaturaPagaAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            const fatura = await this._painelService.MarcarFaturaPaga(id);
+            return res.status(200).json({data: fatura})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async MarcarFaturaCanceladaAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            const fatura = await this._painelService.MarcarFaturaCancelada(id);
+            return res.status(200).json({data: fatura})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ObterReciboAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            const recibo = await this._painelService.ObterRecibo(id);
+            return res.json({data: recibo})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ObterConfigPixAdmin(req:AuthRequest, res:Response){
+
+        const config = await this._painelService.ObterConfigPix();
+        return res.json({data: config})
+    }
+
+    async DefinirConfigPixAdmin(req:AuthRequest, res:Response){
+
+        const config = req.body as pixConfigModel;
+
+        try {
+            const atualizado = await this._painelService.DefinirConfigPix(config);
+            return res.status(200).json({data: atualizado})
         } catch (error: any) {
             return res.status(400).json({ message: error.message })
         }

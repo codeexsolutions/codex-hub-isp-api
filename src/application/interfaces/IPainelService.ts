@@ -8,6 +8,9 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
+import { assinaturaModel } from "../../core/models/assinaturaModel";
+import { faturaModel } from "../../core/models/faturaModel";
+import { pixConfigModel } from "../../core/models/pixConfigModel";
 
 export default interface IPainelServices {
 
@@ -65,6 +68,30 @@ export default interface IPainelServices {
     DefinirLocalizacaoParceiro(id:number, cidade:string|null, uf:string|null) : Promise<void>
     DefinirContatoParceiro(id:number, endereco:string|null, contato:string|null) : Promise<void>
     ValidarCompraAdmin(idCompra:number) : Promise<compraModel>
+
+    // FATURAMENTO SYNK (mensalidade do provedor pra Synk)
+    ObterFaturamentoProvedor(codigoProvedor:number) : Promise<{
+        assinatura: assinaturaModel|null;
+        faturas: faturaModel[];
+        modulosAtivos: string[];
+        pixCopiaCola: string|null;
+        pixQrCode: string|null;
+    }>
+    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string) : Promise<assinaturaModel>
+    ListarFaturamentoTodos() : Promise<any[]>
+    MarcarFaturaPaga(idFatura:number) : Promise<faturaModel>
+    MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel>
+    ObterRecibo(idFatura:number) : Promise<{
+        numero:string;
+        provedorNome:string;
+        provedorCnpj?:string;
+        competencia:string;
+        valor:number;
+        pagoEm:string|null|undefined;
+    }>
+    ObterConfigPix() : Promise<pixConfigModel>
+    DefinirConfigPix(config:pixConfigModel) : Promise<pixConfigModel>
+    VerificarInadimplenciaTodos() : Promise<number>
 }
 
 export type metricasModel = {

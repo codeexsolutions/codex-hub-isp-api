@@ -13,6 +13,11 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
+import { assinaturaModel } from "../../core/models/assinaturaModel";
+import { faturaModel } from "../../core/models/faturaModel";
+import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
+import * as QRCode from "qrcode";
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -270,6 +275,93 @@ export default class PainelService implements IPainelServices {
         if(!compra)
             throw new Error("Compra não encontrada ou já processada.");
         return compra;
+    }
+
+    // FATURAMENTO SYNK (mensalidade que o provedor paga pra Synk)
+
+    async ObterFaturamentoProvedor(codigoProvedor:number) {
+        await this._painelRepository.GarantirFaturaDoMes(codigoProvedor);
+
+        const [assinatura, faturas, modulosAtivos, pixConfig] = await Promise.all([
+            this._painelRepository.ObterAssinatura(codigoProvedor),
+            this._painelRepository.ObterFaturasProvedor(codigoProvedor),
+            this._painelRepository.ObterModulosAtivos(codigoProvedor),
+            this._painelRepository.ObterConfigPix(),
+        ]);
+
+        const faturaAberta = faturas.find((f) => f.status === "pendente");
+        let pixCopiaCola: string | null = null;
+        let pixQrCode: string | null = null;
+        if (faturaAberta && pixConfig?.chave_pix) {
+            pixCopiaCola = gerarPixCopiaCola({
+                chave: pixConfig.chave_pix,
+                nomeRecebedor: pixConfig.nome_recebedor,
+                cidade: pixConfig.cidade,
+                valor: Number(faturaAberta.valor),
+                txid: `FAT${faturaAberta.id}`,
+            });
+            // gera a imagem do QR code localmente a partir do próprio texto do PIX —
+            // sem chamada de rede, sem serviço externo.
+            pixQrCode = await QRCode.toDataURL(pixCopiaCola, { margin: 1, width: 280 });
+        }
+
+        return { assinatura, faturas, modulosAtivos, pixCopiaCola, pixQrCode };
+    }
+
+    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string) : Promise<assinaturaModel> {
+        if (!(valorMensalidade > 0))
+            throw new Error("Informe um valor de mensalidade válido.");
+        if (!dataAdesao)
+            throw new Error("Informe a data de adesão.");
+
+        const assinatura = await this._painelRepository.CriarOuEditarAssinatura(codigoProvedor, valorMensalidade, dataAdesao);
+        await this._painelRepository.GarantirFaturaDoMes(codigoProvedor);
+        return assinatura;
+    }
+
+    async ListarFaturamentoTodos() : Promise<any[]> {
+        await this._painelRepository.GarantirFaturasTodos();
+        return await this._painelRepository.ListarFaturamentoTodos();
+    }
+
+    async MarcarFaturaPaga(idFatura:number) : Promise<faturaModel> {
+        return await this._painelRepository.MarcarFaturaPaga(idFatura);
+    }
+
+    async MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel> {
+        return await this._painelRepository.MarcarFaturaCancelada(idFatura);
+    }
+
+    async ObterRecibo(idFatura:number) {
+        const fatura = await this._painelRepository.ObterFaturaComProvedor(idFatura);
+        if (!fatura)
+            throw new Error("Fatura não encontrada.");
+        if (fatura.status !== "pago")
+            throw new Error("Só é possível gerar recibo de faturas pagas.");
+
+        return {
+            numero: `SYNK-${String(fatura.id).padStart(6, "0")}`,
+            provedorNome: fatura.provedor_nome ?? "",
+            provedorCnpj: fatura.provedor_cnpj,
+            competencia: fatura.competencia,
+            valor: Number(fatura.valor),
+            pagoEm: fatura.pago_em,
+        };
+    }
+
+    async ObterConfigPix() : Promise<pixConfigModel> {
+        return await this._painelRepository.ObterConfigPix();
+    }
+
+    async DefinirConfigPix(config:pixConfigModel) : Promise<pixConfigModel> {
+        if (!config.chave_pix?.trim())
+            throw new Error("Informe a chave PIX.");
+        return await this._painelRepository.DefinirConfigPix(config);
+    }
+
+    async VerificarInadimplenciaTodos() : Promise<number> {
+        await this._painelRepository.GarantirFaturasTodos();
+        return await this._painelRepository.VerificarInadimplenciaTodos();
     }
 
 }

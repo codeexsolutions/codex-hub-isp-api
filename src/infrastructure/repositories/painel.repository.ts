@@ -11,6 +11,10 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
+import { assinaturaModel } from "../../core/models/assinaturaModel";
+import { faturaModel } from "../../core/models/faturaModel";
+import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { estatus } from "../../common/enuns/estatus";
 
 @injectable()
 export default class PainelRepository implements IPainelRepository {
@@ -448,5 +452,150 @@ export default class PainelRepository implements IPainelRepository {
         } catch { /* pontos são bônus — não bloqueia a validação */ }
 
         return compra;
+    }
+
+    // FATURAMENTO SYNK (mensalidade que o provedor paga pra Synk — não confundir com
+    // a comissão de vendas de benefícios, que é outro fluxo já existente).
+
+    async ObterAssinatura(codigoProvedor:number) : Promise<assinaturaModel|null> {
+        const select = `SELECT * FROM provedor_assinaturas WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<assinaturaModel>(select, [codigoProvedor]);
+        return result[0] ?? null;
+    }
+
+    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string) : Promise<assinaturaModel> {
+        const upsert = `INSERT INTO provedor_assinaturas (codigo_provedor_fk, valor_mensalidade, data_adesao, ativo)
+            VALUES ($1, $2, $3, true)
+            ON CONFLICT (codigo_provedor_fk)
+            DO UPDATE SET valor_mensalidade = EXCLUDED.valor_mensalidade, data_adesao = EXCLUDED.data_adesao
+            RETURNING *;`;
+        const result = await this._db.Execulte<assinaturaModel>(upsert, [codigoProvedor, valorMensalidade, dataAdesao]);
+        return result[0];
+    }
+
+    // dia de vencimento = dia da data de adesão, capado em 28 pra não ter problema com
+    // meses curtos (fevereiro). Tudo em UTC pra não dar drift de fuso na conversão de data.
+    private calcularCompetenciaEVencimento(dataAdesao:string) : { competencia:string; vencimento:string } {
+        const hoje = new Date();
+        const ano = hoje.getUTCFullYear();
+        const mes = hoje.getUTCMonth();
+        const diaAdesao = new Date(dataAdesao).getUTCDate();
+        const diaVencimento = Math.min(diaAdesao, 28);
+        const competencia = new Date(Date.UTC(ano, mes, 1)).toISOString().slice(0, 10);
+        const vencimento = new Date(Date.UTC(ano, mes, diaVencimento)).toISOString().slice(0, 10);
+        return { competencia, vencimento };
+    }
+
+    async GarantirFaturaDoMes(codigoProvedor:number) : Promise<void> {
+        const assinatura = await this.ObterAssinatura(codigoProvedor);
+        if (!assinatura || !assinatura.ativo) return;
+
+        const { competencia, vencimento } = this.calcularCompetenciaEVencimento(assinatura.data_adesao);
+
+        const insert = `INSERT INTO provedor_faturas (codigo_provedor_fk, competencia, vencimento, valor)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (codigo_provedor_fk, competencia) DO NOTHING;`;
+        await this._db.Execulte<any>(insert, [codigoProvedor, competencia, vencimento, assinatura.valor_mensalidade]);
+    }
+
+    async GarantirFaturasTodos() : Promise<void> {
+        const select = `SELECT codigo_provedor_fk FROM provedor_assinaturas WHERE ativo = true;`;
+        const assinaturas = await this._db.Execulte<{ codigo_provedor_fk:number }>(select, []);
+        for (const row of assinaturas) {
+            await this.GarantirFaturaDoMes(row.codigo_provedor_fk);
+        }
+    }
+
+    async ObterFaturasProvedor(codigoProvedor:number) : Promise<faturaModel[]> {
+        const select = `SELECT * FROM provedor_faturas WHERE codigo_provedor_fk = $1 ORDER BY competencia DESC;`;
+        return await this._db.Execulte<faturaModel>(select, [codigoProvedor]);
+    }
+
+    async ObterFaturaComProvedor(idFatura:number) : Promise<faturaModel|null> {
+        const select = `
+            SELECT pf.*, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome, p.cnpj AS provedor_cnpj
+            FROM provedor_faturas pf
+            JOIN provedores p ON p.codigo_provedor = pf.codigo_provedor_fk
+            WHERE pf.id = $1;
+        `;
+        const result = await this._db.Execulte<faturaModel>(select, [idFatura]);
+        return result[0] ?? null;
+    }
+
+    // só reativa se não sobrar nenhuma outra fatura vencida há 7+ dias — evita reverter
+    // uma inativação manual do admin por outro motivo quando só uma de várias for paga.
+    private async ReativarSeQuitado(codigoProvedor:number) : Promise<void> {
+        const select = `SELECT 1 FROM provedor_faturas
+            WHERE codigo_provedor_fk = $1 AND status = 'pendente' AND vencimento < (CURRENT_DATE - INTERVAL '7 days')
+            LIMIT 1;`;
+        const pendentes = await this._db.Execulte<any>(select, [codigoProvedor]);
+        if (pendentes.length === 0) {
+            await this.DefinirStatusProvedor(codigoProvedor, estatus.ATIVO);
+        }
+    }
+
+    async MarcarFaturaPaga(idFatura:number) : Promise<faturaModel> {
+        const update = `UPDATE provedor_faturas SET status = 'pago', pago_em = now() WHERE id = $1 RETURNING *;`;
+        const result = await this._db.Execulte<faturaModel>(update, [idFatura]);
+        const fatura = result[0];
+        if (fatura) await this.ReativarSeQuitado(fatura.codigo_provedor_fk);
+        return fatura;
+    }
+
+    async MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel> {
+        const update = `UPDATE provedor_faturas SET status = 'cancelado' WHERE id = $1 RETURNING *;`;
+        const result = await this._db.Execulte<faturaModel>(update, [idFatura]);
+        const fatura = result[0];
+        if (fatura) await this.ReativarSeQuitado(fatura.codigo_provedor_fk);
+        return fatura;
+    }
+
+    async VerificarInadimplenciaTodos() : Promise<number> {
+        const select = `
+            SELECT DISTINCT pf.codigo_provedor_fk
+            FROM provedor_faturas pf
+            JOIN provedores p ON p.codigo_provedor = pf.codigo_provedor_fk
+            WHERE pf.status = 'pendente'
+              AND pf.vencimento < (CURRENT_DATE - INTERVAL '7 days')
+              AND p.status = $1;
+        `;
+        const inadimplentes = await this._db.Execulte<{ codigo_provedor_fk:number }>(select, [estatus.ATIVO]);
+        for (const row of inadimplentes) {
+            await this.DefinirStatusProvedor(row.codigo_provedor_fk, estatus.INATIVO);
+        }
+        return inadimplentes.length;
+    }
+
+    async ListarFaturamentoTodos() : Promise<any[]> {
+        const select = `
+            SELECT p.codigo_provedor, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome,
+                   p.cnpj AS provedor_cnpj, p.status AS provedor_status,
+                   pa.id AS assinatura_id, pa.valor_mensalidade, pa.data_adesao,
+                   uf.id AS fatura_id, uf.competencia, uf.vencimento, uf.valor AS fatura_valor,
+                   uf.status AS fatura_status, uf.pago_em
+            FROM provedores p
+            LEFT JOIN provedor_assinaturas pa ON pa.codigo_provedor_fk = p.codigo_provedor
+            LEFT JOIN LATERAL (
+                SELECT * FROM provedor_faturas pf
+                WHERE pf.codigo_provedor_fk = p.codigo_provedor
+                ORDER BY pf.competencia DESC
+                LIMIT 1
+            ) uf ON true
+            ORDER BY provedor_nome ASC;
+        `;
+        return await this._db.Execulte<any>(select, []);
+    }
+
+    async ObterConfigPix() : Promise<pixConfigModel> {
+        const select = `SELECT chave_pix, nome_recebedor, cidade FROM synk_pix_config WHERE id = 1;`;
+        const result = await this._db.Execulte<pixConfigModel>(select, []);
+        return result[0];
+    }
+
+    async DefinirConfigPix(config:pixConfigModel) : Promise<pixConfigModel> {
+        const update = `UPDATE synk_pix_config SET chave_pix = $1, nome_recebedor = $2, cidade = $3, atualizado_em = now()
+            WHERE id = 1 RETURNING chave_pix, nome_recebedor, cidade;`;
+        const result = await this._db.Execulte<pixConfigModel>(update, [config.chave_pix, config.nome_recebedor, config.cidade]);
+        return result[0];
     }
 }

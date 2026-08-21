@@ -80,4 +80,14 @@ painelRouter.patch('/admin/parceiros/:id/localizacao', authMiddleware, adminMidd
 painelRouter.patch('/admin/parceiros/:id/contato', authMiddleware, adminMiddleware, painelController.DefinirContatoParceiroAdmin.bind(painelController));
 painelRouter.patch('/admin/compras/:id/validar', authMiddleware, adminMiddleware, painelController.ValidarCompraAdmin.bind(painelController));
 
+// FATURAMENTO SYNK (mensalidade que o provedor paga pra Synk)
+painelRouter.get('/provedor/faturamento', authMiddleware, painelController.ObterFaturamentoProvedor.bind(painelController));
+painelRouter.get('/admin/faturamento', authMiddleware, adminMiddleware, painelController.ListarFaturamentoAdmin.bind(painelController));
+painelRouter.post('/admin/faturamento/:codigoProvedor/assinatura', authMiddleware, adminMiddleware, painelController.ConfigurarAssinaturaAdmin.bind(painelController));
+painelRouter.patch('/admin/faturas/:id/pagar', authMiddleware, adminMiddleware, painelController.MarcarFaturaPagaAdmin.bind(painelController));
+painelRouter.patch('/admin/faturas/:id/cancelar', authMiddleware, adminMiddleware, painelController.MarcarFaturaCanceladaAdmin.bind(painelController));
+painelRouter.get('/admin/faturas/:id/recibo', authMiddleware, adminMiddleware, painelController.ObterReciboAdmin.bind(painelController));
+painelRouter.get('/admin/config-pix', authMiddleware, adminMiddleware, painelController.ObterConfigPixAdmin.bind(painelController));
+painelRouter.put('/admin/config-pix', authMiddleware, adminMiddleware, painelController.DefinirConfigPixAdmin.bind(painelController));
+
 export default painelRouter;
