@@ -62,10 +62,43 @@ export default class NotificationsController {
 
         const codigoProvedor = req.usuario?.codigoProvedor as string;
         const data = req.body as notificacaoDto
-        
+
         await this._service.Notificar(codigoProvedor, data);
 
         return res.status(201).json({})
 
+    }
+
+    // CENTRAL DE NOTIFICAÇÕES DO CLIENTE (sino do app)
+
+    async ListarMinhasNotificacoes(req: Request, res: Response){
+
+        const { cpf, codigoProvedor } = req.body;
+        const notificacoes = await this._service.ListarNotificacoesCliente(cpf, codigoProvedor);
+        return res.json({ data: notificacoes });
+    }
+
+    async ContarNaoLidas(req: Request, res: Response){
+
+        const { cpf, codigoProvedor } = req.body;
+        const total = await this._service.ContarNotificacoesNaoLidas(cpf, codigoProvedor);
+        return res.json({ data: total });
+    }
+
+    async MarcarLida(req: Request, res: Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const { cpf, codigoProvedor } = req.body;
+        await this._service.MarcarNotificacaoLida(id, cpf, codigoProvedor);
+        return res.json({});
+    }
+
+    async ExcluirNotificacao(req: Request, res: Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const cpf = req.query.cpf as string;
+        const codigoProvedor = req.query.codigoProvedor as string;
+        await this._service.ExcluirNotificacaoCliente(id, cpf, codigoProvedor);
+        return res.json({});
     }
 }

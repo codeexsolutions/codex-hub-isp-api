@@ -12,4 +12,11 @@ notificationRoute.post('/notificar', authMiddleware, controller.EnviarNotificaca
 notificationRoute.get('/buscarTodos', authMiddleware, controller.OberTodos.bind(controller));
 notificationRoute.get('/buscarPorCpf', authMiddleware, controller.EnviarNotificacao.bind(controller));
 
+// CENTRAL DE NOTIFICAÇÕES DO CLIENTE (sino do app) — sem authMiddleware, mesmo
+// padrão das demais rotas de cliente (identidade vem de cpf+codigoProvedor)
+notificationRoute.post('/minhas', controller.ListarMinhasNotificacoes.bind(controller));
+notificationRoute.post('/nao-lidas', controller.ContarNaoLidas.bind(controller));
+notificationRoute.patch('/:id/lida', controller.MarcarLida.bind(controller));
+notificationRoute.delete('/:id', controller.ExcluirNotificacao.bind(controller));
+
 export default notificationRoute;

@@ -5,15 +5,23 @@ import IPushNotificationRepository from "../../core/interfaces/IPushNotification
 import PushSubscription  from "../../core/domains/PushSubscription";
 import { WebPushProvider } from "../../infrastructure/notification/provider";
 import IProvedorRepository from "../../core/interfaces/IProvedorRepository";
+import INotificacaoClienteRepository from "../../core/interfaces/INotificacaoClienteRepository";
+import { notificacaoClienteModel } from "../../core/models/notificacaoClienteModel";
 
 @injectable()
 export default class PushNotificationServices implements IPushNotificationServices {
 
     private readonly _pushRepository:IPushNotificationRepository;
     private readonly _provedorRepository:IProvedorRepository;
-    constructor(@inject("IPushNotificationRepository")repository:IPushNotificationRepository, @inject("IProvedorRepository")provedorRepository:IProvedorRepository){
+    private readonly _notificacaoClienteRepository:INotificacaoClienteRepository;
+    constructor(
+        @inject("IPushNotificationRepository")repository:IPushNotificationRepository,
+        @inject("IProvedorRepository")provedorRepository:IProvedorRepository,
+        @inject("INotificacaoClienteRepository")notificacaoClienteRepository:INotificacaoClienteRepository
+    ){
         this._pushRepository = repository;
         this._provedorRepository = provedorRepository;
+        this._notificacaoClienteRepository = notificacaoClienteRepository;
     }
 
     async Salvar(subscription: pushSubscriptionDto): Promise<string> {
@@ -73,20 +81,53 @@ export default class PushNotificationServices implements IPushNotificationServic
     }
 
     async Notificar(codigoProvedor:string, payload:notificacaoDto) : Promise<void> {
-        
-        
         const subscriptions = await this.BuscarTodos(codigoProvedor);
-        const webPush = new WebPushProvider()        
-            
+        await this.EnviarParaSubscricoes(subscriptions, codigoProvedor, payload);
+    }
+
+    async NotificarCliente(cpf:string, codigoProvedor:string, payload:notificacaoDto) : Promise<void> {
+        const subscriptions = await this.BuscarPorCpf(cpf, codigoProvedor);
+        await this.EnviarParaSubscricoes(subscriptions, codigoProvedor, payload);
+    }
+
+    async ListarNotificacoesCliente(cpf: string, codigoProvedor: string): Promise<notificacaoClienteModel[]> {
+        return await this._notificacaoClienteRepository.Listar(cpf, codigoProvedor);
+    }
+
+    async ContarNotificacoesNaoLidas(cpf: string, codigoProvedor: string): Promise<number> {
+        return await this._notificacaoClienteRepository.ContarNaoLidas(cpf, codigoProvedor);
+    }
+
+    async MarcarNotificacaoLida(id: number, cpf: string, codigoProvedor: string): Promise<void> {
+        await this._notificacaoClienteRepository.MarcarLida(id, cpf, codigoProvedor);
+    }
+
+    async ExcluirNotificacaoCliente(id: number, cpf: string, codigoProvedor: string): Promise<void> {
+        await this._notificacaoClienteRepository.Excluir(id, cpf, codigoProvedor);
+    }
+
+    private async EnviarParaSubscricoes(subscriptions:pushSubscriptionDto[], codigoProvedor:string, payload:notificacaoDto) : Promise<void> {
+
+        const webPush = new WebPushProvider()
+
         const result = await this._provedorRepository.ObterTema(codigoProvedor);
         if(result){
-            
+
             payload.title = payload.title ?? result.nome;
             payload.icon = result.icone512 ?? undefined;
             payload.badge = result.icone192 ?? result.icone512 ?? undefined;
             payload.image = result.icone512 ?? undefined;
             payload.data = result.icone192 ?? undefined;
-        }            
+        }
+
+        const cpfsUnicos = [...new Set(subscriptions.map((sub) => sub.cpf))];
+        for (const cpf of cpfsUnicos) {
+            try {
+                await this._notificacaoClienteRepository.Salvar(cpf, codigoProvedor, payload.title, payload.body);
+            } catch (error) {
+                console.error("Erro ao salvar notificação do cliente:", error);
+            }
+        }
 
         for (const sub of subscriptions) {
             try {
@@ -109,5 +150,5 @@ export default class PushNotificationServices implements IPushNotificationServic
         }
 
     }
-    
+
 }

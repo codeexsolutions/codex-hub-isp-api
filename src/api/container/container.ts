@@ -27,6 +27,12 @@ import IParceiroRepository from "../../core/interfaces/IParceiroRepository";
 import ParceiroRepository from "../../infrastructure/repositories/parceiro.repository";
 import IParceiroServices from "../../application/interfaces/IParceiroServices";
 import ParceiroServices from "../../application/services/ParceiroServices";
+import INotificacaoFaturaRepository from "../../core/interfaces/INotificacaoFaturaRepository";
+import NotificacaoFaturaRepository from "../../infrastructure/repositories/NotificacaoFaturaRepository";
+import INotificacaoFaturaServices from "../../application/interfaces/INotificacaoFaturaServices";
+import NotificacaoFaturaServices from "../../application/services/NotificacaoFaturaServices";
+import INotificacaoClienteRepository from "../../core/interfaces/INotificacaoClienteRepository";
+import NotificacaoClienteRepository from "../../infrastructure/repositories/NotificacaoClienteRepository";
 
 
 container.registerSingleton<IDBContext>("IDBContext", DBContext);
@@ -43,3 +49,6 @@ container.registerSingleton<IPushNotificationRepository>("IPushNotificationRepos
 container.registerSingleton<IPushNotificationServices>("IPushNotificationServices", PushNotificationServices);
 container.registerSingleton<IParceiroRepository>("IParceiroRepository", ParceiroRepository);
 container.registerSingleton<IParceiroServices>("IParceiroServices", ParceiroServices);
+container.registerSingleton<INotificacaoFaturaRepository>("INotificacaoFaturaRepository", NotificacaoFaturaRepository);
+container.registerSingleton<INotificacaoFaturaServices>("INotificacaoFaturaServices", NotificacaoFaturaServices);
+container.registerSingleton<INotificacaoClienteRepository>("INotificacaoClienteRepository", NotificacaoClienteRepository);
