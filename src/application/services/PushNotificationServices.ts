@@ -90,6 +90,12 @@ export default class PushNotificationServices implements IPushNotificationServic
         await this.EnviarParaSubscricoes(subscriptions, codigoProvedor, payload);
     }
 
+    async NotificarClientes(cpfs:string[], codigoProvedor:string, payload:notificacaoDto) : Promise<void> {
+        const listas = await Promise.all(cpfs.map((cpf) => this.BuscarPorCpf(cpf, codigoProvedor)));
+        const subscriptions = listas.flat();
+        await this.EnviarParaSubscricoes(subscriptions, codigoProvedor, payload);
+    }
+
     async ListarNotificacoesCliente(cpf: string, codigoProvedor: string): Promise<notificacaoClienteModel[]> {
         return await this._notificacaoClienteRepository.Listar(cpf, codigoProvedor);
     }

@@ -9,6 +9,7 @@ export default interface IPushNotificationServices {
     Remover(endpoint: string, codigoProvedor:string): Promise<void>
     Notificar(codigoProvedor:string, payload:notificacaoDto)  : Promise<void> ;
     NotificarCliente(cpf:string, codigoProvedor:string, payload:notificacaoDto) : Promise<void>;
+    NotificarClientes(cpfs:string[], codigoProvedor:string, payload:notificacaoDto) : Promise<void>;
 
     // CENTRAL DE NOTIFICAÇÕES DO CLIENTE (sino do app)
     ListarNotificacoesCliente(cpf:string, codigoProvedor:string) : Promise<notificacaoClienteModel[]>;
