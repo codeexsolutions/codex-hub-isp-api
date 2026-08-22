@@ -137,12 +137,15 @@ export default class ParceiroRepository implements IParceiroRepository {
     async ExcluirOferta(id:string, parceiroId:number) : Promise<{ removido:boolean }> {
         const usoCount = `SELECT
             (SELECT count(*) FROM beneficio_cliques WHERE beneficio_id = $1) +
-            (SELECT count(*) FROM beneficio_compras WHERE beneficio_id = $1) AS total`;
+            (SELECT count(*) FROM beneficio_compras WHERE beneficio_id = $1) +
+            (SELECT count(*) FROM beneficio_provedores WHERE beneficio_id = $1) AS total`;
         const uso = await this._db.Execulte<{ total:string }>(usoCount, [id]);
         const temHistorico = Number.parseInt(uso[0]?.total ?? "0") > 0;
 
         if (temHistorico) {
-            // preserva histórico (relatórios/comissão) — só desativa a oferta.
+            // preserva histórico (relatórios/comissão) e as ativações de provedor — só
+            // desativa a oferta. Excluir de verdade aqui violaria a FK de
+            // beneficio_provedores pra quem já tiver ativado essa oferta alguma vez.
             const desativar = `UPDATE marketing_beneficios SET ativo = false WHERE id = $1 AND parceiro_id_fk = $2`;
             await this._db.Execulte<any>(desativar, [id, parceiroId]);
             return { removido: false };
