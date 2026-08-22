@@ -107,6 +107,14 @@ export default class ProvedorController{
         return res.json({data: clube})
     }
 
+    async ObterIxcAssuntos(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string
+        const assuntos = await this._provedorService.ObterIxcAssuntos(codigoProvedor);
+
+        return res.json({data: assuntos})
+    }
+
     async RegistrarCliqueBeneficio(req:Request, res:Response){
 
         const idBeneficio = Number.parseInt(req.params.id as string);

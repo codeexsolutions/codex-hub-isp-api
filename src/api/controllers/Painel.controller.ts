@@ -346,6 +346,83 @@ export default class PainelController {
         }
     }
 
+    async ObterIxcOsConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const config = await this._painelService.ObterIxcOsConfig(Number.parseInt(codigoProvedor));
+
+        return res.json({data: config})
+    }
+
+    async DefinirIxcOsConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { id_assunto, id_filial, setor, id_evento_mensagem } = req.body;
+
+        try {
+            const config = await this._painelService.DefinirIxcOsConfig(Number.parseInt(codigoProvedor), {
+                id_assunto: id_assunto ? Number.parseInt(id_assunto) : null,
+                id_filial: id_filial ? Number.parseInt(id_filial) : null,
+                setor: setor ? Number.parseInt(setor) : null,
+                id_evento_mensagem: id_evento_mensagem ? Number.parseInt(id_evento_mensagem) : null,
+            });
+            return res.json({data: config})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ListarIxcAssuntosProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const assuntos = await this._painelService.ListarIxcAssuntos(Number.parseInt(codigoProvedor));
+
+        return res.json({data: assuntos})
+    }
+
+    async CriarIxcAssuntoProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { nome, id_assunto_ixc } = req.body;
+
+        try {
+            const assunto = await this._painelService.CriarIxcAssunto(Number.parseInt(codigoProvedor), nome, Number.parseInt(id_assunto_ixc));
+            return res.status(201).json({data: assunto})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ExcluirIxcAssuntoProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const id = Number.parseInt(req.params.id as string);
+        await this._painelService.ExcluirIxcAssunto(id, Number.parseInt(codigoProvedor));
+
+        return res.json({})
+    }
+
+    async ObterIxcContratoConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const config = await this._painelService.ObterIxcContratoConfig(Number.parseInt(codigoProvedor));
+
+        return res.json({data: config})
+    }
+
+    async DefinirIxcContratoConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { resource_imprimir } = req.body;
+
+        try {
+            const config = await this._painelService.DefinirIxcContratoConfig(Number.parseInt(codigoProvedor), resource_imprimir);
+            return res.json({data: config})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     async ObterCompras(req:AuthRequest, res:Response){
 
         const codigoProvedor = req.usuario?.codigoProvedor as string

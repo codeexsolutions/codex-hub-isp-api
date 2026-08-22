@@ -11,6 +11,7 @@ import { recompensaModel } from "../models/recompensaModel";
 import { extratoPontosModel } from "../models/extratoPontosModel";
 import { parceiroModel } from "../models/parceiroModel";
 import { homeConfigModel } from "../models/homeConfigModel";
+import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { atendimentoModel } from "../models/atendimentoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 
@@ -25,6 +26,7 @@ export default interface IProvedorRepository{
     ObterHomeConfig(codigo:string) : Promise<homeConfigModel>;
     ObterAtendimento(codigo:string) : Promise<atendimentoModel>;
     ObterClubeBeneficios(codigo:string) : Promise<clubeBeneficiosModel>;
+    ObterIxcAssuntos(codigo:string) : Promise<ixcAssuntoModel[]>;
     RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void>;
     ObterBeneficioPorId(idBeneficio:number, codigoProvedor:number) : Promise<beneficioModel>;
     ObterConfigComissao() : Promise<configComissaoModel>;

@@ -3,12 +3,15 @@ export type chamadoDto = {
     protocolo: string,
     descricao: string,
     status: string,
-    respostasStatus: number
+    respostasStatus: number,
+    solucao?: string
 }
 
 export type abrirChamadoRequest = {
     gerenciador:string;
     token:string;
+    cpfCnpj?:string;
+    codigoProvedor?:string;
     payload:object;
 }
 
@@ -17,4 +20,5 @@ export type payload = {
     categoria:string;
     descricao:string;
     dataAbertura: string;
+    idAssunto?:number;
 }

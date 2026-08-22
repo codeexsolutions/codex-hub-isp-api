@@ -88,6 +88,25 @@ export default class ClienteController {
 
         const data = req.body;
 
+        if (data.gerenciador === eGerenciador.IXCSOFT.toString()) {
+            if (!data.idContrato) {
+                const retorno: retornoPadrao<string> = {
+                    statusCode: 400,
+                    message: "Contrato indisponível",
+                    data: "Contrato não identificado."
+                }
+                return res.status(400).json(retorno);
+            }
+
+            const link = `${req.protocol}://${req.get("host")}/v1/cliente/contrato/pdf?gerenciador=${eGerenciador.IXCSOFT}&codigoProvedor=${encodeURIComponent(data.codigoProvedor)}&idContrato=${encodeURIComponent(data.idContrato)}`;
+            const retorno: retornoPadrao<{ link:string }> = {
+                statusCode: 200,
+                message: "Contrato "+ data.gerenciador,
+                data: { link }
+            }
+            return res.json(retorno);
+        }
+
         if(data.gerenciador !== eGerenciador.RECEITANET){
             const retorno: retornoPadrao<string> = {
                 statusCode: 400,
@@ -123,6 +142,20 @@ export default class ClienteController {
     // binário em vez de um link) — usada como href quando ObterContrato não
     // recebe um link pronto do gerenciador.
     async ObterContratoPdf(req:Request, res:Response){
+
+        if (req.query.gerenciador === eGerenciador.IXCSOFT.toString()) {
+            const codigoProvedor = req.query.codigoProvedor as string;
+            const idContrato = Number.parseInt(req.query.idContrato as string);
+
+            try {
+                const buffer = await this._ixcSoftService.ObterContratoPdf(idContrato, codigoProvedor);
+                res.set("Content-Type", "application/pdf");
+                res.set("Content-Disposition", "inline; filename=contrato.pdf");
+                return res.status(200).send(buffer);
+            } catch (error:any) {
+                return res.status(500).json({ statusCode: 500, message: "Contrato", data: error.message });
+            }
+        }
 
         const token = req.query.token as string;
 

@@ -10,6 +10,7 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 
@@ -25,6 +26,7 @@ export default interface IProvedorServices {
     ObterHomeConfig(codigo:string) : Promise<homeConfigModel>;
     ObterAtendimento(codigo:string) : Promise<atendimentoModel>;
     ObterClubeBeneficios(codigo:string) : Promise<clubeBeneficiosModel>;
+    ObterIxcAssuntos(codigo:string) : Promise<ixcAssuntoModel[]>;
     RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void> ;
     ComprarBeneficio(idBeneficio:number, codigoProvedor:number, clienteNome:string, clienteCpfCnpj:string) : Promise<compraModel> ;
     ObterMinhasCompras(codigoProvedor:string, cpfCnpj:string) : Promise<compraModel[]> ;

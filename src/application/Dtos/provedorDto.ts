@@ -23,6 +23,7 @@ export type temaDto = {
     icon192:string;
     icon512:string;
     maskable:string;
+    gerenciador?:string;
 }
 
 export type provedorPainelDto = {

@@ -14,6 +14,9 @@ import { pixConfigModel } from "../models/pixConfigModel";
 import { homeConfigModel } from "../models/homeConfigModel";
 import { atendimentoModel } from "../models/atendimentoModel";
 import { comissaoFaturaModel } from "../models/comissaoFaturaModel";
+import { ixcOsConfigModel } from "../models/ixcOsConfigModel";
+import { ixcContratoConfigModel } from "../models/ixcContratoConfigModel";
+import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 
 export default interface IPainelRepository {
@@ -117,4 +120,17 @@ export default interface IPainelRepository {
     ListarFaturasComissaoTodos() : Promise<any[]>
     MarcarFaturaComissaoPaga(id:number) : Promise<comissaoFaturaModel>
     MarcarFaturaComissaoCancelada(id:number) : Promise<comissaoFaturaModel>
+
+    // ORDEM DE SERVIÇO IXC (config de id_filial/setor/id_evento)
+    ObterIxcOsConfig(codigoProvedor:number) : Promise<ixcOsConfigModel>
+    DefinirIxcOsConfig(codigoProvedor:number, dados:ixcOsConfigModel) : Promise<ixcOsConfigModel>
+
+    // ASSUNTOS DE OS IXC (lista — o IXC tem vários, não dá pra fixar 1 só)
+    ListarIxcAssuntos(codigoProvedor:number) : Promise<ixcAssuntoModel[]>
+    CriarIxcAssunto(codigoProvedor:number, nome:string, idAssuntoIxc:number) : Promise<ixcAssuntoModel>
+    ExcluirIxcAssunto(id:number, codigoProvedor:number) : Promise<void>
+
+    // IMPRESSÃO DE CONTRATO IXC (resource do endpoint — específico por instalação)
+    ObterIxcContratoConfig(codigoProvedor:number) : Promise<ixcContratoConfigModel>
+    DefinirIxcContratoConfig(codigoProvedor:number, resourceImprimir:string) : Promise<ixcContratoConfigModel>
 }

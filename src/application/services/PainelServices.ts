@@ -21,6 +21,9 @@ import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { planoModel } from "../../core/models/planoModel";
 import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
+import { ixcOsConfigModel } from "../../core/models/ixcOsConfigModel";
+import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel";
+import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
 import * as QRCode from "qrcode";
 
@@ -386,6 +389,40 @@ export default class PainelService implements IPainelServices {
 
     async MarcarFaturaComissaoCancelada(id:number) : Promise<comissaoFaturaModel> {
         return await this._painelRepository.MarcarFaturaComissaoCancelada(id);
+    }
+
+    async ObterIxcOsConfig(codigoProvedor:number) : Promise<ixcOsConfigModel> {
+        return await this._painelRepository.ObterIxcOsConfig(codigoProvedor);
+    }
+
+    async DefinirIxcOsConfig(codigoProvedor:number, dados:ixcOsConfigModel) : Promise<ixcOsConfigModel> {
+        return await this._painelRepository.DefinirIxcOsConfig(codigoProvedor, dados);
+    }
+
+    async ListarIxcAssuntos(codigoProvedor:number) : Promise<ixcAssuntoModel[]> {
+        return await this._painelRepository.ListarIxcAssuntos(codigoProvedor);
+    }
+
+    async CriarIxcAssunto(codigoProvedor:number, nome:string, idAssuntoIxc:number) : Promise<ixcAssuntoModel> {
+        if (!nome?.trim())
+            throw new Error("Informe o nome do assunto.");
+        if (!(idAssuntoIxc > 0))
+            throw new Error("Informe o ID do assunto no IXC.");
+        return await this._painelRepository.CriarIxcAssunto(codigoProvedor, nome.trim(), idAssuntoIxc);
+    }
+
+    async ExcluirIxcAssunto(id:number, codigoProvedor:number) : Promise<void> {
+        await this._painelRepository.ExcluirIxcAssunto(id, codigoProvedor);
+    }
+
+    async ObterIxcContratoConfig(codigoProvedor:number) : Promise<ixcContratoConfigModel> {
+        return await this._painelRepository.ObterIxcContratoConfig(codigoProvedor);
+    }
+
+    async DefinirIxcContratoConfig(codigoProvedor:number, resourceImprimir:string) : Promise<ixcContratoConfigModel> {
+        if (!resourceImprimir?.trim())
+            throw new Error("Informe o recurso de impressão de contrato do IXC.");
+        return await this._painelRepository.DefinirIxcContratoConfig(codigoProvedor, resourceImprimir.trim());
     }
 
     async ListarFaturamentoTodos() : Promise<any[]> {

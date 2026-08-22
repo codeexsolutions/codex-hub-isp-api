@@ -280,6 +280,30 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
         return response.json();
     }
 
+    // PIX pra uma fatura (fn_areceber) — sem header ixcsoft:listar, é uma ação/consulta
+    // pontual, não uma listagem.
+    async ObterPix(idAreceber:number, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: "get_pix",
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`
+            },
+            body: {
+                id_areceber: String(idAreceber)
+            }
+        }
+
+        const response = await service.Requst(configReques);
+        return response.json();
+    }
+
     async ObterConsumo(idLogin: number, codigoProvedor: string): Promise<any> {
         
         const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
@@ -339,11 +363,181 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
         return response.json();
     }
 
+    // Ordem de serviço / chamado de suporte — mesmo padrão de listagem já usado
+    // pra radusuarios (webservice/v1/{recurso}, header ixcsoft:listar).
+    async ObterOS(idCliente:number, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'su_oss_chamado',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: {
+                qtype: 'su_oss_chamado.id_cliente',
+                query: idCliente,
+                oper: operadores.IGUAL,
+                page: 1,
+                rp: 100,
+                sortname: 'su_oss_chamado.id',
+                sortorder: ordenacao.MENOR_MAIOR
+            }
+        }
+
+        const response = await service.Requst(configReques);
+        return response.json();
+    }
+
+    // Abre uma OS nova (POST simples, sem o header ixcsoft:listar — é o "insert" da API).
+    // origem_endereco fixo em "M" (manual) pra não exigir endereço/cidade obrigatórios;
+    // prioridade fixa em "N" (normal), que é o padrão neutro pra abertura pelo cliente.
+    async CriarOS(dados:{ idCliente:number; idAssunto:number; idFilial:number; setor:number; mensagem:string }, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'su_oss_chamado',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`
+            },
+            body: {
+                tipo: 'C',
+                id_assunto: dados.idAssunto,
+                id_cliente: dados.idCliente,
+                id_filial: dados.idFilial,
+                origem_endereco: 'M',
+                prioridade: 'N',
+                setor: dados.setor,
+                mensagem: dados.mensagem,
+                status: 'A'
+            }
+        }
+
+        const response = await service.Requst(configReques);
+        const resultado = await response.json();
+        // a API do IXC responde HTTP 200 mesmo quando rejeita o insert (type: "error" no corpo)
+        if (resultado?.type === 'error')
+            throw new Error(resultado.message ?? 'Erro ao abrir a Ordem de Serviço no IXC.');
+        return resultado;
+    }
+
+    // Mensagens/andamento de uma OS — mesmo padrão listar do su_oss_chamado.
+    async ObterMensagensOS(idChamado:number, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'su_oss_chamado_mensagem',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: {
+                qtype: 'su_oss_chamado_mensagem.id_chamado',
+                query: idChamado,
+                oper: operadores.IGUAL,
+                page: 1,
+                rp: 200,
+                sortname: 'su_oss_chamado_mensagem.id',
+                sortorder: ordenacao.MENOR_MAIOR
+            }
+        }
+
+        const response = await service.Requst(configReques);
+        return response.json();
+    }
+
+    // Envia uma mensagem/resposta numa OS existente. tipo_cobranca e finaliza_processo
+    // fixos pro caso simples de "cliente comentou" — não fecha nem cobra nada.
+    async CriarMensagemOS(dados:{ idChamado:number; idEvento:number; mensagem:string }, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'su_oss_chamado_mensagem',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`
+            },
+            body: {
+                id_chamado: dados.idChamado,
+                id_evento: dados.idEvento,
+                mensagem: dados.mensagem,
+                status: 'A',
+                tipo_cobranca: 'NENHUM',
+                finaliza_processo: 'N'
+            }
+        }
+
+        const response = await service.Requst(configReques);
+        const resultado = await response.json();
+        // a API do IXC responde HTTP 200 mesmo quando rejeita o insert (type: "error" no corpo) —
+        // ex.: id_evento inválido/incompatível faz a mensagem "sumir" silenciosamente sem isso.
+        if (resultado?.type === 'error')
+            throw new Error(resultado.message ?? 'Erro ao enviar a mensagem no IXC.');
+        return resultado;
+    }
+
     async NewRequestService(codigoProvedor:string) : Promise<RequestService> {
         const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
         const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
         const service = new RequestService(urlBase);
         return service;
+    }
+
+    // Endpoint de impressão de contrato — o "resource" é específico por instalação
+    // IXC (ex.: cliente_contrato_imprimir_contrato_17678), por isso vem de config
+    // do provedor em vez de fixo. Resposta de sucesso é o PDF em base64 cru (sem
+    // wrapper JSON); em erro a IXC devolve JSON normal com type "error", mesmo com
+    // HTTP 200 — por isso o corpo é sempre inspecionado antes de devolver.
+    async ImprimirContrato(idContrato:number, resource:string, codigoProvedor:string) : Promise<string> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource,
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`
+            },
+            body: {
+                id: String(idContrato)
+            }
+        }
+
+        const response = await service.Requst(configReques);
+        const texto = await response.text();
+
+        try {
+            const possivelErro = JSON.parse(texto);
+            if (possivelErro?.type === 'error')
+                throw new Error(possivelErro.message ?? 'Erro ao gerar o contrato no IXC.');
+        } catch (e) {
+            if (!(e instanceof SyntaxError))
+                throw e;
+        }
+
+        return texto;
     }
 
     public Token(provedor:Provedor): string {

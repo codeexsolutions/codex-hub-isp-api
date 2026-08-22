@@ -84,6 +84,29 @@ export default class TokenController{
         
     }
 
+    async ObterTokenPorUsuarioSenha(req:Request, res:Response){
+
+        const data = req.body;
+
+        try {
+            const token = await this._tokenService.ObterTokenPorUsuarioSenha(data.codigoProvedor, data.login, data.senha);
+
+            const retorno: retornoPadrao<tokenDto> = {
+                statusCode: 200,
+                message: "Token retornado com sucesso.",
+                data: token
+            }
+            return res.json(retorno);
+        } catch (error:any) {
+            const retorno: retornoPadrao<string> = {
+                statusCode: 401,
+                message: error.message,
+                data: 'Usuário ou senha inválido.'
+            }
+            return res.status(401).json(retorno);
+        }
+    }
+
     async ObterTokenPorContrato(req:Request, res: Response) {
 
         const data = req.body;

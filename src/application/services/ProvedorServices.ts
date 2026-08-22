@@ -132,7 +132,8 @@ export default class ProvedorServices implements IProvedorServices {
                 favicon: result.favicon,
                 icon192: result.icone192,
                 icon512: result.icone512,
-                maskable: result.maskable
+                maskable: result.maskable,
+                gerenciador: result.gerenciador
             }
 
             return tema;
@@ -222,6 +223,10 @@ export default class ProvedorServices implements IProvedorServices {
 
     async ObterClubeBeneficios(codigo: string) {
         return await this._provedorRepository.ObterClubeBeneficios(codigo);
+    }
+
+    async ObterIxcAssuntos(codigo: string) {
+        return await this._provedorRepository.ObterIxcAssuntos(codigo);
     }
 
     async RegistrarCliqueBeneficio(idBeneficio: number, codigoProvedor: number): Promise<void> {

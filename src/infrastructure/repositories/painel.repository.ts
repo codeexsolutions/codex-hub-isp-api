@@ -18,6 +18,9 @@ import { pixConfigModel } from "../../core/models/pixConfigModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
+import { ixcOsConfigModel } from "../../core/models/ixcOsConfigModel";
+import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel";
+import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { estatus } from "../../common/enuns/estatus";
 
@@ -816,5 +819,76 @@ export default class PainelRepository implements IPainelRepository {
         );
 
         return result[0];
+    }
+
+    async ObterIxcOsConfig(codigoProvedor: number): Promise<ixcOsConfigModel> {
+
+        const select = `SELECT id_assunto, id_filial, setor, id_evento_mensagem FROM provedor_ixc_os_config WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<ixcOsConfigModel>(select, [codigoProvedor]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { id_assunto: null, id_filial: null, setor: null, id_evento_mensagem: null };
+    }
+
+    async DefinirIxcOsConfig(codigoProvedor: number, dados: ixcOsConfigModel): Promise<ixcOsConfigModel> {
+
+        const upsert = `INSERT INTO provedor_ixc_os_config (codigo_provedor_fk, id_assunto, id_filial, setor, id_evento_mensagem)
+            VALUES ($1,$2,$3,$4,$5)
+            ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
+                id_assunto = EXCLUDED.id_assunto, id_filial = EXCLUDED.id_filial, setor = EXCLUDED.setor,
+                id_evento_mensagem = EXCLUDED.id_evento_mensagem, atualizado_em = now()
+            RETURNING id_assunto, id_filial, setor, id_evento_mensagem;`;
+
+        const result = await this._db.Execulte<ixcOsConfigModel>(
+            upsert,
+            [codigoProvedor, dados.id_assunto || null, dados.id_filial || null, dados.setor || null, dados.id_evento_mensagem || null]
+        );
+
+        return result[0];
+    }
+
+    async ObterIxcContratoConfig(codigoProvedor: number): Promise<ixcContratoConfigModel> {
+
+        const select = `SELECT resource_imprimir FROM provedor_ixc_contrato_config WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<ixcContratoConfigModel>(select, [codigoProvedor]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { resource_imprimir: null };
+    }
+
+    async DefinirIxcContratoConfig(codigoProvedor: number, resourceImprimir: string): Promise<ixcContratoConfigModel> {
+
+        const upsert = `INSERT INTO provedor_ixc_contrato_config (codigo_provedor_fk, resource_imprimir)
+            VALUES ($1,$2)
+            ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
+                resource_imprimir = EXCLUDED.resource_imprimir, atualizado_em = now()
+            RETURNING resource_imprimir;`;
+
+        const result = await this._db.Execulte<ixcContratoConfigModel>(upsert, [codigoProvedor, resourceImprimir]);
+
+        return result[0];
+    }
+
+    async ListarIxcAssuntos(codigoProvedor: number): Promise<ixcAssuntoModel[]> {
+        const select = `SELECT id, nome, id_assunto_ixc FROM provedor_ixc_assuntos WHERE codigo_provedor_fk = $1 ORDER BY nome ASC;`;
+        return await this._db.Execulte<ixcAssuntoModel>(select, [codigoProvedor]);
+    }
+
+    async CriarIxcAssunto(codigoProvedor: number, nome: string, idAssuntoIxc: number): Promise<ixcAssuntoModel> {
+        const insert = `INSERT INTO provedor_ixc_assuntos (codigo_provedor_fk, nome, id_assunto_ixc)
+            VALUES ($1,$2,$3) RETURNING id, nome, id_assunto_ixc;`;
+        const result = await this._db.Execulte<ixcAssuntoModel>(insert, [codigoProvedor, nome, idAssuntoIxc]);
+        return result[0];
+    }
+
+    async ExcluirIxcAssunto(id: number, codigoProvedor: number): Promise<void> {
+        await this._db.Execulte<any>(
+            `DELETE FROM provedor_ixc_assuntos WHERE id = $1 AND codigo_provedor_fk = $2;`,
+            [id, codigoProvedor]
+        );
     }
 }

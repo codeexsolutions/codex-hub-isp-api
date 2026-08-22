@@ -131,6 +131,22 @@ export default class TokenService implements ITokenService {
 
     }
 
+    // TODO: falta confirmar com o provedor como validar login/senha contra o IXC (comparar
+    // radusuarios.senha retornado pela API listar? endpoint de autenticação dedicado?).
+    // Por ora sempre nega, pra não liberar acesso sem validação real.
+    async ObterTokenPorUsuarioSenha(codigoProvedor:string, login:string, senha:string): Promise<tokenDto> {
+
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+
+        if(provedor === null)
+            throw new Error("Provedor não encontrado.");
+
+        if(provedor.Gerenciador !== eGerenciador.IXCSOFT)
+            throw new Error("Login por usuário e senha só está disponível pra provedores IXC.");
+
+        throw new Error("Login por usuário e senha ainda não está disponível — em breve.");
+    }
+
     async TokenAcessoPainel(loginPainel:loginPainel): Promise<tokenPainelDto> {
         
         const provedor = await this._provedorRepository.Login(loginPainel);

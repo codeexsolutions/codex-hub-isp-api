@@ -70,6 +70,19 @@ painelRouter.put('/provedor/atendimento', authMiddleware, painelController.Defin
 painelRouter.get('/provedor/clube-beneficios', authMiddleware, painelController.ObterClubeBeneficiosProprio.bind(painelController));
 painelRouter.put('/provedor/clube-beneficios', authMiddleware, painelController.DefinirClubeBeneficiosProprio.bind(painelController));
 
+// ORDEM DE SERVIÇO IXC (config de id_assunto/id_filial/setor/id_evento)
+painelRouter.get('/provedor/ixc-os-config', authMiddleware, painelController.ObterIxcOsConfigProprio.bind(painelController));
+painelRouter.put('/provedor/ixc-os-config', authMiddleware, painelController.DefinirIxcOsConfigProprio.bind(painelController));
+
+// ASSUNTOS DE OS IXC
+painelRouter.get('/provedor/ixc-assuntos', authMiddleware, painelController.ListarIxcAssuntosProprio.bind(painelController));
+painelRouter.post('/provedor/ixc-assuntos', authMiddleware, painelController.CriarIxcAssuntoProprio.bind(painelController));
+painelRouter.delete('/provedor/ixc-assuntos/:id', authMiddleware, painelController.ExcluirIxcAssuntoProprio.bind(painelController));
+
+// IMPRESSÃO DE CONTRATO IXC (resource do endpoint — específico por instalação)
+painelRouter.get('/provedor/ixc-contrato-config', authMiddleware, painelController.ObterIxcContratoConfigProprio.bind(painelController));
+painelRouter.put('/provedor/ixc-contrato-config', authMiddleware, painelController.DefinirIxcContratoConfigProprio.bind(painelController));
+
 painelRouter.get('/provedor/indicacoes', authMiddleware, painelController.ObterIndicacoes.bind(painelController));
 painelRouter.patch('/provedor/indicacoes/:id/efetivar', authMiddleware, moduloMiddleware("beneficios"), painelController.MarcarIndicacaoEfetivada.bind(painelController));
 painelRouter.get('/provedor/avaliacoes', authMiddleware, painelController.ObterAvaliacaoServico.bind(painelController));

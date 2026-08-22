@@ -15,6 +15,7 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 
@@ -132,13 +133,13 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async ObterTema(codigo:string) : Promise<any> {
-        const select = `SELECT p.codigo_provedor as codigo, p.nome_fantasia as nome, t.tag, t.accent, t.accent2, t.logo_url, 
+        const select = `SELECT p.codigo_provedor as codigo, p.nome_fantasia as nome, p.gerenciador, t.tag, t.accent, t.accent2, t.logo_url,
                         t.logo,
                         t.favicon,
                         t.icone192,
                         t.icone512,
                         t.maskable
-                        FROM theme t JOIN provedores p ON t.codigo_provedor_fk = p.codigo_provedor 
+                        FROM theme t JOIN provedores p ON t.codigo_provedor_fk = p.codigo_provedor
                         WHERE p.codigo_provedor = $1;`;
 
         const result = await this._db.Execulte<any>(select, [codigo])
@@ -239,6 +240,11 @@ export default class ProvedorRepository implements IProvedorRepository{
             return result[0];
 
         return { nome: null, mensagem: null };
+    }
+
+    async ObterIxcAssuntos(codigo:string) : Promise<ixcAssuntoModel[]> {
+        const select = `SELECT id, nome, id_assunto_ixc FROM provedor_ixc_assuntos WHERE codigo_provedor_fk = $1 ORDER BY nome ASC;`;
+        return await this._db.Execulte<ixcAssuntoModel>(select, [codigo]);
     }
 
     async RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void> {

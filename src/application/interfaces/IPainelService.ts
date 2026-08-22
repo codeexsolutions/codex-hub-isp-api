@@ -15,6 +15,9 @@ import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { planoModel } from "../../core/models/planoModel";
 import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
+import { ixcOsConfigModel } from "../../core/models/ixcOsConfigModel";
+import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel";
+import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 
 export default interface IPainelServices {
@@ -93,6 +96,20 @@ export default interface IPainelServices {
     ListarFaturasComissaoTodos() : Promise<any[]>
     MarcarFaturaComissaoPaga(id:number) : Promise<comissaoFaturaModel>
     MarcarFaturaComissaoCancelada(id:number) : Promise<comissaoFaturaModel>
+
+    // ORDEM DE SERVIÇO IXC
+    ObterIxcOsConfig(codigoProvedor:number) : Promise<ixcOsConfigModel>
+    DefinirIxcOsConfig(codigoProvedor:number, dados:ixcOsConfigModel) : Promise<ixcOsConfigModel>
+
+    // ASSUNTOS DE OS IXC
+    ListarIxcAssuntos(codigoProvedor:number) : Promise<ixcAssuntoModel[]>
+    CriarIxcAssunto(codigoProvedor:number, nome:string, idAssuntoIxc:number) : Promise<ixcAssuntoModel>
+    ExcluirIxcAssunto(id:number, codigoProvedor:number) : Promise<void>
+
+    // IMPRESSÃO DE CONTRATO IXC
+    ObterIxcContratoConfig(codigoProvedor:number) : Promise<ixcContratoConfigModel>
+    DefinirIxcContratoConfig(codigoProvedor:number, resourceImprimir:string) : Promise<ixcContratoConfigModel>
+
     ListarFaturamentoTodos() : Promise<any[]>
     MarcarFaturaPaga(idFatura:number) : Promise<faturaModel>
     MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel>
