@@ -10,6 +10,9 @@ import { beneficioModel } from "../models/beneficioModel";
 import { recompensaModel } from "../models/recompensaModel";
 import { extratoPontosModel } from "../models/extratoPontosModel";
 import { parceiroModel } from "../models/parceiroModel";
+import { homeConfigModel } from "../models/homeConfigModel";
+import { atendimentoModel } from "../models/atendimentoModel";
+import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 
 export default interface IProvedorRepository{
     ObterProvedor(codigoProvedor:string): Promise<Provedor>
@@ -19,6 +22,9 @@ export default interface IProvedorRepository{
     ObterAnuncios(codigo:string) : Promise<any>;
     ObterBeneficios(codigo:string) : Promise<any>;
     ObterModulosAtivos(codigo:string) : Promise<string[]>;
+    ObterHomeConfig(codigo:string) : Promise<homeConfigModel>;
+    ObterAtendimento(codigo:string) : Promise<atendimentoModel>;
+    ObterClubeBeneficios(codigo:string) : Promise<clubeBeneficiosModel>;
     RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void>;
     ObterBeneficioPorId(idBeneficio:number, codigoProvedor:number) : Promise<beneficioModel>;
     ObterConfigComissao() : Promise<configComissaoModel>;

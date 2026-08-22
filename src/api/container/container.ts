@@ -33,6 +33,8 @@ import INotificacaoFaturaServices from "../../application/interfaces/INotificaca
 import NotificacaoFaturaServices from "../../application/services/NotificacaoFaturaServices";
 import INotificacaoClienteRepository from "../../core/interfaces/INotificacaoClienteRepository";
 import NotificacaoClienteRepository from "../../infrastructure/repositories/NotificacaoClienteRepository";
+import INotificacaoTemplateRepository from "../../core/interfaces/INotificacaoTemplateRepository";
+import NotificacaoTemplateRepository from "../../infrastructure/repositories/NotificacaoTemplateRepository";
 
 
 container.registerSingleton<IDBContext>("IDBContext", DBContext);
@@ -52,3 +54,4 @@ container.registerSingleton<IParceiroServices>("IParceiroServices", ParceiroServ
 container.registerSingleton<INotificacaoFaturaRepository>("INotificacaoFaturaRepository", NotificacaoFaturaRepository);
 container.registerSingleton<INotificacaoFaturaServices>("INotificacaoFaturaServices", NotificacaoFaturaServices);
 container.registerSingleton<INotificacaoClienteRepository>("INotificacaoClienteRepository", NotificacaoClienteRepository);
+container.registerSingleton<INotificacaoTemplateRepository>("INotificacaoTemplateRepository", NotificacaoTemplateRepository);

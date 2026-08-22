@@ -83,6 +83,30 @@ export default class ProvedorController{
         return res.json({data: modulos})
     }
 
+    async ObterHomeConfig(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string
+        const config = await this._provedorService.ObterHomeConfig(codigoProvedor);
+
+        return res.json({data: config})
+    }
+
+    async ObterAtendimento(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string
+        const atendimento = await this._provedorService.ObterAtendimento(codigoProvedor);
+
+        return res.json({data: atendimento})
+    }
+
+    async ObterClubeBeneficios(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string
+        const clube = await this._provedorService.ObterClubeBeneficios(codigoProvedor);
+
+        return res.json({data: clube})
+    }
+
     async RegistrarCliqueBeneficio(req:Request, res:Response){
 
         const idBeneficio = Number.parseInt(req.params.id as string);

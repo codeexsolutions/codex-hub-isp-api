@@ -1,5 +1,6 @@
 import { notificacaoDto, pushSubscriptionDto } from "../Dtos/pushSubscriptionDto";
 import { notificacaoClienteModel } from "../../core/models/notificacaoClienteModel";
+import { notificacaoTemplateModel } from "../../core/models/notificacaoTemplateModel";
 
 export default interface IPushNotificationServices {
     Salvar(subscription:pushSubscriptionDto):Promise<string>;
@@ -16,4 +17,9 @@ export default interface IPushNotificationServices {
     ContarNotificacoesNaoLidas(cpf:string, codigoProvedor:string) : Promise<number>;
     MarcarNotificacaoLida(id:number, cpf:string, codigoProvedor:string) : Promise<void>;
     ExcluirNotificacaoCliente(id:number, cpf:string, codigoProvedor:string) : Promise<void>;
+
+    // MODELOS DE NOTIFICAÇÃO (reutilizáveis pelo provedor)
+    ListarTemplatesNotificacao(codigoProvedor:number) : Promise<notificacaoTemplateModel[]>;
+    CriarTemplateNotificacao(codigoProvedor:number, nome:string, titulo:string, corpo:string) : Promise<notificacaoTemplateModel>;
+    ExcluirTemplateNotificacao(id:number, codigoProvedor:number) : Promise<void>;
 }

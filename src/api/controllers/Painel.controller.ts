@@ -283,6 +283,69 @@ export default class PainelController {
         return res.json({data: modulos})
     }
 
+    async ObterHomeConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const config = await this._painelService.ObterHomeConfig(Number.parseInt(codigoProvedor));
+
+        return res.json({data: config})
+    }
+
+    async DefinirHomeConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { banner, fatura, consumo, atalhos } = req.body;
+
+        try {
+            const config = await this._painelService.DefinirHomeConfig(Number.parseInt(codigoProvedor), { banner, fatura, consumo, atalhos });
+            return res.json({data: config})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ObterAtendimentoProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const atendimento = await this._painelService.ObterAtendimento(Number.parseInt(codigoProvedor));
+
+        return res.json({data: atendimento})
+    }
+
+    async DefinirAtendimentoProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { whatsapp, telefone, email, site, instagram } = req.body;
+
+        try {
+            const atendimento = await this._painelService.DefinirAtendimento(Number.parseInt(codigoProvedor), { whatsapp, telefone, email, site, instagram });
+            return res.json({data: atendimento})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ObterClubeBeneficiosProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const clube = await this._painelService.ObterClubeBeneficios(Number.parseInt(codigoProvedor));
+
+        return res.json({data: clube})
+    }
+
+    async DefinirClubeBeneficiosProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { nome, mensagem } = req.body;
+
+        try {
+            const clube = await this._painelService.DefinirClubeBeneficios(Number.parseInt(codigoProvedor), { nome, mensagem });
+            return res.json({data: clube})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     async ObterCompras(req:AuthRequest, res:Response){
 
         const codigoProvedor = req.usuario?.codigoProvedor as string
@@ -500,13 +563,53 @@ export default class PainelController {
         const codigoProvedor = Number.parseInt(req.params.codigoProvedor as string);
         const valorMensalidade = Number.parseFloat(req.body?.valor_mensalidade);
         const dataAdesao = req.body?.data_adesao as string;
+        const planoId = req.body?.plano_id ? Number.parseInt(req.body.plano_id) : null;
 
         try {
-            const assinatura = await this._painelService.CriarOuEditarAssinatura(codigoProvedor, valorMensalidade, dataAdesao);
+            const assinatura = await this._painelService.CriarOuEditarAssinatura(codigoProvedor, valorMensalidade, dataAdesao, planoId);
             return res.status(200).json({data: assinatura})
         } catch (error: any) {
             return res.status(400).json({ message: error.message })
         }
+    }
+
+    async ListarPlanosAdmin(req:AuthRequest, res:Response){
+
+        const planos = await this._painelService.ListarPlanos();
+        return res.json({data: planos})
+    }
+
+    async CriarPlanoAdmin(req:AuthRequest, res:Response){
+
+        const { nome, valor_mensalidade, modulos, ordem } = req.body;
+
+        try {
+            const plano = await this._painelService.CriarPlano(nome, Number.parseFloat(valor_mensalidade), modulos, Number.parseInt(ordem) || 0);
+            return res.status(201).json({data: plano})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async EditarPlanoAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const { nome, valor_mensalidade, modulos, ordem } = req.body;
+
+        try {
+            const plano = await this._painelService.EditarPlano(id, nome, Number.parseFloat(valor_mensalidade), modulos, Number.parseInt(ordem) || 0);
+            return res.json({data: plano})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async DefinirStatusPlanoAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const ativo = Boolean(req.body?.ativo);
+        await this._painelService.DefinirStatusPlano(id, ativo);
+        return res.json({})
     }
 
     async MarcarFaturaPagaAdmin(req:AuthRequest, res:Response){

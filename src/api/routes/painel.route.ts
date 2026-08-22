@@ -58,6 +58,18 @@ painelRouter.post('/provedor/pontos/conceder', authMiddleware, moduloMiddleware(
 // MODULOS (o próprio provedor consultando quais módulos ele tem ativos)
 painelRouter.get('/provedor/modulos', authMiddleware, painelController.ObterModulosProprio.bind(painelController));
 
+// HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
+painelRouter.get('/provedor/home-config', authMiddleware, painelController.ObterHomeConfigProprio.bind(painelController));
+painelRouter.put('/provedor/home-config', authMiddleware, painelController.DefinirHomeConfigProprio.bind(painelController));
+
+// CANAIS DE ATENDIMENTO
+painelRouter.get('/provedor/atendimento', authMiddleware, painelController.ObterAtendimentoProprio.bind(painelController));
+painelRouter.put('/provedor/atendimento', authMiddleware, painelController.DefinirAtendimentoProprio.bind(painelController));
+
+// CLUBE DE BENEFÍCIOS (identidade própria)
+painelRouter.get('/provedor/clube-beneficios', authMiddleware, painelController.ObterClubeBeneficiosProprio.bind(painelController));
+painelRouter.put('/provedor/clube-beneficios', authMiddleware, painelController.DefinirClubeBeneficiosProprio.bind(painelController));
+
 painelRouter.get('/provedor/indicacoes', authMiddleware, painelController.ObterIndicacoes.bind(painelController));
 painelRouter.patch('/provedor/indicacoes/:id/efetivar', authMiddleware, moduloMiddleware("beneficios"), painelController.MarcarIndicacaoEfetivada.bind(painelController));
 painelRouter.get('/provedor/avaliacoes', authMiddleware, painelController.ObterAvaliacaoServico.bind(painelController));
@@ -84,6 +96,12 @@ painelRouter.patch('/admin/compras/:id/validar', authMiddleware, adminMiddleware
 painelRouter.get('/provedor/faturamento', authMiddleware, painelController.ObterFaturamentoProvedor.bind(painelController));
 painelRouter.get('/admin/faturamento', authMiddleware, adminMiddleware, painelController.ListarFaturamentoAdmin.bind(painelController));
 painelRouter.post('/admin/faturamento/:codigoProvedor/assinatura', authMiddleware, adminMiddleware, painelController.ConfigurarAssinaturaAdmin.bind(painelController));
+
+// PLANOS DE VENDA
+painelRouter.get('/admin/planos', authMiddleware, adminMiddleware, painelController.ListarPlanosAdmin.bind(painelController));
+painelRouter.post('/admin/planos', authMiddleware, adminMiddleware, painelController.CriarPlanoAdmin.bind(painelController));
+painelRouter.put('/admin/planos/:id', authMiddleware, adminMiddleware, painelController.EditarPlanoAdmin.bind(painelController));
+painelRouter.patch('/admin/planos/:id/status', authMiddleware, adminMiddleware, painelController.DefinirStatusPlanoAdmin.bind(painelController));
 painelRouter.patch('/admin/faturas/:id/pagar', authMiddleware, adminMiddleware, painelController.MarcarFaturaPagaAdmin.bind(painelController));
 painelRouter.patch('/admin/faturas/:id/cancelar', authMiddleware, adminMiddleware, painelController.MarcarFaturaCanceladaAdmin.bind(painelController));
 painelRouter.get('/admin/faturas/:id/recibo', authMiddleware, adminMiddleware, painelController.ObterReciboAdmin.bind(painelController));

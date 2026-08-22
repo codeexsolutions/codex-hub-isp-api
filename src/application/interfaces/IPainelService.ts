@@ -11,6 +11,10 @@ import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { assinaturaModel } from "../../core/models/assinaturaModel";
 import { faturaModel } from "../../core/models/faturaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { homeConfigModel } from "../../core/models/homeConfigModel";
+import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { planoModel } from "../../core/models/planoModel";
+import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 
 export default interface IPainelServices {
 
@@ -77,7 +81,11 @@ export default interface IPainelServices {
         pixCopiaCola: string|null;
         pixQrCode: string|null;
     }>
-    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string) : Promise<assinaturaModel>
+    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null) : Promise<assinaturaModel>
+    ListarPlanos() : Promise<planoModel[]>
+    CriarPlano(nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
+    EditarPlano(id:number, nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
+    DefinirStatusPlano(id:number, ativo:boolean) : Promise<void>
     ListarFaturamentoTodos() : Promise<any[]>
     MarcarFaturaPaga(idFatura:number) : Promise<faturaModel>
     MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel>
@@ -92,6 +100,18 @@ export default interface IPainelServices {
     ObterConfigPix() : Promise<pixConfigModel>
     DefinirConfigPix(config:pixConfigModel) : Promise<pixConfigModel>
     VerificarInadimplenciaTodos() : Promise<number>
+
+    // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
+    ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel>
+    DefinirHomeConfig(codigoProvedor:number, config:homeConfigModel) : Promise<homeConfigModel>
+
+    // CANAIS DE ATENDIMENTO
+    ObterAtendimento(codigoProvedor:number) : Promise<atendimentoModel>
+    DefinirAtendimento(codigoProvedor:number, dados:atendimentoModel) : Promise<atendimentoModel>
+
+    // CLUBE DE BENEFÍCIOS (identidade própria)
+    ObterClubeBeneficios(codigoProvedor:number) : Promise<clubeBeneficiosModel>
+    DefinirClubeBeneficios(codigoProvedor:number, dados:clubeBeneficiosModel) : Promise<clubeBeneficiosModel>
 }
 
 export type metricasModel = {

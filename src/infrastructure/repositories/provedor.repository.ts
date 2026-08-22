@@ -13,6 +13,9 @@ import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
+import { homeConfigModel } from "../../core/models/homeConfigModel";
+import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 
 
@@ -206,6 +209,36 @@ export default class ProvedorRepository implements IProvedorRepository{
         const select = `SELECT modulo FROM provedor_modulos WHERE codigo_provedor_fk = $1 AND ativo = true;`;
         const result = await this._db.Execulte<{ modulo:string }>(select, [codigo]);
         return result.map((r) => r.modulo);
+    }
+
+    async ObterHomeConfig(codigo:string) : Promise<homeConfigModel> {
+        const select = `SELECT banner, fatura, consumo, atalhos FROM provedor_home_config WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<homeConfigModel>(select, [codigo]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { banner: true, fatura: true, consumo: true, atalhos: true };
+    }
+
+    async ObterAtendimento(codigo:string) : Promise<atendimentoModel> {
+        const select = `SELECT whatsapp, telefone, email, site, instagram FROM provedor_atendimento WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<atendimentoModel>(select, [codigo]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { whatsapp: null, telefone: null, email: null, site: null, instagram: null };
+    }
+
+    async ObterClubeBeneficios(codigo:string) : Promise<clubeBeneficiosModel> {
+        const select = `SELECT nome, mensagem FROM provedor_clube_beneficios WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<clubeBeneficiosModel>(select, [codigo]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { nome: null, mensagem: null };
     }
 
     async RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void> {

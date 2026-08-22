@@ -8,8 +8,12 @@ import { configPontosModel } from "../models/configPontosModel";
 import { parceiroModel } from "../models/parceiroModel";
 import { extratoPontosModel } from "../models/extratoPontosModel";
 import { assinaturaModel } from "../models/assinaturaModel";
+import { planoModel } from "../models/planoModel";
 import { faturaModel } from "../models/faturaModel";
 import { pixConfigModel } from "../models/pixConfigModel";
+import { homeConfigModel } from "../models/homeConfigModel";
+import { atendimentoModel } from "../models/atendimentoModel";
+import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 
 export default interface IPainelRepository {
 
@@ -76,7 +80,12 @@ export default interface IPainelRepository {
 
     // FATURAMENTO SYNK (mensalidade do provedor pra Synk)
     ObterAssinatura(codigoProvedor:number) : Promise<assinaturaModel|null>
-    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string) : Promise<assinaturaModel>
+    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null) : Promise<assinaturaModel>
+    ListarPlanos() : Promise<planoModel[]>
+    ObterPlano(id:number) : Promise<planoModel|null>
+    CriarPlano(nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
+    EditarPlano(id:number, nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
+    DefinirStatusPlano(id:number, ativo:boolean) : Promise<void>
     GarantirFaturaDoMes(codigoProvedor:number) : Promise<void>
     GarantirFaturasTodos() : Promise<void>
     ObterFaturasProvedor(codigoProvedor:number) : Promise<faturaModel[]>
@@ -87,4 +96,16 @@ export default interface IPainelRepository {
     ListarFaturamentoTodos() : Promise<any[]>
     ObterConfigPix() : Promise<pixConfigModel>
     DefinirConfigPix(config:pixConfigModel) : Promise<pixConfigModel>
+
+    // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
+    ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel>
+    DefinirHomeConfig(codigoProvedor:number, config:homeConfigModel) : Promise<homeConfigModel>
+
+    // CANAIS DE ATENDIMENTO
+    ObterAtendimento(codigoProvedor:number) : Promise<atendimentoModel>
+    DefinirAtendimento(codigoProvedor:number, dados:atendimentoModel) : Promise<atendimentoModel>
+
+    // CLUBE DE BENEFÍCIOS (identidade própria)
+    ObterClubeBeneficios(codigoProvedor:number) : Promise<clubeBeneficiosModel>
+    DefinirClubeBeneficios(codigoProvedor:number, dados:clubeBeneficiosModel) : Promise<clubeBeneficiosModel>
 }

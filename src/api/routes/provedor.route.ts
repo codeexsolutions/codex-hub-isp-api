@@ -11,6 +11,9 @@ provedorRoute.get('/banners/:codigoProvedor', provedorController.ObterBanner.bin
 provedorRoute.get('/anuncios/:codigoProvedor', provedorController.ObterAnuncios.bind(provedorController));
 provedorRoute.get('/beneficios/:codigoProvedor', provedorController.ObterBeneficios.bind(provedorController));
 provedorRoute.get('/modulos/:codigoProvedor', provedorController.ObterModulos.bind(provedorController));
+provedorRoute.get('/home-config/:codigoProvedor', provedorController.ObterHomeConfig.bind(provedorController));
+provedorRoute.get('/atendimento/:codigoProvedor', provedorController.ObterAtendimento.bind(provedorController));
+provedorRoute.get('/clube-beneficios/:codigoProvedor', provedorController.ObterClubeBeneficios.bind(provedorController));
 provedorRoute.post('/beneficios/:id/clique', provedorController.RegistrarCliqueBeneficio.bind(provedorController));
 provedorRoute.post('/beneficios/:id/comprar', provedorController.ComprarBeneficio.bind(provedorController));
 provedorRoute.get('/beneficios/compras/:codigoProvedor', provedorController.ObterMinhasCompras.bind(provedorController));

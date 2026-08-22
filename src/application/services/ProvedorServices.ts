@@ -212,6 +212,18 @@ export default class ProvedorServices implements IProvedorServices {
         return await this._provedorRepository.ObterModulosAtivos(codigo);
     }
 
+    async ObterHomeConfig(codigo: string) {
+        return await this._provedorRepository.ObterHomeConfig(codigo);
+    }
+
+    async ObterAtendimento(codigo: string) {
+        return await this._provedorRepository.ObterAtendimento(codigo);
+    }
+
+    async ObterClubeBeneficios(codigo: string) {
+        return await this._provedorRepository.ObterClubeBeneficios(codigo);
+    }
+
     async RegistrarCliqueBeneficio(idBeneficio: number, codigoProvedor: number): Promise<void> {
         await this._provedorRepository.RegistrarCliqueBeneficio(idBeneficio, codigoProvedor);
     }

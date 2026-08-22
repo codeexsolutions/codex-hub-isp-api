@@ -12,8 +12,12 @@ import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { assinaturaModel } from "../../core/models/assinaturaModel";
+import { planoModel } from "../../core/models/planoModel";
 import { faturaModel } from "../../core/models/faturaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { homeConfigModel } from "../../core/models/homeConfigModel";
+import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { estatus } from "../../common/enuns/estatus";
 
 @injectable()
@@ -463,14 +467,43 @@ export default class PainelRepository implements IPainelRepository {
         return result[0] ?? null;
     }
 
-    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string) : Promise<assinaturaModel> {
-        const upsert = `INSERT INTO provedor_assinaturas (codigo_provedor_fk, valor_mensalidade, data_adesao, ativo)
-            VALUES ($1, $2, $3, true)
+    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null) : Promise<assinaturaModel> {
+        const upsert = `INSERT INTO provedor_assinaturas (codigo_provedor_fk, valor_mensalidade, data_adesao, plano_id, ativo)
+            VALUES ($1, $2, $3, $4, true)
             ON CONFLICT (codigo_provedor_fk)
-            DO UPDATE SET valor_mensalidade = EXCLUDED.valor_mensalidade, data_adesao = EXCLUDED.data_adesao
+            DO UPDATE SET valor_mensalidade = EXCLUDED.valor_mensalidade, data_adesao = EXCLUDED.data_adesao, plano_id = EXCLUDED.plano_id
             RETURNING *;`;
-        const result = await this._db.Execulte<assinaturaModel>(upsert, [codigoProvedor, valorMensalidade, dataAdesao]);
+        const result = await this._db.Execulte<assinaturaModel>(upsert, [codigoProvedor, valorMensalidade, dataAdesao, planoId]);
         return result[0];
+    }
+
+    async ListarPlanos() : Promise<planoModel[]> {
+        const select = `SELECT id, nome, valor_mensalidade, modulos, ordem, ativo FROM planos_synk ORDER BY ordem ASC, id ASC;`;
+        return await this._db.Execulte<planoModel>(select, []);
+    }
+
+    async ObterPlano(id:number) : Promise<planoModel|null> {
+        const select = `SELECT id, nome, valor_mensalidade, modulos, ordem, ativo FROM planos_synk WHERE id = $1;`;
+        const result = await this._db.Execulte<planoModel>(select, [id]);
+        return result[0] ?? null;
+    }
+
+    async CriarPlano(nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel> {
+        const insert = `INSERT INTO planos_synk (nome, valor_mensalidade, modulos, ordem)
+            VALUES ($1,$2,$3,$4) RETURNING id, nome, valor_mensalidade, modulos, ordem, ativo;`;
+        const result = await this._db.Execulte<planoModel>(insert, [nome, valorMensalidade, modulos, ordem]);
+        return result[0];
+    }
+
+    async EditarPlano(id:number, nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel> {
+        const update = `UPDATE planos_synk SET nome = $1, valor_mensalidade = $2, modulos = $3, ordem = $4
+            WHERE id = $5 RETURNING id, nome, valor_mensalidade, modulos, ordem, ativo;`;
+        const result = await this._db.Execulte<planoModel>(update, [nome, valorMensalidade, modulos, ordem, id]);
+        return result[0];
+    }
+
+    async DefinirStatusPlano(id:number, ativo:boolean) : Promise<void> {
+        await this._db.Execulte<any>(`UPDATE planos_synk SET ativo = $1 WHERE id = $2;`, [ativo, id]);
     }
 
     // dia de vencimento = dia da data de adesão, capado em 28 pra não ter problema com
@@ -570,7 +603,7 @@ export default class PainelRepository implements IPainelRepository {
         const select = `
             SELECT p.codigo_provedor, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome,
                    p.cnpj AS provedor_cnpj, p.status AS provedor_status,
-                   pa.id AS assinatura_id, pa.valor_mensalidade, pa.data_adesao,
+                   pa.id AS assinatura_id, pa.valor_mensalidade, pa.data_adesao, pa.plano_id,
                    uf.id AS fatura_id, uf.competencia, uf.vencimento, uf.valor AS fatura_valor,
                    uf.status AS fatura_status, uf.pago_em
             FROM provedores p
@@ -596,6 +629,89 @@ export default class PainelRepository implements IPainelRepository {
         const update = `UPDATE synk_pix_config SET chave_pix = $1, nome_recebedor = $2, cidade = $3, atualizado_em = now()
             WHERE id = 1 RETURNING chave_pix, nome_recebedor, cidade;`;
         const result = await this._db.Execulte<pixConfigModel>(update, [config.chave_pix, config.nome_recebedor, config.cidade]);
+        return result[0];
+    }
+
+    async ObterHomeConfig(codigoProvedor: number): Promise<homeConfigModel> {
+
+        const select = `SELECT banner, fatura, consumo, atalhos FROM provedor_home_config WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<homeConfigModel>(select, [codigoProvedor]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { banner: true, fatura: true, consumo: true, atalhos: true };
+    }
+
+    async DefinirHomeConfig(codigoProvedor: number, config: homeConfigModel): Promise<homeConfigModel> {
+
+        const upsert = `INSERT INTO provedor_home_config (codigo_provedor_fk, banner, fatura, consumo, atalhos)
+            VALUES ($1,$2,$3,$4,$5)
+            ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
+                banner = EXCLUDED.banner, fatura = EXCLUDED.fatura, consumo = EXCLUDED.consumo,
+                atalhos = EXCLUDED.atalhos, atualizado_em = now()
+            RETURNING banner, fatura, consumo, atalhos;`;
+
+        const result = await this._db.Execulte<homeConfigModel>(
+            upsert,
+            [codigoProvedor, config.banner, config.fatura, config.consumo, config.atalhos]
+        );
+
+        return result[0];
+    }
+
+    async ObterAtendimento(codigoProvedor: number): Promise<atendimentoModel> {
+
+        const select = `SELECT whatsapp, telefone, email, site, instagram FROM provedor_atendimento WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<atendimentoModel>(select, [codigoProvedor]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { whatsapp: null, telefone: null, email: null, site: null, instagram: null };
+    }
+
+    async DefinirAtendimento(codigoProvedor: number, dados: atendimentoModel): Promise<atendimentoModel> {
+
+        const upsert = `INSERT INTO provedor_atendimento (codigo_provedor_fk, whatsapp, telefone, email, site, instagram)
+            VALUES ($1,$2,$3,$4,$5,$6)
+            ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
+                whatsapp = EXCLUDED.whatsapp, telefone = EXCLUDED.telefone, email = EXCLUDED.email,
+                site = EXCLUDED.site, instagram = EXCLUDED.instagram, atualizado_em = now()
+            RETURNING whatsapp, telefone, email, site, instagram;`;
+
+        const result = await this._db.Execulte<atendimentoModel>(
+            upsert,
+            [codigoProvedor, dados.whatsapp || null, dados.telefone || null, dados.email || null, dados.site || null, dados.instagram || null]
+        );
+
+        return result[0];
+    }
+
+    async ObterClubeBeneficios(codigoProvedor: number): Promise<clubeBeneficiosModel> {
+
+        const select = `SELECT nome, mensagem FROM provedor_clube_beneficios WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<clubeBeneficiosModel>(select, [codigoProvedor]);
+
+        if (result.length > 0)
+            return result[0];
+
+        return { nome: null, mensagem: null };
+    }
+
+    async DefinirClubeBeneficios(codigoProvedor: number, dados: clubeBeneficiosModel): Promise<clubeBeneficiosModel> {
+
+        const upsert = `INSERT INTO provedor_clube_beneficios (codigo_provedor_fk, nome, mensagem)
+            VALUES ($1,$2,$3)
+            ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
+                nome = EXCLUDED.nome, mensagem = EXCLUDED.mensagem, atualizado_em = now()
+            RETURNING nome, mensagem;`;
+
+        const result = await this._db.Execulte<clubeBeneficiosModel>(
+            upsert,
+            [codigoProvedor, dados.nome || null, dados.mensagem || null]
+        );
+
         return result[0];
     }
 }

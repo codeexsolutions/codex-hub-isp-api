@@ -104,4 +104,34 @@ export default class NotificationsController {
         await this._service.ExcluirNotificacaoCliente(id, cpf, codigoProvedor);
         return res.json({});
     }
+
+    // MODELOS DE NOTIFICAÇÃO (reutilizáveis pelo provedor)
+
+    async ListarTemplates(req: AuthRequest, res: Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const templates = await this._service.ListarTemplatesNotificacao(Number.parseInt(codigoProvedor));
+        return res.json({ data: templates });
+    }
+
+    async CriarTemplate(req: AuthRequest, res: Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { nome, titulo, corpo } = req.body;
+
+        try {
+            const template = await this._service.CriarTemplateNotificacao(Number.parseInt(codigoProvedor), nome, titulo, corpo);
+            return res.status(201).json({ data: template });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ExcluirTemplate(req: AuthRequest, res: Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const id = Number.parseInt(req.params.id as string);
+        await this._service.ExcluirTemplateNotificacao(id, Number.parseInt(codigoProvedor));
+        return res.json({});
+    }
 }

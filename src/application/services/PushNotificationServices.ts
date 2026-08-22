@@ -7,6 +7,8 @@ import { WebPushProvider } from "../../infrastructure/notification/provider";
 import IProvedorRepository from "../../core/interfaces/IProvedorRepository";
 import INotificacaoClienteRepository from "../../core/interfaces/INotificacaoClienteRepository";
 import { notificacaoClienteModel } from "../../core/models/notificacaoClienteModel";
+import INotificacaoTemplateRepository from "../../core/interfaces/INotificacaoTemplateRepository";
+import { notificacaoTemplateModel } from "../../core/models/notificacaoTemplateModel";
 
 @injectable()
 export default class PushNotificationServices implements IPushNotificationServices {
@@ -14,14 +16,17 @@ export default class PushNotificationServices implements IPushNotificationServic
     private readonly _pushRepository:IPushNotificationRepository;
     private readonly _provedorRepository:IProvedorRepository;
     private readonly _notificacaoClienteRepository:INotificacaoClienteRepository;
+    private readonly _notificacaoTemplateRepository:INotificacaoTemplateRepository;
     constructor(
         @inject("IPushNotificationRepository")repository:IPushNotificationRepository,
         @inject("IProvedorRepository")provedorRepository:IProvedorRepository,
-        @inject("INotificacaoClienteRepository")notificacaoClienteRepository:INotificacaoClienteRepository
+        @inject("INotificacaoClienteRepository")notificacaoClienteRepository:INotificacaoClienteRepository,
+        @inject("INotificacaoTemplateRepository")notificacaoTemplateRepository:INotificacaoTemplateRepository
     ){
         this._pushRepository = repository;
         this._provedorRepository = provedorRepository;
         this._notificacaoClienteRepository = notificacaoClienteRepository;
+        this._notificacaoTemplateRepository = notificacaoTemplateRepository;
     }
 
     async Salvar(subscription: pushSubscriptionDto): Promise<string> {
@@ -110,6 +115,20 @@ export default class PushNotificationServices implements IPushNotificationServic
 
     async ExcluirNotificacaoCliente(id: number, cpf: string, codigoProvedor: string): Promise<void> {
         await this._notificacaoClienteRepository.Excluir(id, cpf, codigoProvedor);
+    }
+
+    async ListarTemplatesNotificacao(codigoProvedor: number): Promise<notificacaoTemplateModel[]> {
+        return await this._notificacaoTemplateRepository.Listar(codigoProvedor);
+    }
+
+    async CriarTemplateNotificacao(codigoProvedor: number, nome: string, titulo: string, corpo: string): Promise<notificacaoTemplateModel> {
+        if (!nome?.trim() || !titulo?.trim() || !corpo?.trim())
+            throw new Error("Preencha nome, título e mensagem do modelo.");
+        return await this._notificacaoTemplateRepository.Criar(codigoProvedor, nome.trim(), titulo.trim(), corpo.trim());
+    }
+
+    async ExcluirTemplateNotificacao(id: number, codigoProvedor: number): Promise<void> {
+        await this._notificacaoTemplateRepository.Excluir(id, codigoProvedor);
     }
 
     private async EnviarParaSubscricoes(subscriptions:pushSubscriptionDto[], codigoProvedor:string, payload:notificacaoDto) : Promise<void> {

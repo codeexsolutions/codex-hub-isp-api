@@ -16,8 +16,17 @@ import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { assinaturaModel } from "../../core/models/assinaturaModel";
 import { faturaModel } from "../../core/models/faturaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { homeConfigModel } from "../../core/models/homeConfigModel";
+import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
+import { planoModel } from "../../core/models/planoModel";
 import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
 import * as QRCode from "qrcode";
+
+// mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
+// desses módulos, os demais (novos módulos ainda não incluídos em plano
+// nenhum) continuam controláveis manualmente.
+const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca"];
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -308,15 +317,57 @@ export default class PainelService implements IPainelServices {
         return { assinatura, faturas, modulosAtivos, pixCopiaCola, pixQrCode };
     }
 
-    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string) : Promise<assinaturaModel> {
-        if (!(valorMensalidade > 0))
-            throw new Error("Informe um valor de mensalidade válido.");
+    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null) : Promise<assinaturaModel> {
         if (!dataAdesao)
             throw new Error("Informe a data de adesão.");
 
-        const assinatura = await this._painelRepository.CriarOuEditarAssinatura(codigoProvedor, valorMensalidade, dataAdesao);
+        let valor = valorMensalidade;
+
+        if (planoId) {
+            const plano = await this._painelRepository.ObterPlano(planoId);
+            if (!plano)
+                throw new Error("Plano não encontrado.");
+
+            valor = Number(plano.valor_mensalidade);
+
+            // plano define os módulos: ativa os incluídos, desativa os demais —
+            // assinatura "sem plano" (planoId null) continua sem mexer nos módulos,
+            // pra não bagunçar configuração manual/personalizada.
+            for (const modulo of MODULOS_CONHECIDOS) {
+                await this._painelRepository.DefinirModulo(codigoProvedor, modulo, plano.modulos.includes(modulo));
+            }
+        }
+
+        if (!(valor > 0))
+            throw new Error("Informe um valor de mensalidade válido.");
+
+        const assinatura = await this._painelRepository.CriarOuEditarAssinatura(codigoProvedor, valor, dataAdesao, planoId);
         await this._painelRepository.GarantirFaturaDoMes(codigoProvedor);
         return assinatura;
+    }
+
+    async ListarPlanos() : Promise<planoModel[]> {
+        return await this._painelRepository.ListarPlanos();
+    }
+
+    async CriarPlano(nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel> {
+        if (!nome?.trim())
+            throw new Error("Informe o nome do plano.");
+        if (!(valorMensalidade > 0))
+            throw new Error("Informe um valor de mensalidade válido.");
+        return await this._painelRepository.CriarPlano(nome.trim(), valorMensalidade, modulos ?? [], ordem ?? 0);
+    }
+
+    async EditarPlano(id:number, nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel> {
+        if (!nome?.trim())
+            throw new Error("Informe o nome do plano.");
+        if (!(valorMensalidade > 0))
+            throw new Error("Informe um valor de mensalidade válido.");
+        return await this._painelRepository.EditarPlano(id, nome.trim(), valorMensalidade, modulos ?? [], ordem ?? 0);
+    }
+
+    async DefinirStatusPlano(id:number, ativo:boolean) : Promise<void> {
+        await this._painelRepository.DefinirStatusPlano(id, ativo);
     }
 
     async ListarFaturamentoTodos() : Promise<any[]> {
@@ -357,6 +408,30 @@ export default class PainelService implements IPainelServices {
         if (!config.chave_pix?.trim())
             throw new Error("Informe a chave PIX.");
         return await this._painelRepository.DefinirConfigPix(config);
+    }
+
+    async ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel> {
+        return await this._painelRepository.ObterHomeConfig(codigoProvedor);
+    }
+
+    async DefinirHomeConfig(codigoProvedor:number, config:homeConfigModel) : Promise<homeConfigModel> {
+        return await this._painelRepository.DefinirHomeConfig(codigoProvedor, config);
+    }
+
+    async ObterAtendimento(codigoProvedor:number) : Promise<atendimentoModel> {
+        return await this._painelRepository.ObterAtendimento(codigoProvedor);
+    }
+
+    async DefinirAtendimento(codigoProvedor:number, dados:atendimentoModel) : Promise<atendimentoModel> {
+        return await this._painelRepository.DefinirAtendimento(codigoProvedor, dados);
+    }
+
+    async ObterClubeBeneficios(codigoProvedor:number) : Promise<clubeBeneficiosModel> {
+        return await this._painelRepository.ObterClubeBeneficios(codigoProvedor);
+    }
+
+    async DefinirClubeBeneficios(codigoProvedor:number, dados:clubeBeneficiosModel) : Promise<clubeBeneficiosModel> {
+        return await this._painelRepository.DefinirClubeBeneficios(codigoProvedor, dados);
     }
 
     async VerificarInadimplenciaTodos() : Promise<number> {

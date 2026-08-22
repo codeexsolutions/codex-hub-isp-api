@@ -19,4 +19,9 @@ notificationRoute.post('/nao-lidas', controller.ContarNaoLidas.bind(controller))
 notificationRoute.patch('/:id/lida', controller.MarcarLida.bind(controller));
 notificationRoute.delete('/:id', controller.ExcluirNotificacao.bind(controller));
 
+// MODELOS DE NOTIFICAÇÃO (provedor, autenticado)
+notificationRoute.get('/templates', authMiddleware, controller.ListarTemplates.bind(controller));
+notificationRoute.post('/templates', authMiddleware, controller.CriarTemplate.bind(controller));
+notificationRoute.delete('/templates/:id', authMiddleware, controller.ExcluirTemplate.bind(controller));
+
 export default notificationRoute;

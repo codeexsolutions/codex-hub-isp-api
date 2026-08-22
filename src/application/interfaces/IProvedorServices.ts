@@ -8,6 +8,9 @@ import { ThemeFiles } from "../Dtos/temaFiles.dto";
 import { compraModel } from "../../core/models/compraModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
+import { homeConfigModel } from "../../core/models/homeConfigModel";
+import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 
 export default interface IProvedorServices {
@@ -19,6 +22,9 @@ export default interface IProvedorServices {
     ObterAnuncios(codigo:string) : Promise<any> ;
     ObterBeneficios(codigo:string) : Promise<any> ;
     ObterModulosAtivos(codigo:string) : Promise<string[]> ;
+    ObterHomeConfig(codigo:string) : Promise<homeConfigModel>;
+    ObterAtendimento(codigo:string) : Promise<atendimentoModel>;
+    ObterClubeBeneficios(codigo:string) : Promise<clubeBeneficiosModel>;
     RegistrarCliqueBeneficio(idBeneficio:number, codigoProvedor:number) : Promise<void> ;
     ComprarBeneficio(idBeneficio:number, codigoProvedor:number, clienteNome:string, clienteCpfCnpj:string) : Promise<compraModel> ;
     ObterMinhasCompras(codigoProvedor:string, cpfCnpj:string) : Promise<compraModel[]> ;
