@@ -14,6 +14,7 @@ import { pixConfigModel } from "../../core/models/pixConfigModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { planoModel } from "../../core/models/planoModel";
+import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 
 export default interface IPainelServices {
@@ -86,6 +87,12 @@ export default interface IPainelServices {
     CriarPlano(nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
     EditarPlano(id:number, nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
     DefinirStatusPlano(id:number, ativo:boolean) : Promise<void>
+
+    // PAGAMENTO DE COMISSÃO DO PARCEIRO
+    GarantirFaturasComissaoTodos() : Promise<void>
+    ListarFaturasComissaoTodos() : Promise<any[]>
+    MarcarFaturaComissaoPaga(id:number) : Promise<comissaoFaturaModel>
+    MarcarFaturaComissaoCancelada(id:number) : Promise<comissaoFaturaModel>
     ListarFaturamentoTodos() : Promise<any[]>
     MarcarFaturaPaga(idFatura:number) : Promise<faturaModel>
     MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel>

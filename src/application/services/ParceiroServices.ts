@@ -1,21 +1,29 @@
 import { inject, injectable } from "tsyringe";
 import IParceiroRepository from "../../core/interfaces/IParceiroRepository";
 import IParceiroServices from "../interfaces/IParceiroServices";
+import IPainelRepository from "../../core/interfaces/IPainelRepository";
 import { compraModel } from "../../core/models/compraModel";
 import { beneficioModel } from "../../core/models/beneficioModel";
 import { ofertaEditeDto } from "../Dtos/ofertaEditeDto";
 import JwtService from "./JwtServices";
 import UploadService from "./UploadServices";
 import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
+import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
+import * as QRCode from "qrcode";
 
 @injectable()
 export default class ParceiroServices implements IParceiroServices {
 
     private readonly _parceiroRepository:IParceiroRepository;
+    private readonly _painelRepository:IPainelRepository;
     private readonly _jwtService:JwtService;
 
-    constructor(@inject("IParceiroRepository") parceiroRepository:IParceiroRepository){
+    constructor(
+        @inject("IParceiroRepository") parceiroRepository:IParceiroRepository,
+        @inject("IPainelRepository") painelRepository:IPainelRepository
+    ){
         this._parceiroRepository = parceiroRepository;
+        this._painelRepository = painelRepository;
         this._jwtService = new JwtService();
     }
 
@@ -43,6 +51,33 @@ export default class ParceiroServices implements IParceiroServices {
         }
 
         return { resumo, compras };
+    }
+
+    async ObterFaturamentoComissao(parceiroId:number) {
+
+        await this._painelRepository.GarantirFaturaComissaoParceiro(parceiroId);
+
+        const [faturas, pixConfig] = await Promise.all([
+            this._painelRepository.ObterFaturasComissaoParceiro(parceiroId),
+            this._painelRepository.ObterConfigPix(),
+        ]);
+
+        const faturaAberta = faturas.find((f) => f.status === "pendente");
+        let pixCopiaCola: string | null = null;
+        let pixQrCode: string | null = null;
+
+        if (faturaAberta && pixConfig?.chave_pix) {
+            pixCopiaCola = gerarPixCopiaCola({
+                chave: pixConfig.chave_pix,
+                nomeRecebedor: pixConfig.nome_recebedor,
+                cidade: pixConfig.cidade,
+                valor: Number(faturaAberta.valor),
+                txid: `COM${faturaAberta.id}`,
+            });
+            pixQrCode = await QRCode.toDataURL(pixCopiaCola, { margin: 1, width: 280 });
+        }
+
+        return { faturas, pixCopiaCola, pixQrCode };
     }
 
     async ObterCupom(cupom:string, parceiroId:number) : Promise<compraModel> {

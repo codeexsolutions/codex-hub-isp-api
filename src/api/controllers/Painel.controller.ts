@@ -612,6 +612,36 @@ export default class PainelController {
         return res.json({})
     }
 
+    async ListarFaturasComissaoAdmin(req:AuthRequest, res:Response){
+
+        const lista = await this._painelService.ListarFaturasComissaoTodos();
+        return res.json({data: lista})
+    }
+
+    async MarcarFaturaComissaoPagaAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            const fatura = await this._painelService.MarcarFaturaComissaoPaga(id);
+            return res.status(200).json({data: fatura})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async MarcarFaturaComissaoCanceladaAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            const fatura = await this._painelService.MarcarFaturaComissaoCancelada(id);
+            return res.status(200).json({data: fatura})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     async MarcarFaturaPagaAdmin(req:AuthRequest, res:Response){
 
         const id = Number.parseInt(req.params.id as string);

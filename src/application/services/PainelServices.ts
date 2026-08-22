@@ -20,6 +20,7 @@ import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { planoModel } from "../../core/models/planoModel";
+import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
 import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
 import * as QRCode from "qrcode";
 
@@ -368,6 +369,23 @@ export default class PainelService implements IPainelServices {
 
     async DefinirStatusPlano(id:number, ativo:boolean) : Promise<void> {
         await this._painelRepository.DefinirStatusPlano(id, ativo);
+    }
+
+    async GarantirFaturasComissaoTodos() : Promise<void> {
+        await this._painelRepository.GarantirFaturasComissaoTodos();
+    }
+
+    async ListarFaturasComissaoTodos() : Promise<any[]> {
+        await this._painelRepository.GarantirFaturasComissaoTodos();
+        return await this._painelRepository.ListarFaturasComissaoTodos();
+    }
+
+    async MarcarFaturaComissaoPaga(id:number) : Promise<comissaoFaturaModel> {
+        return await this._painelRepository.MarcarFaturaComissaoPaga(id);
+    }
+
+    async MarcarFaturaComissaoCancelada(id:number) : Promise<comissaoFaturaModel> {
+        return await this._painelRepository.MarcarFaturaComissaoCancelada(id);
     }
 
     async ListarFaturamentoTodos() : Promise<any[]> {

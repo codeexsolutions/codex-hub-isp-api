@@ -33,6 +33,13 @@ export default class ParceiroController {
         return res.json({ data: financeiro });
     }
 
+    async ObterFaturamentoComissao(req:AuthRequest, res:Response){
+
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const faturamento = await this._parceiroService.ObterFaturamentoComissao(parceiroId);
+        return res.json({ data: faturamento });
+    }
+
     async ObterCupom(req:AuthRequest, res:Response){
 
         const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);

@@ -13,6 +13,7 @@ import { faturaModel } from "../models/faturaModel";
 import { pixConfigModel } from "../models/pixConfigModel";
 import { homeConfigModel } from "../models/homeConfigModel";
 import { atendimentoModel } from "../models/atendimentoModel";
+import { comissaoFaturaModel } from "../models/comissaoFaturaModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 
 export default interface IPainelRepository {
@@ -108,4 +109,12 @@ export default interface IPainelRepository {
     // CLUBE DE BENEFÍCIOS (identidade própria)
     ObterClubeBeneficios(codigoProvedor:number) : Promise<clubeBeneficiosModel>
     DefinirClubeBeneficios(codigoProvedor:number, dados:clubeBeneficiosModel) : Promise<clubeBeneficiosModel>
+
+    // PAGAMENTO DE COMISSÃO DO PARCEIRO
+    GarantirFaturaComissaoParceiro(parceiroId:number) : Promise<void>
+    GarantirFaturasComissaoTodos() : Promise<void>
+    ObterFaturasComissaoParceiro(parceiroId:number) : Promise<comissaoFaturaModel[]>
+    ListarFaturasComissaoTodos() : Promise<any[]>
+    MarcarFaturaComissaoPaga(id:number) : Promise<comissaoFaturaModel>
+    MarcarFaturaComissaoCancelada(id:number) : Promise<comissaoFaturaModel>
 }

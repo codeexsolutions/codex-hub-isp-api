@@ -12,6 +12,7 @@ const parceiroController = container.resolve(ParceiroController);
 
 parceiroRoute.post('/login', parceiroController.Login.bind(parceiroController));
 parceiroRoute.get('/financeiro', authMiddleware, parceiroMiddleware, parceiroController.ObterFinanceiro.bind(parceiroController));
+parceiroRoute.get('/comissao/faturamento', authMiddleware, parceiroMiddleware, parceiroController.ObterFaturamentoComissao.bind(parceiroController));
 parceiroRoute.get('/cupom/:codigo', authMiddleware, parceiroMiddleware, parceiroController.ObterCupom.bind(parceiroController));
 parceiroRoute.patch('/cupom/:codigo/validar', authMiddleware, parceiroMiddleware, parceiroController.ValidarCupom.bind(parceiroController));
 parceiroRoute.patch('/cupom/:codigo/cancelar', authMiddleware, parceiroMiddleware, parceiroController.CancelarCupom.bind(parceiroController));

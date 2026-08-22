@@ -38,3 +38,13 @@ setInterval(() => {
         console.error("Erro na varredura de notificação de faturas:", error);
     });
 }, 6 * 60 * 60 * 1000);
+
+// Varredura periódica de comissão do parceiro: gera a fatura do mês fechado
+// (Synk + provedor) pra quem teve venda validada e ainda não tem fatura —
+// roda de tempos em tempos, sem depender do parceiro abrir a tela naquele dia.
+setInterval(() => {
+    const painelServices = container.resolve<IPainelServices>("IPainelServices");
+    painelServices.GarantirFaturasComissaoTodos().catch((error) => {
+        console.error("Erro na varredura de comissão do parceiro:", error);
+    });
+}, 6 * 60 * 60 * 1000);

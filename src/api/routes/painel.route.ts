@@ -102,6 +102,11 @@ painelRouter.get('/admin/planos', authMiddleware, adminMiddleware, painelControl
 painelRouter.post('/admin/planos', authMiddleware, adminMiddleware, painelController.CriarPlanoAdmin.bind(painelController));
 painelRouter.put('/admin/planos/:id', authMiddleware, adminMiddleware, painelController.EditarPlanoAdmin.bind(painelController));
 painelRouter.patch('/admin/planos/:id/status', authMiddleware, adminMiddleware, painelController.DefinirStatusPlanoAdmin.bind(painelController));
+
+// PAGAMENTO DE COMISSÃO DO PARCEIRO
+painelRouter.get('/admin/comissao/faturamento', authMiddleware, adminMiddleware, painelController.ListarFaturasComissaoAdmin.bind(painelController));
+painelRouter.patch('/admin/comissao/faturas/:id/pagar', authMiddleware, adminMiddleware, painelController.MarcarFaturaComissaoPagaAdmin.bind(painelController));
+painelRouter.patch('/admin/comissao/faturas/:id/cancelar', authMiddleware, adminMiddleware, painelController.MarcarFaturaComissaoCanceladaAdmin.bind(painelController));
 painelRouter.patch('/admin/faturas/:id/pagar', authMiddleware, adminMiddleware, painelController.MarcarFaturaPagaAdmin.bind(painelController));
 painelRouter.patch('/admin/faturas/:id/cancelar', authMiddleware, adminMiddleware, painelController.MarcarFaturaCanceladaAdmin.bind(painelController));
 painelRouter.get('/admin/faturas/:id/recibo', authMiddleware, adminMiddleware, painelController.ObterReciboAdmin.bind(painelController));

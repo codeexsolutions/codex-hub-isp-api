@@ -17,6 +17,7 @@ import { faturaModel } from "../../core/models/faturaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
+import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { estatus } from "../../common/enuns/estatus";
 
@@ -218,7 +219,7 @@ export default class PainelRepository implements IPainelRepository {
     }
 
     async ObterConfigComissao() : Promise<configComissaoModel> {
-        const select = `SELECT percentual_parceiro, percentual_synk, percentual_provedor FROM config_comissao WHERE id = 1;`;
+        const select = `SELECT percentual_parceiro, percentual_synk, percentual_provedor, dia_pagamento FROM config_comissao WHERE id = 1;`;
         const result = await this._db.Execulte<configComissaoModel>(select, []);
         return result[0];
     }
@@ -262,11 +263,14 @@ export default class PainelRepository implements IPainelRepository {
                 percentual_parceiro = $1,
                 percentual_synk = $2,
                 percentual_provedor = $3,
+                dia_pagamento = $4,
                 atualizado_em = now()
             WHERE id = 1
-            RETURNING percentual_parceiro, percentual_synk, percentual_provedor;
+            RETURNING percentual_parceiro, percentual_synk, percentual_provedor, dia_pagamento;
         `;
-        const result = await this._db.Execulte<configComissaoModel>(update, [config.percentual_parceiro, config.percentual_synk, config.percentual_provedor]);
+        const result = await this._db.Execulte<configComissaoModel>(update, [
+            config.percentual_parceiro, config.percentual_synk, config.percentual_provedor, config.dia_pagamento ?? 5,
+        ]);
         return result[0];
     }
 
@@ -516,6 +520,93 @@ export default class PainelRepository implements IPainelRepository {
 
     async DefinirStatusPlano(id:number, ativo:boolean) : Promise<void> {
         await this._db.Execulte<any>(`UPDATE planos_synk SET ativo = $1 WHERE id = $2;`, [ativo, id]);
+    }
+
+    // PAGAMENTO DE COMISSÃO DO PARCEIRO (mês fechado, cobrado no dia combinado do mês seguinte)
+
+    private calcularCompetenciaVencimentoComissao(diaPagamento:number) : { competencia:string; vencimento:string } {
+        const hoje = new Date();
+        const ano = hoje.getUTCFullYear();
+        const mes = hoje.getUTCMonth();
+        // competência = mês fechado anterior; vencimento = dia combinado do mês corrente
+        const competencia = new Date(Date.UTC(ano, mes - 1, 1)).toISOString().slice(0, 10);
+        const dia = Math.min(diaPagamento, 28);
+        const vencimento = new Date(Date.UTC(ano, mes, dia)).toISOString().slice(0, 10);
+        return { competencia, vencimento };
+    }
+
+    async GarantirFaturaComissaoParceiro(parceiroId:number) : Promise<void> {
+
+        const config = await this.ObterConfigComissao();
+        const { competencia, vencimento } = this.calcularCompetenciaVencimentoComissao(config.dia_pagamento ?? 5);
+
+        const existe = await this._db.Execulte<any>(
+            `SELECT id FROM parceiro_comissao_faturas WHERE parceiro_id_fk = $1 AND competencia = $2;`,
+            [parceiroId, competencia]
+        );
+        if (existe.length > 0) return;
+
+        // soma o que foi validado (utilizado) dentro do mês fechado que está sendo cobrado
+        const soma = await this._db.Execulte<{ total:string }>(
+            `SELECT COALESCE(SUM(c.valor_synk + c.valor_provedor), 0) AS total
+             FROM beneficio_compras c
+             JOIN marketing_beneficios b ON b.id = c.beneficio_id
+             WHERE b.parceiro_id_fk = $1 AND c.status = 'utilizado'
+               AND c.validado_em >= $2::date AND c.validado_em < ($2::date + interval '1 month');`,
+            [parceiroId, competencia]
+        );
+        const valor = Number.parseFloat(soma[0]?.total ?? "0");
+
+        // não cria fatura de mês sem nada devido
+        if (!(valor > 0)) return;
+
+        await this._db.Execulte<any>(
+            `INSERT INTO parceiro_comissao_faturas (parceiro_id_fk, competencia, vencimento, valor)
+             VALUES ($1,$2,$3,$4) ON CONFLICT (parceiro_id_fk, competencia) DO NOTHING;`,
+            [parceiroId, competencia, vencimento, valor]
+        );
+    }
+
+    async GarantirFaturasComissaoTodos() : Promise<void> {
+        const parceiros = await this._db.Execulte<{ id:number }>(`SELECT id FROM parceiros;`, []);
+        for (const p of parceiros) {
+            await this.GarantirFaturaComissaoParceiro(p.id);
+        }
+    }
+
+    async ObterFaturasComissaoParceiro(parceiroId:number) : Promise<comissaoFaturaModel[]> {
+        const select = `SELECT * FROM parceiro_comissao_faturas WHERE parceiro_id_fk = $1 ORDER BY competencia DESC;`;
+        return await this._db.Execulte<comissaoFaturaModel>(select, [parceiroId]);
+    }
+
+    async ListarFaturasComissaoTodos() : Promise<any[]> {
+        const select = `
+            SELECT pa.id AS parceiro_id, pa.nome_parceiro AS parceiro_nome,
+                   cf.id AS fatura_id, cf.competencia, cf.vencimento, cf.valor, cf.status, cf.pago_em
+            FROM parceiros pa
+            LEFT JOIN LATERAL (
+                SELECT * FROM parceiro_comissao_faturas pcf
+                WHERE pcf.parceiro_id_fk = pa.id
+                ORDER BY pcf.competencia DESC
+                LIMIT 1
+            ) cf ON true
+            ORDER BY pa.nome_parceiro ASC;
+        `;
+        return await this._db.Execulte<any>(select, []);
+    }
+
+    async MarcarFaturaComissaoPaga(id:number) : Promise<comissaoFaturaModel> {
+        const update = `UPDATE parceiro_comissao_faturas SET status = 'pago', pago_em = now()
+            WHERE id = $1 AND status = 'pendente' RETURNING *;`;
+        const result = await this._db.Execulte<comissaoFaturaModel>(update, [id]);
+        return result[0];
+    }
+
+    async MarcarFaturaComissaoCancelada(id:number) : Promise<comissaoFaturaModel> {
+        const update = `UPDATE parceiro_comissao_faturas SET status = 'cancelado'
+            WHERE id = $1 AND status = 'pendente' RETURNING *;`;
+        const result = await this._db.Execulte<comissaoFaturaModel>(update, [id]);
+        return result[0];
     }
 
     // dia de vencimento = dia da data de adesão, capado em 28 pra não ter problema com
