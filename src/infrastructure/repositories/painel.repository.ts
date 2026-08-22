@@ -420,6 +420,18 @@ export default class PainelRepository implements IPainelRepository {
     async DefinirStatusParceiro(id:number, ativo:boolean) : Promise<void> {
         const update = `UPDATE parceiros SET ativo = $1 WHERE id = $2;`;
         await this._db.Execulte<any>(update, [ativo, id]);
+
+        if (!ativo) {
+            // ao desativar o parceiro, as ofertas dele saem do catálogo de todo provedor e
+            // do app (mesmo filtro mb.ativo=true já usado hoje) — sem isso, o parceiro
+            // desativado continuava aparecendo/vendável normalmente. Reativar o parceiro
+            // NÃO reativa as ofertas sozinho — ele reabre cada uma pelo próprio portal,
+            // evitando reativar algo que ele mesmo já tinha desligado antes.
+            await this._db.Execulte<any>(
+                `UPDATE marketing_beneficios SET ativo = false WHERE parceiro_id_fk = $1 AND ativo = true;`,
+                [id]
+            );
+        }
     }
 
     async DefinirProvedorParceiro(id:number, codigoProvedorFk:number|null) : Promise<void> {
