@@ -11,6 +11,7 @@ import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { assinaturaModel } from "../../core/models/assinaturaModel";
 import { faturaModel } from "../../core/models/faturaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { iptvConfigModel } from "../../core/models/iptvConfigModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { planoModel } from "../../core/models/planoModel";
@@ -124,6 +125,10 @@ export default interface IPainelServices {
     ObterConfigPix() : Promise<pixConfigModel>
     DefinirConfigPix(config:pixConfigModel) : Promise<pixConfigModel>
     VerificarInadimplenciaTodos() : Promise<number>
+
+    // IPTV (URL padrão do servidor Xtream usada pelo app de TV)
+    ObterConfigIptv() : Promise<iptvConfigModel>
+    DefinirConfigIptv(urlPadrao:string) : Promise<iptvConfigModel>
 
     // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
     ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel>

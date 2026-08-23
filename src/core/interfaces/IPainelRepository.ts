@@ -11,6 +11,7 @@ import { assinaturaModel } from "../models/assinaturaModel";
 import { planoModel } from "../models/planoModel";
 import { faturaModel } from "../models/faturaModel";
 import { pixConfigModel } from "../models/pixConfigModel";
+import { iptvConfigModel } from "../models/iptvConfigModel";
 import { homeConfigModel } from "../models/homeConfigModel";
 import { atendimentoModel } from "../models/atendimentoModel";
 import { comissaoFaturaModel } from "../models/comissaoFaturaModel";
@@ -100,6 +101,10 @@ export default interface IPainelRepository {
     ListarFaturamentoTodos() : Promise<any[]>
     ObterConfigPix() : Promise<pixConfigModel>
     DefinirConfigPix(config:pixConfigModel) : Promise<pixConfigModel>
+
+    // IPTV (URL padrão do servidor Xtream usada pelo app de TV)
+    ObterConfigIptv() : Promise<iptvConfigModel>
+    DefinirConfigIptv(urlPadrao:string) : Promise<iptvConfigModel>
 
     // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
     ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel>

@@ -126,4 +126,7 @@ painelRouter.get('/admin/faturas/:id/recibo', authMiddleware, adminMiddleware, p
 painelRouter.get('/admin/config-pix', authMiddleware, adminMiddleware, painelController.ObterConfigPixAdmin.bind(painelController));
 painelRouter.put('/admin/config-pix', authMiddleware, adminMiddleware, painelController.DefinirConfigPixAdmin.bind(painelController));
 
+painelRouter.get('/admin/config-iptv', authMiddleware, adminMiddleware, painelController.ObterConfigIptvAdmin.bind(painelController));
+painelRouter.put('/admin/config-iptv', authMiddleware, adminMiddleware, painelController.DefinirConfigIptvAdmin.bind(painelController));
+
 export default painelRouter;

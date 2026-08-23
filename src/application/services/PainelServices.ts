@@ -16,6 +16,7 @@ import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { assinaturaModel } from "../../core/models/assinaturaModel";
 import { faturaModel } from "../../core/models/faturaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { iptvConfigModel } from "../../core/models/iptvConfigModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
@@ -463,6 +464,14 @@ export default class PainelService implements IPainelServices {
         if (!config.chave_pix?.trim())
             throw new Error("Informe a chave PIX.");
         return await this._painelRepository.DefinirConfigPix(config);
+    }
+
+    async ObterConfigIptv() : Promise<iptvConfigModel> {
+        return await this._painelRepository.ObterConfigIptv();
+    }
+
+    async DefinirConfigIptv(urlPadrao:string) : Promise<iptvConfigModel> {
+        return await this._painelRepository.DefinirConfigIptv(urlPadrao?.trim() ?? "");
     }
 
     async ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel> {

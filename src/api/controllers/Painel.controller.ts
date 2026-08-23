@@ -773,4 +773,22 @@ export default class PainelController {
         }
     }
 
+    async ObterConfigIptvAdmin(req:AuthRequest, res:Response){
+
+        const config = await this._painelService.ObterConfigIptv();
+        return res.json({data: config})
+    }
+
+    async DefinirConfigIptvAdmin(req:AuthRequest, res:Response){
+
+        const { url_padrao } = req.body;
+
+        try {
+            const atualizado = await this._painelService.DefinirConfigIptv(url_padrao);
+            return res.status(200).json({data: atualizado})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
 }

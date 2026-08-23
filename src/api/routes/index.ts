@@ -6,6 +6,7 @@ import chamadoRoute from "./chamado.route";
 import painelRouter from "./painel.route";
 import notificationRoute from "./notifications.route";
 import parceiroRoute from "./parceiro.route";
+import iptvRoute from "./iptv.route";
 
 const routes = Router();
 
@@ -16,5 +17,6 @@ routes.use("/chamados", chamadoRoute);
 routes.use("/painel", painelRouter);
 routes.use('/notificacoes', notificationRoute)
 routes.use('/parceiros', parceiroRoute)
+routes.use('/iptv', iptvRoute)
 
 export default routes;

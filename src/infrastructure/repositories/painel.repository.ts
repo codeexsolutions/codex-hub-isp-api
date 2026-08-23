@@ -15,6 +15,7 @@ import { assinaturaModel } from "../../core/models/assinaturaModel";
 import { planoModel } from "../../core/models/planoModel";
 import { faturaModel } from "../../core/models/faturaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
+import { iptvConfigModel } from "../../core/models/iptvConfigModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
@@ -735,6 +736,19 @@ export default class PainelRepository implements IPainelRepository {
         const update = `UPDATE synk_pix_config SET chave_pix = $1, nome_recebedor = $2, cidade = $3, atualizado_em = now()
             WHERE id = 1 RETURNING chave_pix, nome_recebedor, cidade;`;
         const result = await this._db.Execulte<pixConfigModel>(update, [config.chave_pix, config.nome_recebedor, config.cidade]);
+        return result[0];
+    }
+
+    async ObterConfigIptv() : Promise<iptvConfigModel> {
+        const select = `SELECT url_padrao FROM iptv_config WHERE id = 1;`;
+        const result = await this._db.Execulte<iptvConfigModel>(select, []);
+        return result[0];
+    }
+
+    async DefinirConfigIptv(urlPadrao:string) : Promise<iptvConfigModel> {
+        const update = `UPDATE iptv_config SET url_padrao = $1, atualizado_em = now()
+            WHERE id = 1 RETURNING url_padrao;`;
+        const result = await this._db.Execulte<iptvConfigModel>(update, [urlPadrao]);
         return result[0];
     }
 
