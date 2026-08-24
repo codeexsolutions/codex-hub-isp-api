@@ -23,6 +23,7 @@ import { ixcOsConfigModel } from "../../core/models/ixcOsConfigModel";
 import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel";
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
+import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
 import { estatus } from "../../common/enuns/estatus";
 
 @injectable()
@@ -750,6 +751,58 @@ export default class PainelRepository implements IPainelRepository {
             WHERE id = 1 RETURNING url_padrao;`;
         const result = await this._db.Execulte<iptvConfigModel>(update, [urlPadrao]);
         return result[0];
+    }
+
+    // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
+    async ObterConfigLicencaTv() : Promise<configLicencaTvModel> {
+        const select = `SELECT valor_anual FROM config_licenca_tv WHERE id = 1;`;
+        const result = await this._db.Execulte<configLicencaTvModel>(select, []);
+        return result[0];
+    }
+
+    async DefinirConfigLicencaTv(valorAnual:number) : Promise<configLicencaTvModel> {
+        const update = `UPDATE config_licenca_tv SET valor_anual = $1 WHERE id = 1 RETURNING valor_anual;`;
+        const result = await this._db.Execulte<configLicencaTvModel>(update, [valorAnual]);
+        return result[0];
+    }
+
+    // Já nasce em teste (7 dias liberados) — o cliente entra na hora, sem
+    // esperar aprovação de pagamento; o PIX fica disponível durante o teste
+    // pra converter em licença paga (ver AprovarLicencaTv).
+    async CriarLicencaTv(chave:string, nome:string, telefone:string, valor:number) : Promise<licencaTvModel> {
+        const insert = `INSERT INTO licencas_tv (chave, nome, telefone, valor, status, vencimento)
+            VALUES ($1,$2,$3,$4,'teste',(CURRENT_DATE + INTERVAL '7 days')::date) RETURNING *;`;
+        const result = await this._db.Execulte<licencaTvModel>(insert, [chave, nome, telefone, valor]);
+        return result[0];
+    }
+
+    async ObterLicencaTvPorChave(chave:string) : Promise<licencaTvModel | null> {
+        const select = `SELECT * FROM licencas_tv WHERE chave = $1;`;
+        const result = await this._db.Execulte<licencaTvModel>(select, [chave]);
+        return result[0] ?? null;
+    }
+
+    async ListarLicencasTv() : Promise<licencaTvModel[]> {
+        const select = `SELECT * FROM licencas_tv ORDER BY criado_em DESC;`;
+        return await this._db.Execulte<licencaTvModel>(select, []);
+    }
+
+    async AprovarLicencaTv(id:number) : Promise<licencaTvModel> {
+        const update = `UPDATE licencas_tv SET status = 'ativa', vencimento = (CURRENT_DATE + INTERVAL '1 year')::date, ativado_em = now()
+            WHERE id = $1 RETURNING *;`;
+        const result = await this._db.Execulte<licencaTvModel>(update, [id]);
+        return result[0];
+    }
+
+    async CancelarLicencaTv(id:number) : Promise<licencaTvModel> {
+        const update = `UPDATE licencas_tv SET status = 'cancelada' WHERE id = $1 RETURNING *;`;
+        const result = await this._db.Execulte<licencaTvModel>(update, [id]);
+        return result[0];
+    }
+
+    async VencerLicencasTvExpiradas() : Promise<void> {
+        const update = `UPDATE licencas_tv SET status = 'vencida' WHERE status IN ('ativa','teste') AND vencimento < CURRENT_DATE;`;
+        await this._db.Execulte<any>(update, []);
     }
 
     async ObterHomeConfig(codigoProvedor: number): Promise<homeConfigModel> {

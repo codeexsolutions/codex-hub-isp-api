@@ -19,6 +19,7 @@ import { ixcOsConfigModel } from "../models/ixcOsConfigModel";
 import { ixcContratoConfigModel } from "../models/ixcContratoConfigModel";
 import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
+import { licencaTvModel, configLicencaTvModel } from "../models/licencaTvModel";
 
 export default interface IPainelRepository {
 
@@ -105,6 +106,16 @@ export default interface IPainelRepository {
     // IPTV (URL padrão do servidor Xtream usada pelo app de TV)
     ObterConfigIptv() : Promise<iptvConfigModel>
     DefinirConfigIptv(urlPadrao:string) : Promise<iptvConfigModel>
+
+    // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
+    ObterConfigLicencaTv() : Promise<configLicencaTvModel>
+    DefinirConfigLicencaTv(valorAnual:number) : Promise<configLicencaTvModel>
+    CriarLicencaTv(chave:string, nome:string, telefone:string, valor:number) : Promise<licencaTvModel>
+    ObterLicencaTvPorChave(chave:string) : Promise<licencaTvModel | null>
+    ListarLicencasTv() : Promise<licencaTvModel[]>
+    AprovarLicencaTv(id:number) : Promise<licencaTvModel>
+    CancelarLicencaTv(id:number) : Promise<licencaTvModel>
+    VencerLicencasTvExpiradas() : Promise<void>
 
     // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
     ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel>

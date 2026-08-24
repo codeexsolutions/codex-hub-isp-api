@@ -791,4 +791,50 @@ export default class PainelController {
         }
     }
 
+    async ObterConfigLicencaTvAdmin(req:AuthRequest, res:Response){
+
+        const config = await this._painelService.ObterConfigLicencaTv();
+        return res.json({data: config})
+    }
+
+    async DefinirConfigLicencaTvAdmin(req:AuthRequest, res:Response){
+
+        const { valor_anual } = req.body;
+
+        try {
+            const atualizado = await this._painelService.DefinirConfigLicencaTv(Number(valor_anual));
+            return res.status(200).json({data: atualizado})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ListarLicencasTvAdmin(req:AuthRequest, res:Response){
+
+        const licencas = await this._painelService.ListarLicencasTv();
+        return res.json({data: licencas})
+    }
+
+    async AprovarLicencaTvAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        try {
+            const licenca = await this._painelService.AprovarLicencaTv(id);
+            return res.json({data: licenca})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async CancelarLicencaTvAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        try {
+            const licenca = await this._painelService.CancelarLicencaTv(id);
+            return res.json({data: licenca})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
 }

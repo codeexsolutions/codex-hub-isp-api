@@ -27,6 +27,8 @@ import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
 import * as QRCode from "qrcode";
+import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
+import crypto from "crypto";
 
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
@@ -472,6 +474,77 @@ export default class PainelService implements IPainelServices {
 
     async DefinirConfigIptv(urlPadrao:string) : Promise<iptvConfigModel> {
         return await this._painelRepository.DefinirConfigIptv(urlPadrao?.trim() ?? "");
+    }
+
+    // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
+    async ObterConfigLicencaTv() : Promise<configLicencaTvModel> {
+        return await this._painelRepository.ObterConfigLicencaTv();
+    }
+
+    async DefinirConfigLicencaTv(valorAnual:number) : Promise<configLicencaTvModel> {
+        if (!(valorAnual > 0))
+            throw new Error("Informe um valor anual válido.");
+        return await this._painelRepository.DefinirConfigLicencaTv(valorAnual);
+    }
+
+    private gerarChaveLicenca(): string {
+        const bloco = () => crypto.randomBytes(3).toString("hex").toUpperCase();
+        return `SYNK-${bloco()}-${bloco()}`;
+    }
+
+    private async gerarPixLicenca(licenca: licencaTvModel) {
+        const pixConfig = await this._painelRepository.ObterConfigPix();
+        if (!pixConfig?.chave_pix) return { pixCopiaCola: null, pixQrCode: null };
+
+        const pixCopiaCola = gerarPixCopiaCola({
+            chave: pixConfig.chave_pix,
+            nomeRecebedor: pixConfig.nome_recebedor,
+            cidade: pixConfig.cidade,
+            valor: Number(licenca.valor),
+            txid: `LIC${licenca.id}`,
+        });
+        const pixQrCode = await QRCode.toDataURL(pixCopiaCola, { margin: 1, width: 280 });
+        return { pixCopiaCola, pixQrCode };
+    }
+
+    async SolicitarLicencaTv(nome:string, telefone:string) {
+        if (!nome?.trim() || !telefone?.trim())
+            throw new Error("Informe nome e telefone.");
+
+        const config = await this._painelRepository.ObterConfigLicencaTv();
+        const chave = this.gerarChaveLicenca();
+        const licenca = await this._painelRepository.CriarLicencaTv(chave, nome.trim(), telefone.trim(), Number(config.valor_anual));
+        const pix = await this.gerarPixLicenca(licenca);
+
+        return { chave: licenca.chave, valor: licenca.valor, status: licenca.status, vencimento: licenca.vencimento, ...pix };
+    }
+
+    async ObterStatusLicencaTv(chave:string) {
+        await this._painelRepository.VencerLicencasTvExpiradas();
+        const licenca = await this._painelRepository.ObterLicencaTvPorChave(chave?.trim() ?? "");
+        if (!licenca)
+            throw new Error("Licença não encontrada.");
+
+        // "pendente" (legado) e "teste" continuam mostrando o PIX — o
+        // cliente pode pagar a qualquer momento pra virar licença cheia.
+        if (licenca.status !== "pendente" && licenca.status !== "teste")
+            return { chave: licenca.chave, status: licenca.status, vencimento: licenca.vencimento, valor: licenca.valor };
+
+        const pix = await this.gerarPixLicenca(licenca);
+        return { chave: licenca.chave, status: licenca.status, vencimento: licenca.vencimento, valor: licenca.valor, ...pix };
+    }
+
+    async ListarLicencasTv() : Promise<licencaTvModel[]> {
+        await this._painelRepository.VencerLicencasTvExpiradas();
+        return await this._painelRepository.ListarLicencasTv();
+    }
+
+    async AprovarLicencaTv(id:number) : Promise<licencaTvModel> {
+        return await this._painelRepository.AprovarLicencaTv(id);
+    }
+
+    async CancelarLicencaTv(id:number) : Promise<licencaTvModel> {
+        return await this._painelRepository.CancelarLicencaTv(id);
     }
 
     async ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel> {
