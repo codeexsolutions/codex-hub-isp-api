@@ -799,10 +799,15 @@ export default class PainelController {
 
     async DefinirConfigLicencaTvAdmin(req:AuthRequest, res:Response){
 
-        const { valor_anual } = req.body;
+        const { valor_anual, chave_pix, nome_recebedor, cidade } = req.body;
 
         try {
-            const atualizado = await this._painelService.DefinirConfigLicencaTv(Number(valor_anual));
+            const atualizado = await this._painelService.DefinirConfigLicencaTv({
+                valor_anual: Number(valor_anual),
+                chave_pix,
+                nome_recebedor,
+                cidade,
+            });
             return res.status(200).json({data: atualizado})
         } catch (error: any) {
             return res.status(400).json({ message: error.message })

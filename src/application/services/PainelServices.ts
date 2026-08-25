@@ -481,10 +481,17 @@ export default class PainelService implements IPainelServices {
         return await this._painelRepository.ObterConfigLicencaTv();
     }
 
-    async DefinirConfigLicencaTv(valorAnual:number) : Promise<configLicencaTvModel> {
-        if (!(valorAnual > 0))
+    async DefinirConfigLicencaTv(config: configLicencaTvModel) : Promise<configLicencaTvModel> {
+        if (!(Number(config.valor_anual) > 0))
             throw new Error("Informe um valor anual válido.");
-        return await this._painelRepository.DefinirConfigLicencaTv(valorAnual);
+        if (!config.chave_pix?.trim())
+            throw new Error("Informe a chave PIX da licença.");
+        return await this._painelRepository.DefinirConfigLicencaTv({
+            valor_anual: Number(config.valor_anual),
+            chave_pix: config.chave_pix.trim(),
+            nome_recebedor: config.nome_recebedor?.trim() || "SYNK SOLUCOES",
+            cidade: config.cidade?.trim() || "FORTALEZA",
+        });
     }
 
     private gerarChaveLicenca(): string {
@@ -492,8 +499,10 @@ export default class PainelService implements IPainelServices {
         return `SYNK-${bloco()}-${bloco()}`;
     }
 
+    // PIX próprio da licença (config_licenca_tv) — deliberadamente separado
+    // do synk_pix_config usado em Faturamento/Comissão do provedor.
     private async gerarPixLicenca(licenca: licencaTvModel) {
-        const pixConfig = await this._painelRepository.ObterConfigPix();
+        const pixConfig = await this._painelRepository.ObterConfigLicencaTv();
         if (!pixConfig?.chave_pix) return { pixCopiaCola: null, pixQrCode: null };
 
         const pixCopiaCola = gerarPixCopiaCola({

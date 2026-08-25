@@ -133,7 +133,7 @@ export default interface IPainelServices {
 
     // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
     ObterConfigLicencaTv() : Promise<configLicencaTvModel>
-    DefinirConfigLicencaTv(valorAnual:number) : Promise<configLicencaTvModel>
+    DefinirConfigLicencaTv(config:configLicencaTvModel) : Promise<configLicencaTvModel>
     SolicitarLicencaTv(nome:string, telefone:string) : Promise<{ chave:string; valor:number; status:string; vencimento:string|null; pixCopiaCola:string|null; pixQrCode:string|null }>
     ObterStatusLicencaTv(chave:string) : Promise<{ chave:string; status:string; vencimento:string|null; valor:number; pixCopiaCola?:string|null; pixQrCode?:string|null }>
     ListarLicencasTv() : Promise<licencaTvModel[]>

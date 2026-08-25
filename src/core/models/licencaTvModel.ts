@@ -12,4 +12,7 @@ export type licencaTvModel = {
 
 export type configLicencaTvModel = {
     valor_anual: number;
+    chave_pix: string;
+    nome_recebedor: string;
+    cidade: string;
 };

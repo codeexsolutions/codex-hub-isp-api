@@ -7,6 +7,7 @@ import painelRouter from "./painel.route";
 import notificationRoute from "./notifications.route";
 import parceiroRoute from "./parceiro.route";
 import iptvRoute from "./iptv.route";
+import iptvProxyRoute from "./iptvProxy.route";
 import licencaTvRoute from "./licencaTv.route";
 
 const routes = Router();
@@ -19,6 +20,7 @@ routes.use("/painel", painelRouter);
 routes.use('/notificacoes', notificationRoute)
 routes.use('/parceiros', parceiroRoute)
 routes.use('/iptv', iptvRoute)
+routes.use('/iptv/proxy', iptvProxyRoute)
 routes.use('/licenca-tv', licencaTvRoute)
 
 export default routes;

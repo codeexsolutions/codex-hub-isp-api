@@ -753,16 +753,18 @@ export default class PainelRepository implements IPainelRepository {
         return result[0];
     }
 
-    // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
+    // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor) — PIX próprio,
+    // separado do synk_pix_config usado em Faturamento/Comissão.
     async ObterConfigLicencaTv() : Promise<configLicencaTvModel> {
-        const select = `SELECT valor_anual FROM config_licenca_tv WHERE id = 1;`;
+        const select = `SELECT valor_anual, chave_pix, nome_recebedor, cidade FROM config_licenca_tv WHERE id = 1;`;
         const result = await this._db.Execulte<configLicencaTvModel>(select, []);
         return result[0];
     }
 
-    async DefinirConfigLicencaTv(valorAnual:number) : Promise<configLicencaTvModel> {
-        const update = `UPDATE config_licenca_tv SET valor_anual = $1 WHERE id = 1 RETURNING valor_anual;`;
-        const result = await this._db.Execulte<configLicencaTvModel>(update, [valorAnual]);
+    async DefinirConfigLicencaTv(config: configLicencaTvModel) : Promise<configLicencaTvModel> {
+        const update = `UPDATE config_licenca_tv SET valor_anual = $1, chave_pix = $2, nome_recebedor = $3, cidade = $4
+            WHERE id = 1 RETURNING valor_anual, chave_pix, nome_recebedor, cidade;`;
+        const result = await this._db.Execulte<configLicencaTvModel>(update, [config.valor_anual, config.chave_pix, config.nome_recebedor, config.cidade]);
         return result[0];
     }
 
