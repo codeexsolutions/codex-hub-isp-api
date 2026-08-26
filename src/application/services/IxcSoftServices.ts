@@ -115,7 +115,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
                 consumoMensalDown :  [Number.parseFloat(download)],
                 consumoMensalUp : [Number.parseFloat(upload)]
             },
-            ultimasFaturas: await Promise.all(faturas.registros.map(async (fat:any) => {
+            ultimasFaturas: await Promise.all((faturas.registros ?? []).map(async (fat:any) => {
                 const pix = await this.ObterPixSeAberta(fat, codigoProvedor);
                 const fatura:faturaDto = {
                     id: fat.id,
@@ -141,7 +141,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
 
         const faturasResponse = await this._apiIxcSoft.ObterFaturas(Number.parseInt(idContrato), codigoProvedor);
 
-        const faturas = await Promise.all(faturasResponse.registros.map(async (fat:any) => {
+        const faturas = await Promise.all((faturasResponse.registros ?? []).map(async (fat:any) => {
             const pix = await this.ObterPixSeAberta(fat, codigoProvedor);
             const fatura:faturaDto = {
                 id: fat.id,
