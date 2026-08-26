@@ -20,6 +20,11 @@ painelRouter.patch('/provedor/atualizar', authMiddleware, painelController.Atual
 painelRouter.get('/provedor/temas', authMiddleware, painelController.ObterTema.bind(painelController));
 painelRouter.put('/provedor/temas', authMiddleware, uploadMiddleware, painelController.AtualizarTema.bind(painelController));
 
+// ATIVAÇÃO TV (código por cliente, ver core/models/ativacaoTvModel.ts)
+painelRouter.post('/provedor/tv-ativacoes', authMiddleware, painelController.GerarAtivacaoTv.bind(painelController));
+painelRouter.get('/provedor/tv-ativacoes', authMiddleware, painelController.ListarAtivacoesTv.bind(painelController));
+painelRouter.delete('/provedor/tv-ativacoes/:id', authMiddleware, painelController.RevogarAtivacaoTv.bind(painelController));
+
 
 // MARKETING - ALERTAS - INFORMATIVOS
 

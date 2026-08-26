@@ -13,6 +13,7 @@ import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
 
 export default interface IProvedorServices {
     Cadastrar(cadastro:cadastroProvedorDto): Promise<provedorPainelDto>
@@ -43,4 +44,9 @@ export default interface IProvedorServices {
     AvaliarApp(avaliacao:avaliacaoModel) : Promise<any> 
     ObterAvaliacoesApp(codigoProvedor:string) : Promise<any>
     ObterManifest(codigo:string) : Promise<any>
+    // ATIVAÇÃO TV
+    GerarAtivacaoTv(codigoProvedor:number, clienteNome?:string) : Promise<ativacaoTvModel>
+    ListarAtivacoesTv(codigoProvedor:number) : Promise<ativacaoTvModel[]>
+    RevogarAtivacaoTv(codigoProvedor:number, id:number) : Promise<ativacaoTvModel>
+    ValidarAtivacaoTv(codigoProvedor:string, codigo:string) : Promise<{ valido:boolean }>
 }

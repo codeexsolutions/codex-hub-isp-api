@@ -188,8 +188,34 @@ export default class PainelController {
         
         data.codigo = Number.parseInt(req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string);
         const result = await this._provedorService.AtualizarTema(data, files);
-        
+
         return res.json({data: result})
+    }
+
+    async GerarAtivacaoTv(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const { clienteNome } = req.body as { clienteNome?: string };
+        const ativacao = await this._provedorService.GerarAtivacaoTv(codigoProvedor, clienteNome);
+
+        return res.status(201).json({ data: ativacao });
+    }
+
+    async ListarAtivacoesTv(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const ativacoes = await this._provedorService.ListarAtivacoesTv(codigoProvedor);
+
+        return res.json({ data: ativacoes });
+    }
+
+    async RevogarAtivacaoTv(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const id = Number.parseInt(req.params.id as string);
+        const ativacao = await this._provedorService.RevogarAtivacaoTv(codigoProvedor, id);
+
+        return res.json({ data: ativacao });
     }
 
     async SalvarIndicacao(req:AuthRequest, res:Response){

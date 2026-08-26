@@ -14,6 +14,7 @@ import { homeConfigModel } from "../models/homeConfigModel";
 import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { atendimentoModel } from "../models/atendimentoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
+import { ativacaoTvModel } from "../models/ativacaoTvModel";
 
 export default interface IProvedorRepository{
     ObterProvedor(codigoProvedor:string): Promise<Provedor>
@@ -52,4 +53,10 @@ export default interface IProvedorRepository{
     ObterIndicacoes(codigoProvedor:string) : Promise<any>;
     ObterProvedorPorCpfCnpj(cnpj: string): Promise<Provedor | null>
     ObterManifest(codigo:string) : Promise<any>
+    // ATIVAÇÃO TV (código por cliente — ver 2026_08_ativacao_tv.sql)
+    CriarAtivacaoTv(codigo:string, codigoProvedor:number, clienteNome:string | null) : Promise<ativacaoTvModel>
+    ListarAtivacoesTv(codigoProvedor:number) : Promise<ativacaoTvModel[]>
+    ObterAtivacaoTvAtiva(codigo:string, codigoProvedor:string) : Promise<ativacaoTvModel | null>
+    MarcarAtivacaoTvUsada(id:number) : Promise<void>
+    RevogarAtivacaoTv(id:number, codigoProvedor:number) : Promise<ativacaoTvModel>
 }

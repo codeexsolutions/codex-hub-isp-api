@@ -42,6 +42,22 @@ export default class ProvedorController{
 
     }
 
+    // Público — o app de TV chama antes de liberar sem cobrar a licença anual.
+    // O codigo_provedor sozinho (usado aqui só pra achar o provedor certo) não
+    // basta: precisa também do código de ativação que o provedor gerou e
+    // enviou pro cliente (ver Painel > Ativação TV).
+    async ValidarAtivacaoTv(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigo as string;
+        const { codigoAtivacao } = req.body as { codigoAtivacao?: string };
+
+        if (!codigoAtivacao?.trim())
+            return res.status(400).json({ statusCode: 400, message: "Informe o código de ativação." });
+
+        const resultado = await this._provedorService.ValidarAtivacaoTv(codigoProvedor, codigoAtivacao);
+        return res.json({ data: resultado });
+    }
+
     async ObterTema(req:AuthRequest, res:Response){
         
         const codigoProvedor = req.usuario?.codigoProvedor ?? req.params.codigoProvedor as string;

@@ -18,6 +18,7 @@ import { atendimentoModel } from "../../core/models/atendimentoModel";
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
 
 
 @injectable()
@@ -454,7 +455,40 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async ObterAvaliacoesApp(codigoProvedor:string) : Promise<any> {
-        
+
         return await this._db.Execulte("SELECT * FROM avaliacao_app WHERE codigo_provedor_fk = $1", [codigoProvedor])
+    }
+
+    async CriarAtivacaoTv(codigo:string, codigoProvedor:number, clienteNome:string | null) : Promise<ativacaoTvModel> {
+        const insert = `INSERT INTO ativacoes_tv (codigo, codigo_provedor_fk, cliente_nome)
+                        VALUES ($1, $2, $3) RETURNING *;`;
+        const result = await this._db.Execulte<ativacaoTvModel>(insert, [codigo, codigoProvedor, clienteNome]);
+        return result[0];
+    }
+
+    async ListarAtivacoesTv(codigoProvedor:number) : Promise<ativacaoTvModel[]> {
+        const select = `SELECT * FROM ativacoes_tv WHERE codigo_provedor_fk = $1 ORDER BY criado_em DESC;`;
+        return await this._db.Execulte<ativacaoTvModel>(select, [codigoProvedor]);
+    }
+
+    // Único ponto que o app de TV usa pra decidir se libera sem cobrar a
+    // licença — por isso confere código E provedor juntos (o mesmo código
+    // não pode ser reaproveitado apontando pra outro codigo_provedor).
+    async ObterAtivacaoTvAtiva(codigo:string, codigoProvedor:string) : Promise<ativacaoTvModel | null> {
+        const select = `SELECT * FROM ativacoes_tv WHERE codigo = $1 AND codigo_provedor_fk = $2 AND status = 'ativo';`;
+        const result = await this._db.Execulte<ativacaoTvModel>(select, [codigo, codigoProvedor]);
+        return result[0] ?? null;
+    }
+
+    async MarcarAtivacaoTvUsada(id:number) : Promise<void> {
+        await this._db.Execulte(`UPDATE ativacoes_tv SET usado_em = now() WHERE id = $1 AND usado_em IS NULL;`, [id]);
+    }
+
+    async RevogarAtivacaoTv(id:number, codigoProvedor:number) : Promise<ativacaoTvModel> {
+        const update = `UPDATE ativacoes_tv SET status = 'revogado' WHERE id = $1 AND codigo_provedor_fk = $2 RETURNING *;`;
+        const result = await this._db.Execulte<ativacaoTvModel>(update, [id, codigoProvedor]);
+        if (!result[0])
+            throw new Error("Código de ativação não encontrado.");
+        return result[0];
     }
 }

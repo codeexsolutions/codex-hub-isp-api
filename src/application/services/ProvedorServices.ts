@@ -15,6 +15,7 @@ import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
 import { ManifestModel } from "../Dtos/manifest.dto";
 import { compraModel } from "../../core/models/compraModel";
 import { gerarCupom } from "../../common/utilities/cupom";
+import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
 
 @injectable()
 export default class ProvedorServices implements IProvedorServices {
@@ -435,6 +436,32 @@ export default class ProvedorServices implements IProvedorServices {
     }
     async ObterAvaliacoesApp(codigoProvedor: string): Promise<any> {
         return await this._provedorRepository.ObterAvaliacoesApp(codigoProvedor);
+    }
+
+    // ATIVAÇÃO TV — código gerado pelo provedor e enviado pro cliente. É o que
+    // realmente autoriza pular a licença paga do synk-tv; o codigo_provedor
+    // sozinho não basta (é público, usado só pra tema/branding).
+    async GerarAtivacaoTv(codigoProvedor: number, clienteNome?: string): Promise<ativacaoTvModel> {
+        const codigo = gerarCupom();
+        return await this._provedorRepository.CriarAtivacaoTv(codigo, codigoProvedor, clienteNome?.trim() || null);
+    }
+
+    async ListarAtivacoesTv(codigoProvedor: number): Promise<ativacaoTvModel[]> {
+        return await this._provedorRepository.ListarAtivacoesTv(codigoProvedor);
+    }
+
+    async RevogarAtivacaoTv(codigoProvedor: number, id: number): Promise<ativacaoTvModel> {
+        return await this._provedorRepository.RevogarAtivacaoTv(id, codigoProvedor);
+    }
+
+    // Público — chamado pelo app de TV. Não revela se o código existe pra outro
+    // provedor nem se já foi usado: só "válido" ou "inválido" pra esse par.
+    async ValidarAtivacaoTv(codigoProvedor: string, codigo: string): Promise<{ valido: boolean }> {
+        const ativacao = await this._provedorRepository.ObterAtivacaoTvAtiva(codigo?.trim().toUpperCase() ?? "", codigoProvedor);
+        if (!ativacao) return { valido: false };
+
+        await this._provedorRepository.MarcarAtivacaoTvUsada(ativacao.id);
+        return { valido: true };
     }
 
 }
