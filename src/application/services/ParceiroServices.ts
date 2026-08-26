@@ -4,6 +4,7 @@ import IParceiroServices from "../interfaces/IParceiroServices";
 import IPainelRepository from "../../core/interfaces/IPainelRepository";
 import { compraModel } from "../../core/models/compraModel";
 import { beneficioModel } from "../../core/models/beneficioModel";
+import { parceiroModel } from "../../core/models/parceiroModel";
 import { ofertaEditeDto } from "../Dtos/ofertaEditeDto";
 import JwtService from "./JwtServices";
 import UploadService from "./UploadServices";
@@ -33,6 +34,20 @@ export default class ParceiroServices implements IParceiroServices {
             throw new Error("Usuário ou senha inválido");
 
         return this._jwtService.GerarToken({ id: parceiro.id.toString(), codigoProvedor: "", parceiroId: parceiro.id.toString(), role: "parceiro" });
+    }
+
+    async PreCadastrar(parceiro:parceiroModel) : Promise<parceiroModel> {
+        if (!parceiro.nome?.trim() || !parceiro.contato?.trim() || !parceiro.cidade?.trim() || !parceiro.uf?.trim())
+            throw new Error("Informe nome do negócio, cidade, UF e um contato (WhatsApp/telefone).");
+
+        return await this._parceiroRepository.PreCadastrar({
+            nome: parceiro.nome.trim(),
+            cidade: parceiro.cidade.trim(),
+            uf: parceiro.uf.trim().toUpperCase(),
+            endereco: parceiro.endereco?.trim() || null,
+            contato: parceiro.contato.trim(),
+            observacoes: parceiro.observacoes?.trim() || null,
+        } as parceiroModel);
     }
 
     async ObterFinanceiro(parceiroId:number) {

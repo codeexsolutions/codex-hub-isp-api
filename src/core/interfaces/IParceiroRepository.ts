@@ -5,6 +5,7 @@ import { beneficioModel } from "../models/beneficioModel";
 
 export default interface IParceiroRepository {
     ObterPorUsuarioSenha(usuario:string, senha:string) : Promise<parceiroModel|null>
+    PreCadastrar(parceiro:parceiroModel) : Promise<parceiroModel>
     ObterResumoFinanceiro(parceiroId:number) : Promise<{ status:string; qtd:number; total:number; synk:number; provedor:number }[]>
     ObterComprasParceiro(parceiroId:number) : Promise<compraModel[]>
     ObterCompraPorCupom(cupom:string, parceiroId:number) : Promise<compraModel|null>

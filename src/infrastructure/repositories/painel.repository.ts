@@ -419,10 +419,11 @@ export default class PainelRepository implements IPainelRepository {
 
     async ListarParceiros() : Promise<parceiroModel[]> {
         const select = `SELECT pa.id, pa.nome_parceiro AS nome, pa.usuario, pa.ativo, pa.codigo_provedor_fk,
-                   pa.cidade, pa.uf, pa.endereco, pa.contato, pa.created_at AS criado_em, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome
+                   pa.cidade, pa.uf, pa.endereco, pa.contato, pa.observacoes, pa.status,
+                   pa.created_at AS criado_em, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome
             FROM parceiros pa
             LEFT JOIN provedores p ON p.codigo_provedor = pa.codigo_provedor_fk
-            ORDER BY pa.nome_parceiro ASC;`;
+            ORDER BY (pa.status = 'pendente') DESC, pa.nome_parceiro ASC;`;
         return await this._db.Execulte<parceiroModel>(select, []);
     }
 
@@ -456,6 +457,26 @@ export default class PainelRepository implements IPainelRepository {
     async DefinirContatoParceiro(id:number, endereco:string|null, contato:string|null) : Promise<void> {
         const update = `UPDATE parceiros SET endereco = $1, contato = $2 WHERE id = $3;`;
         await this._db.Execulte<any>(update, [endereco, contato, id]);
+    }
+
+    // Aprova um pré-cadastro (ver Parceiro.repository.PreCadastrar): define as
+    // credenciais de acesso ao portal do parceiro e libera (ativo=true).
+    async AprovarParceiro(id:number, usuario:string, senha:string) : Promise<parceiroModel> {
+        const update = `UPDATE parceiros SET usuario = $1, senha = $2, status = 'aprovado', ativo = true
+            WHERE id = $3 RETURNING id, nome_parceiro AS nome, usuario, ativo, status, created_at AS criado_em;`;
+        const result = await this._db.Execulte<parceiroModel>(update, [usuario, senha, id]);
+        if (!result[0])
+            throw new Error("Parceiro não encontrado.");
+        return result[0];
+    }
+
+    async RejeitarParceiro(id:number) : Promise<parceiroModel> {
+        const update = `UPDATE parceiros SET status = 'rejeitado', ativo = false
+            WHERE id = $1 RETURNING id, nome_parceiro AS nome, usuario, ativo, status, created_at AS criado_em;`;
+        const result = await this._db.Execulte<parceiroModel>(update, [id]);
+        if (!result[0])
+            throw new Error("Parceiro não encontrado.");
+        return result[0];
     }
 
     async ValidarCompraAdmin(idCompra:number) : Promise<compraModel> {

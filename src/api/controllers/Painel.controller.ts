@@ -629,6 +629,26 @@ export default class PainelController {
         return res.status(200).json({data: { id, endereco, contato }})
     }
 
+    async AprovarParceiroAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const { usuario, senha } = req.body || {};
+
+        try {
+            const parceiro = await this._painelService.AprovarParceiro(id, usuario, senha);
+            return res.status(200).json({ data: parceiro });
+        } catch (error: any) {
+            return res.status(400).json({ statusCode: 400, message: error.message });
+        }
+    }
+
+    async RejeitarParceiroAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const parceiro = await this._painelService.RejeitarParceiro(id);
+        return res.status(200).json({ data: parceiro });
+    }
+
     async ValidarCompraAdmin(req:AuthRequest, res:Response){
 
         const idCompra = Number.parseInt(req.params.id as string);

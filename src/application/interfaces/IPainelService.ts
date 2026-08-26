@@ -77,6 +77,8 @@ export default interface IPainelServices {
     DefinirProvedorParceiro(id:number, codigoProvedorFk:number|null) : Promise<void>
     DefinirLocalizacaoParceiro(id:number, cidade:string|null, uf:string|null) : Promise<void>
     DefinirContatoParceiro(id:number, endereco:string|null, contato:string|null) : Promise<void>
+    AprovarParceiro(id:number, usuario:string, senha:string) : Promise<parceiroModel>
+    RejeitarParceiro(id:number) : Promise<parceiroModel>
     ValidarCompraAdmin(idCompra:number) : Promise<compraModel>
 
     // FATURAMENTO SYNK (mensalidade do provedor pra Synk)

@@ -17,4 +17,10 @@ export type parceiroModel = {
     endereco?:string|null;
     contato?:string|null;
     criado_em?:string;
+    // pré-cadastro (self-service) começa 'pendente' até o admin aprovar/rejeitar;
+    // parceiro criado direto pelo admin (CriarParceiro) já nasce 'aprovado'.
+    status?:"pendente"|"aprovado"|"rejeitado";
+    // contexto que o interessado escreve no pré-cadastro (sobre o negócio e a
+    // oferta que pretende disponibilizar) — só pro admin avaliar, não aparece pro cliente.
+    observacoes?:string|null;
 }

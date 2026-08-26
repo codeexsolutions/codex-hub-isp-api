@@ -286,6 +286,22 @@ export default class PainelService implements IPainelServices {
         await this._painelRepository.DefinirContatoParceiro(id, endereco, contato);
     }
 
+    async AprovarParceiro(id:number, usuario:string, senha:string) : Promise<parceiroModel> {
+        if (!usuario?.trim() || !senha?.trim())
+            throw new Error("Defina usuário e senha de acesso pra aprovar o parceiro.");
+        try {
+            return await this._painelRepository.AprovarParceiro(id, usuario.trim(), senha.trim());
+        } catch (error: any) {
+            if (error?.code === "23505")
+                throw new Error("Esse nome de usuário já está em uso por outro parceiro.");
+            throw error;
+        }
+    }
+
+    async RejeitarParceiro(id:number) : Promise<parceiroModel> {
+        return await this._painelRepository.RejeitarParceiro(id);
+    }
+
     async ValidarCompraAdmin(idCompra:number) : Promise<compraModel> {
         const compra = await this._painelRepository.ValidarCompraAdmin(idCompra);
         if(!compra)

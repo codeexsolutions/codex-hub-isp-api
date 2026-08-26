@@ -21,6 +21,20 @@ export default class ParceiroRepository implements IParceiroRepository {
         return result[0] ?? null;
     }
 
+    // Público — formulário de "Parcerias" do synk-lp. Nasce sem usuario/senha
+    // e status='pendente'; o admin define as credenciais de acesso ao aprovar
+    // (ver AprovarParceiro em painel.repository.ts).
+    async PreCadastrar(parceiro:parceiroModel) : Promise<parceiroModel> {
+        const insert = `INSERT INTO parceiros (nome_parceiro, cidade, uf, endereco, contato, observacoes, ativo, status)
+            VALUES ($1,$2,$3,$4,$5,$6,false,'pendente')
+            RETURNING id, nome_parceiro AS nome, cidade, uf, endereco, contato, observacoes, status, ativo, created_at AS criado_em;`;
+        const result = await this._db.Execulte<parceiroModel>(insert, [
+            parceiro.nome, parceiro.cidade ?? null, parceiro.uf ?? null,
+            parceiro.endereco ?? null, parceiro.contato ?? null, parceiro.observacoes ?? null,
+        ]);
+        return result[0];
+    }
+
     async ObterResumoFinanceiro(parceiroId:number) : Promise<{ status:string; qtd:number; total:number; synk:number; provedor:number }[]> {
         const select = `
             SELECT c.status,

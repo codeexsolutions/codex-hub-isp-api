@@ -108,6 +108,8 @@ painelRouter.patch('/admin/parceiros/:id/status', authMiddleware, adminMiddlewar
 painelRouter.patch('/admin/parceiros/:id/provedor', authMiddleware, adminMiddleware, painelController.DefinirProvedorParceiroAdmin.bind(painelController));
 painelRouter.patch('/admin/parceiros/:id/localizacao', authMiddleware, adminMiddleware, painelController.DefinirLocalizacaoParceiroAdmin.bind(painelController));
 painelRouter.patch('/admin/parceiros/:id/contato', authMiddleware, adminMiddleware, painelController.DefinirContatoParceiroAdmin.bind(painelController));
+painelRouter.patch('/admin/parceiros/:id/aprovar', authMiddleware, adminMiddleware, painelController.AprovarParceiroAdmin.bind(painelController));
+painelRouter.patch('/admin/parceiros/:id/rejeitar', authMiddleware, adminMiddleware, painelController.RejeitarParceiroAdmin.bind(painelController));
 painelRouter.patch('/admin/compras/:id/validar', authMiddleware, adminMiddleware, painelController.ValidarCompraAdmin.bind(painelController));
 
 // FATURAMENTO SYNK (mensalidade que o provedor paga pra Synk)

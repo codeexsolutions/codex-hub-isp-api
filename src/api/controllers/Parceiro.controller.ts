@@ -4,6 +4,7 @@ import { AuthRequest } from "../middleware/IAuthRequest";
 import IParceiroServices from "../../application/interfaces/IParceiroServices";
 import { beneficioModel } from "../../core/models/beneficioModel";
 import { ofertaEditeDto } from "../../application/Dtos/ofertaEditeDto";
+import { parceiroModel } from "../../core/models/parceiroModel";
 
 @injectable()
 export default class ParceiroController {
@@ -23,6 +24,20 @@ export default class ParceiroController {
             return res.json({ data: { token } });
         } catch (error: any) {
             return res.status(401).json({ message: error.message || "Usuário ou senha inválido" });
+        }
+    }
+
+    // Público — formulário de "Parcerias" no synk-lp. Cria com status pendente;
+    // aprovação (com definição de usuário/senha de acesso) é feita pelo admin.
+    async PreCadastrar(req:Request, res:Response){
+
+        const data = req.body as parceiroModel;
+
+        try {
+            const parceiro = await this._parceiroService.PreCadastrar(data);
+            return res.status(201).json({ data: parceiro });
+        } catch (error: any) {
+            return res.status(400).json({ statusCode: 400, message: error.message });
         }
     }
 

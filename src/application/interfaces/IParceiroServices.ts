@@ -6,6 +6,7 @@ import { comissaoFaturaModel } from "../../core/models/comissaoFaturaModel";
 
 export default interface IParceiroServices {
     Login(usuario:string, senha:string) : Promise<string>
+    PreCadastrar(parceiro:parceiroModel) : Promise<parceiroModel>
     ObterFinanceiro(parceiroId:number) : Promise<{
         resumo: Record<string, { qtd:number; total:number; synk:number; provedor:number }>;
         compras: compraModel[];
