@@ -8,9 +8,11 @@ import routes from "./api/routes";
 import app from "./app";
 import IPainelServices from "./application/interfaces/IPainelService";
 import INotificacaoFaturaServices from "./application/interfaces/INotificacaoFaturaServices";
+import { errorHandler } from "./api/middleware/errorHandler";
 
 app.get('/hub-api-isp', (req, res) => res.json({"message":"Check"}))
 app.use('/v1', routes)
+app.use(errorHandler)
 
 
 const PORT = process.env.PORT || 3010;
