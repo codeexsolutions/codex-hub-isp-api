@@ -366,46 +366,50 @@ export default class ProvedorServices implements IProvedorServices {
         }
 
 
-        if(Object.keys(files).length > 0){
-
+        if(files.logo?.[0]){
             temaAtual.logo = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
-               file: files.logo![0].buffer,
+               file: files.logo[0].buffer,
                nomeArquivo: "logo",
                tipo: ETipoArquivo.LOGO
            });
+        }
 
-           //temaAtual.logo = tema.logo;
-           
+        if(files.favicon?.[0]){
            temaAtual.favicon = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
-               file: files.favicon![0].buffer,
+               file: files.favicon[0].buffer,
                nomeArquivo: "favicon",
                tipo: ETipoArquivo.FAVICON
            })
-          
+        }
+
+        if(files.icon192?.[0]){
            temaAtual.icone192 = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
-               file: files.icon192![0].buffer,
+               file: files.icon192[0].buffer,
                nomeArquivo: "icon192",
                tipo: ETipoArquivo.ICON192
            })
-   
+        }
+
+        if(files.icon512?.[0]){
            temaAtual.icone512 = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
-               file: files.icon512![0].buffer,
+               file: files.icon512[0].buffer,
                nomeArquivo: "icon512",
                tipo: ETipoArquivo.ICON512
            })
-   
+        }
+
+        if(files.maskable?.[0]){
            temaAtual.maskable = await _upload.UploadArquivo({
                codigoProvedor: tema.codigo.toString(),
-               file: files.maskable![0].buffer,
+               file: files.maskable[0].buffer,
                nomeArquivo: "masckable",
                tipo: ETipoArquivo.MASKABLE
            })
-           
-        }  
+        }
 
 
         return await this._provedorRepository.AlterarTema(temaAtual);
