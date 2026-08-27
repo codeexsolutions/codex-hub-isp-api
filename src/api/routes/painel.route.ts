@@ -139,6 +139,7 @@ painelRouter.put('/admin/config-iptv', authMiddleware, adminMiddleware, painelCo
 painelRouter.get('/admin/config-licenca-tv', authMiddleware, adminMiddleware, painelController.ObterConfigLicencaTvAdmin.bind(painelController));
 painelRouter.put('/admin/config-licenca-tv', authMiddleware, adminMiddleware, painelController.DefinirConfigLicencaTvAdmin.bind(painelController));
 painelRouter.get('/admin/licencas-tv', authMiddleware, adminMiddleware, painelController.ListarLicencasTvAdmin.bind(painelController));
+painelRouter.post('/admin/licencas-tv', authMiddleware, adminMiddleware, painelController.CriarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/aprovar', authMiddleware, adminMiddleware, painelController.AprovarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/cancelar', authMiddleware, adminMiddleware, painelController.CancelarLicencaTvAdmin.bind(painelController));
 

@@ -866,6 +866,20 @@ export default class PainelController {
         return res.json({data: licencas})
     }
 
+    // Admin cria a licença manualmente pra um cliente que pediu ativação por
+    // fora do app (WhatsApp etc.) — mesma lógica do fluxo público de
+    // solicitação, só que quem preenche nome/telefone é o admin.
+    async CriarLicencaTvAdmin(req:AuthRequest, res:Response){
+
+        try {
+            const { nome, telefone } = req.body;
+            const resultado = await this._painelService.SolicitarLicencaTv(nome, telefone);
+            return res.status(201).json({ data: resultado });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     async AprovarLicencaTvAdmin(req:AuthRequest, res:Response){
 
         const id = Number.parseInt(req.params.id as string);
