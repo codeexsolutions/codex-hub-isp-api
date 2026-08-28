@@ -27,7 +27,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
     async ObterDadosCliente(cpf:string, codigoProvedor: string, idContrato:number): Promise<clienteDto | multiplos | null> {
 
         const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
-        const cliente = await responseCliente.registros[0]
+        const cliente = await responseCliente.registros.filter((s:any) => s.ativo === 'S');
 
         const responseCidade = await this._apiIxcSoft.ObterCidade(cliente.cidade, codigoProvedor);
         const cidade = await responseCidade.registros[0];
