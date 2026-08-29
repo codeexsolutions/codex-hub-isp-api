@@ -334,7 +334,10 @@ export default class PainelService implements IPainelServices {
             });
             // gera a imagem do QR code localmente a partir do próprio texto do PIX —
             // sem chamada de rede, sem serviço externo.
-            pixQrCode = await QRCode.toDataURL(pixCopiaCola, { margin: 1, width: 280 });
+            // margin 4 = zona de silêncio mínima recomendada pela spec do QR —
+            // com menos que isso, câmera de celular pode não conseguir
+            // localizar/focar o código, mesmo com o conteúdo correto.
+            pixQrCode = await QRCode.toDataURL(pixCopiaCola, { margin: 4, width: 320 });
         }
 
         return { assinatura, faturas, modulosAtivos, pixCopiaCola, pixQrCode };
@@ -528,7 +531,7 @@ export default class PainelService implements IPainelServices {
             valor: Number(licenca.valor),
             txid: `LIC${licenca.id}`,
         });
-        const pixQrCode = await QRCode.toDataURL(pixCopiaCola, { margin: 1, width: 280 });
+        const pixQrCode = await QRCode.toDataURL(pixCopiaCola, { margin: 4, width: 320 });
         return { pixCopiaCola, pixQrCode };
     }
 
