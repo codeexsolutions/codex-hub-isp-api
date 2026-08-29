@@ -10,6 +10,7 @@ import { responseToken } from "./responseModels/responseToken";
 import { responseClienteResumo, fatura } from "./responseModels/responseClienteResumo";
 import { multiplos } from "./responseModels/responseMultiContratos";
 import { responseChamados } from "./responseModels/responseChamados";
+import { DEMO_CODIGO_PROVEDOR, DEMO_TOKEN, demoTokenResponse, demoResumoCliente, demoFaturasRaw, demoChamados, demoNotificarPagamento } from "./mockDemo";
 
 @injectable()
 export default class ApiReceitanetServices implements IApiReceitanetServices {
@@ -22,7 +23,12 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
     }
     
     async ObterToken(codigoProvedor:string, cpf:string) : Promise<responseToken | multiplos> {
-        
+
+        // Ambiente de demonstração (Synk Net) — não tem backend ReceitaNet real,
+        // qualquer CPF válido entra e recebe sempre o mesmo cliente fabricado.
+        if (codigoProvedor === DEMO_CODIGO_PROVEDOR)
+            return demoTokenResponse;
+
         const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
                
         const codigo = provedor.ObterCodigoApiGerenciador();
@@ -89,8 +95,11 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
         return token;
     }
 
-    async ObterResumoCliente(token: string): Promise<responseClienteResumo> {       
-   
+    async ObterResumoCliente(token: string): Promise<responseClienteResumo> {
+
+        if (token === DEMO_TOKEN)
+            return demoResumoCliente;
+
         const configRequest:configRequest = {
             method: emethodHttp.GET,
             resource: "cliente/resumo",
@@ -108,6 +117,9 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
     }
 
     async ObterFaturas(token: string) : Promise<fatura[]> {
+        if (token === DEMO_TOKEN)
+            return demoFaturasRaw as any;
+
         const configRequest:configRequest = {
             method: emethodHttp.GET,
             resource: "financeiros/faturas",
@@ -124,6 +136,9 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
 
     // GET cliente/contrato — devolve os dados/link do PDF do contrato assinado.
     async ObterContrato(token: string) : Promise<any> {
+        if (token === DEMO_TOKEN)
+            return { link: "https://synkisp.com.br" };
+
         const configRequest:configRequest = {
             method: emethodHttp.GET,
             resource: "cliente/contrato",
@@ -147,6 +162,9 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
     // POST cliente/notificar-pagamento — "Desbloqueio de confiança": cliente avisa que
     // já pagou pra liberar o acesso antes da baixa automática confirmar.
     async NotificarPagamento(token: string) : Promise<{ success:boolean; date:string }> {
+        if (token === DEMO_TOKEN)
+            return demoNotificarPagamento();
+
         const configRequest:configRequest = {
             method: emethodHttp.GET,
             resource: "cliente/notificar-pagamento",
@@ -161,6 +179,9 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
     }
 
     async AbrirChamado(token:string, motivo:string) : Promise<boolean> {
+
+        if (token === DEMO_TOKEN)
+            return true;
 
         const configRequest:configRequest = {
             method: emethodHttp.POST,
@@ -182,6 +203,9 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
     
     async ObterChamados(token:string) : Promise<responseChamados> {
 
+        if (token === DEMO_TOKEN)
+            return demoChamados;
+
         const configRequest:configRequest = {
             method: emethodHttp.GET,
             resource: "chamados",
@@ -197,6 +221,9 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
     }
 
     async EnviarRespostaChamado(token: string, idChamado: number, mensagem: string): Promise<boolean> {
+        if (token === DEMO_TOKEN)
+            return true;
+
         const configRequest:configRequest = {
             method: emethodHttp.POST,
             resource: `chamados/respostas/${idChamado}`,
@@ -212,6 +239,9 @@ export default class ApiReceitanetServices implements IApiReceitanetServices {
     }
 
     async RespostasDoChamado(token: string, idChamado: number) : Promise<any> {
+        if (token === DEMO_TOKEN)
+            return { respostas: [] };
+
          const configRequest:configRequest = {
             method: emethodHttp.GET,
             resource: `chamados/respostas/${idChamado}`,
