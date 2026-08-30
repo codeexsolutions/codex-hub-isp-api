@@ -35,6 +35,10 @@ import INotificacaoClienteRepository from "../../core/interfaces/INotificacaoCli
 import NotificacaoClienteRepository from "../../infrastructure/repositories/NotificacaoClienteRepository";
 import INotificacaoTemplateRepository from "../../core/interfaces/INotificacaoTemplateRepository";
 import NotificacaoTemplateRepository from "../../infrastructure/repositories/NotificacaoTemplateRepository";
+import INotificacaoPainelRepository from "../../core/interfaces/INotificacaoPainelRepository";
+import NotificacaoPainelRepository from "../../infrastructure/repositories/NotificacaoPainelRepository";
+import INotificacaoPainelServices from "../../application/interfaces/INotificacaoPainelServices";
+import NotificacaoPainelServices from "../../application/services/NotificacaoPainelServices";
 
 
 container.registerSingleton<IDBContext>("IDBContext", DBContext);
@@ -55,3 +59,5 @@ container.registerSingleton<INotificacaoFaturaRepository>("INotificacaoFaturaRep
 container.registerSingleton<INotificacaoFaturaServices>("INotificacaoFaturaServices", NotificacaoFaturaServices);
 container.registerSingleton<INotificacaoClienteRepository>("INotificacaoClienteRepository", NotificacaoClienteRepository);
 container.registerSingleton<INotificacaoTemplateRepository>("INotificacaoTemplateRepository", NotificacaoTemplateRepository);
+container.registerSingleton<INotificacaoPainelRepository>("INotificacaoPainelRepository", NotificacaoPainelRepository);
+container.registerSingleton<INotificacaoPainelServices>("INotificacaoPainelServices", NotificacaoPainelServices);

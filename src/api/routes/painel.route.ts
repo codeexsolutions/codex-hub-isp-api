@@ -63,6 +63,13 @@ painelRouter.post('/provedor/pontos/conceder', authMiddleware, moduloMiddleware(
 // MODULOS (o próprio provedor consultando quais módulos ele tem ativos)
 painelRouter.get('/provedor/modulos', authMiddleware, painelController.ObterModulosProprio.bind(painelController));
 
+// CENTRAL DE NOTIFICAÇÕES DO PAINEL (sino do provedor)
+painelRouter.post('/notificacoes/inscrever', authMiddleware, painelController.InscreverNotificacaoPainel.bind(painelController));
+painelRouter.post('/notificacoes/desinscrever', authMiddleware, painelController.DesinscreverNotificacaoPainel.bind(painelController));
+painelRouter.get('/notificacoes', authMiddleware, painelController.ListarNotificacoesPainel.bind(painelController));
+painelRouter.get('/notificacoes/nao-lidas', authMiddleware, painelController.ContarNotificacoesPainelNaoLidas.bind(painelController));
+painelRouter.patch('/notificacoes/:id/lida', authMiddleware, painelController.MarcarNotificacaoPainelLida.bind(painelController));
+
 // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
 painelRouter.get('/provedor/home-config', authMiddleware, painelController.ObterHomeConfigProprio.bind(painelController));
 painelRouter.put('/provedor/home-config', authMiddleware, painelController.DefinirHomeConfigProprio.bind(painelController));

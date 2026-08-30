@@ -21,6 +21,8 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import INotificacaoPainelServices from "../../application/interfaces/INotificacaoPainelServices";
+import { pushSubscriptionPainelDto } from "../../application/Dtos/pushSubscriptionPainelDto";
 
 @injectable()
 export default class PainelController {
@@ -28,13 +30,53 @@ export default class PainelController {
     private readonly _provedorService:IProvedorServices;
     private readonly _tokenService: ITokenService;
     private readonly _painelService:IPainelServices;
-    constructor(@inject("IProvedorServices")provedorServices:IProvedorServices, 
+    private readonly _notificacaoPainelService:INotificacaoPainelServices;
+    constructor(@inject("IProvedorServices")provedorServices:IProvedorServices,
                 @inject("ITokenService")tokenService:ITokenService,
-                @inject("IPainelServices")paineService:IPainelServices
+                @inject("IPainelServices")paineService:IPainelServices,
+                @inject("INotificacaoPainelServices")notificacaoPainelService:INotificacaoPainelServices
             ){
         this._provedorService = provedorServices;
         this._tokenService = tokenService;
         this._painelService = paineService;
+        this._notificacaoPainelService = notificacaoPainelService;
+    }
+
+    // CENTRAL DE NOTIFICAÇÕES DO PAINEL (sino do provedor) — separada da
+    // central de notificações do cliente. Primeiro uso: avisar sobre chamado
+    // novo aberto por um assinante (ver Chamado.controller.ts).
+    async InscreverNotificacaoPainel(req:AuthRequest, res:Response){
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const data = req.body as pushSubscriptionPainelDto;
+        data.codigoProvedor = codigoProvedor;
+        await this._notificacaoPainelService.Inscrever(data);
+        return res.json({ data: null });
+    }
+
+    async DesinscreverNotificacaoPainel(req:AuthRequest, res:Response){
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { endpoint } = req.body;
+        await this._notificacaoPainelService.Desinscrever(endpoint, codigoProvedor);
+        return res.json({ data: null });
+    }
+
+    async ListarNotificacoesPainel(req:AuthRequest, res:Response){
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const notificacoes = await this._notificacaoPainelService.Listar(codigoProvedor);
+        return res.json({ data: notificacoes });
+    }
+
+    async ContarNotificacoesPainelNaoLidas(req:AuthRequest, res:Response){
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const total = await this._notificacaoPainelService.ContarNaoLidas(codigoProvedor);
+        return res.json({ data: total });
+    }
+
+    async MarcarNotificacaoPainelLida(req:AuthRequest, res:Response){
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const id = Number.parseInt(req.params.id as string);
+        await this._notificacaoPainelService.MarcarLida(id, codigoProvedor);
+        return res.json({ data: null });
     }
 
     async LoginPainel(req:Request, res:Response){
