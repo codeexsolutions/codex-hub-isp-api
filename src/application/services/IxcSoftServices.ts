@@ -84,8 +84,12 @@ export default class IxcSoftServices implements IIxcSoftServices{
                 );
             });
        
-        const download = (Number(consumoMes[0].consumo) / (1024 ** 3)).toFixed(1); 
-        const upload = (Number(consumoMes[0].consumo_upload) / (1024 ** 3)).toFixed(1); 
+        // Cliente sem consumo sincronizado ainda no mês atual (contrato novo, IXC
+        // não gerou registro do dia, etc.) — consumoMes vem vazio; mostra 0 em vez
+        // de quebrar a tela inteira de dados do cliente por causa disso.
+        const consumoAtual = consumoMes[0];
+        const download = consumoAtual ? (Number(consumoAtual.consumo) / (1024 ** 3)).toFixed(1) : "0.0";
+        const upload = consumoAtual ? (Number(consumoAtual.consumo_upload) / (1024 ** 3)).toFixed(1) : "0.0";
         const clienteDto:clienteDto = {
             idContrato : contratos[0].id,
             dadosCadastrais :{
@@ -112,7 +116,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
                 total: produto.total,
             }],
             consumos: {
-                consumoMensalLabels :  [`${new Date(consumoMes[0].data).getMonth()}/${new Date(consumoMes[0].data).getFullYear()}`],
+                consumoMensalLabels :  [`${(consumoAtual ? new Date(consumoAtual.data) : agora).getMonth() + 1}/${(consumoAtual ? new Date(consumoAtual.data) : agora).getFullYear()}`],
                 consumoMensalDown :  [Number.parseFloat(download)],
                 consumoMensalUp : [Number.parseFloat(upload)]
             },
