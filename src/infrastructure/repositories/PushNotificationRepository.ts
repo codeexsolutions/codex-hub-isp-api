@@ -2,6 +2,7 @@ import { inject, injectable } from "tsyringe";
 import IPushNotificationRepository from "../../core/interfaces/IPushNotificationRepository";
 import IDBContext from "../interfaces/IDbContext";
 import PushSubscription from "../../core/domains/PushSubscription";
+import { assinanteNotificacaoModel } from "../../core/models/assinanteNotificacaoModel";
 
 @injectable()
 export default class PushNotificationRepository implements IPushNotificationRepository {
@@ -70,6 +71,51 @@ export default class PushNotificationRepository implements IPushNotificationRepo
     async Remover(endpoint: string, codigoProvedor:string): Promise<void> {
         await this._db.Execulte<void>("DELETE FROM push_subscription WHERE endpoint = $1 AND codigo_provedor = $2", [endpoint, codigoProvedor]);
 
+    }
+
+    async ListarAssinantesComNome(codigoProvedor: string): Promise<assinanteNotificacaoModel[]> {
+        const select = `
+            SELECT ps.cpf,
+                   MAX(ca.cliente_nome) AS nome,
+                   COUNT(*)::int AS dispositivos,
+                   MAX(ca.ultimo_login) AS ultimo_login,
+                   BOOL_OR(ps.ativo) AS notificacao_ativa
+            FROM push_subscription ps
+            LEFT JOIN cliente_atividade ca
+                ON ca.codigo_provedor_fk::text = ps.codigo_provedor
+                AND regexp_replace(ca.cliente_cpf_cnpj, '\\D', '', 'g') = regexp_replace(ps.cpf, '\\D', '', 'g')
+            WHERE ps.codigo_provedor = $1
+            GROUP BY ps.cpf
+            ORDER BY nome NULLS LAST, ps.cpf;
+        `;
+        const result = await this._db.Execulte<any>(select, [codigoProvedor]);
+        return result.map((r:any) : assinanteNotificacaoModel => ({
+            cpf: r.cpf,
+            nome: r.nome,
+            dispositivos: r.dispositivos,
+            ultimoLogin: r.ultimo_login,
+            notificacaoAtiva: r.notificacao_ativa,
+        }));
+    }
+
+    async BuscarAssinantePorCpf(cpf: string, codigoProvedor: string): Promise<assinanteNotificacaoModel|null> {
+        const select = `
+            SELECT ps.cpf,
+                   MAX(ca.cliente_nome) AS nome,
+                   COUNT(*)::int AS dispositivos,
+                   MAX(ca.ultimo_login) AS ultimo_login,
+                   BOOL_OR(ps.ativo) AS notificacao_ativa
+            FROM push_subscription ps
+            LEFT JOIN cliente_atividade ca
+                ON ca.codigo_provedor_fk::text = ps.codigo_provedor
+                AND regexp_replace(ca.cliente_cpf_cnpj, '\\D', '', 'g') = regexp_replace(ps.cpf, '\\D', '', 'g')
+            WHERE ps.codigo_provedor = $2 AND regexp_replace(ps.cpf, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')
+            GROUP BY ps.cpf;
+        `;
+        const result = await this._db.Execulte<any>(select, [cpf, codigoProvedor]);
+        if (!result[0]) return null;
+        const r = result[0];
+        return { cpf: r.cpf, nome: r.nome, dispositivos: r.dispositivos, ultimoLogin: r.ultimo_login, notificacaoAtiva: r.notificacao_ativa };
     }
 
 }

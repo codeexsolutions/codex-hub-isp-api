@@ -85,6 +85,14 @@ export default class PushNotificationServices implements IPushNotificationServic
         await this._pushRepository.Remover(endpoint, codigoProvedor)
     }
 
+    async ListarAssinantes(codigoProvedor: string) {
+        return await this._pushRepository.ListarAssinantesComNome(codigoProvedor);
+    }
+
+    async BuscarAssinantePorCpf(cpf: string, codigoProvedor: string) {
+        return await this._pushRepository.BuscarAssinantePorCpf(cpf, codigoProvedor);
+    }
+
     async Notificar(codigoProvedor:string, payload:notificacaoDto) : Promise<void> {
         const subscriptions = await this.BuscarTodos(codigoProvedor);
         await this.EnviarParaSubscricoes(subscriptions, codigoProvedor, payload);

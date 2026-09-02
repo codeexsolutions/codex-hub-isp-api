@@ -44,19 +44,16 @@ export default class NotificationsController {
     async OberTodos(req: AuthRequest, res: Response){
 
         const codigoProvedor = req.usuario?.codigoProvedor as string;
-        const noti = await this._service.BuscarTodos(codigoProvedor)
-        return res.json(noti)
-
-        
+        const assinantes = await this._service.ListarAssinantes(codigoProvedor)
+        return res.json({ data: assinantes })
     }
 
     async OberPorCpf(req: AuthRequest, res: Response){
 
-        const cpf = req.params.cpf as string;
+        const cpf = req.query.cpf as string;
         const codigoProvedor = req.usuario?.codigoProvedor as string;
-        const noti = await this._service.BuscarPorCpf(cpf, codigoProvedor)
-        return res.json(noti)
-
+        const assinante = await this._service.BuscarAssinantePorCpf(cpf, codigoProvedor)
+        return res.json({ data: assinante })
     }
     async EnviarNotificacao(req: AuthRequest, res: Response){
 

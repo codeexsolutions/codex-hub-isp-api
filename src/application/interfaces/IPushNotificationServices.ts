@@ -1,6 +1,7 @@
 import { notificacaoDto, pushSubscriptionDto } from "../Dtos/pushSubscriptionDto";
 import { notificacaoClienteModel } from "../../core/models/notificacaoClienteModel";
 import { notificacaoTemplateModel } from "../../core/models/notificacaoTemplateModel";
+import { assinanteNotificacaoModel } from "../../core/models/assinanteNotificacaoModel";
 
 export default interface IPushNotificationServices {
     Salvar(subscription:pushSubscriptionDto):Promise<string>;
@@ -8,6 +9,10 @@ export default interface IPushNotificationServices {
     BuscarPorCpf(cpf:string, codigoProvedor:string):Promise<pushSubscriptionDto[]>;
     BuscarTodos(codigoProvedor:string):Promise<pushSubscriptionDto[]>;
     Remover(endpoint: string, codigoProvedor:string): Promise<void>
+
+    // Tela "Assinantes" do painel — 1 linha por CPF, já com nome resolvido.
+    ListarAssinantes(codigoProvedor:string) : Promise<assinanteNotificacaoModel[]>;
+    BuscarAssinantePorCpf(cpf:string, codigoProvedor:string) : Promise<assinanteNotificacaoModel|null>;
     Notificar(codigoProvedor:string, payload:notificacaoDto)  : Promise<void> ;
     NotificarCliente(cpf:string, codigoProvedor:string, payload:notificacaoDto) : Promise<void>;
     NotificarClientes(cpfs:string[], codigoProvedor:string, payload:notificacaoDto) : Promise<void>;
