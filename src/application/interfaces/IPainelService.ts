@@ -115,8 +115,10 @@ export default interface IPainelServices {
     DefinirIxcContratoConfig(codigoProvedor:number, resourceImprimir:string) : Promise<ixcContratoConfigModel>
 
     ListarFaturamentoTodos() : Promise<any[]>
+    ObterFaturasAdmin(codigoProvedor:number) : Promise<faturaModel[]>
     MarcarFaturaPaga(idFatura:number) : Promise<faturaModel>
     MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel>
+    ReabrirFatura(idFatura:number) : Promise<faturaModel>
     ObterRecibo(idFatura:number) : Promise<{
         numero:string;
         provedorNome:string;

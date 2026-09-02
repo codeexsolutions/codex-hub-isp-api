@@ -807,12 +807,36 @@ export default class PainelController {
         }
     }
 
+    async ObterFaturasAdmin(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.params.codigoProvedor as string);
+
+        try {
+            const faturas = await this._painelService.ObterFaturasAdmin(codigoProvedor);
+            return res.json({data: faturas})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     async MarcarFaturaPagaAdmin(req:AuthRequest, res:Response){
 
         const id = Number.parseInt(req.params.id as string);
 
         try {
             const fatura = await this._painelService.MarcarFaturaPaga(id);
+            return res.status(200).json({data: fatura})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ReabrirFaturaAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            const fatura = await this._painelService.ReabrirFatura(id);
             return res.status(200).json({data: fatura})
         } catch (error: any) {
             return res.status(400).json({ message: error.message })

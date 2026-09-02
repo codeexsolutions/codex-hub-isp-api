@@ -712,6 +712,15 @@ export default class PainelRepository implements IPainelRepository {
         return fatura;
     }
 
+    // Desfaz um "marcar como pago"/"cancelar" feito por engano — volta a fatura
+    // pra pendente. Não reverte a reativação de acesso do provedor sozinha (se
+    // ele já foi reativado, isso é uma decisão separada do admin).
+    async ReabrirFatura(idFatura:number) : Promise<faturaModel> {
+        const update = `UPDATE provedor_faturas SET status = 'pendente', pago_em = NULL WHERE id = $1 RETURNING *;`;
+        const result = await this._db.Execulte<faturaModel>(update, [idFatura]);
+        return result[0];
+    }
+
     async VerificarInadimplenciaTodos() : Promise<number> {
         const select = `
             SELECT DISTINCT pf.codigo_provedor_fk
@@ -734,13 +743,19 @@ export default class PainelRepository implements IPainelRepository {
                    p.cnpj AS provedor_cnpj, p.status AS provedor_status,
                    pa.id AS assinatura_id, pa.valor_mensalidade, pa.data_adesao, pa.plano_id,
                    uf.id AS fatura_id, uf.competencia, uf.vencimento, uf.valor AS fatura_valor,
-                   uf.status AS fatura_status, uf.pago_em
+                   uf.status AS fatura_status, uf.pago_em,
+                   (SELECT COUNT(*) FROM provedor_faturas WHERE codigo_provedor_fk = p.codigo_provedor AND status = 'pendente') AS faturas_pendentes
             FROM provedores p
             LEFT JOIN provedor_assinaturas pa ON pa.codigo_provedor_fk = p.codigo_provedor
             LEFT JOIN LATERAL (
                 SELECT * FROM provedor_faturas pf
                 WHERE pf.codigo_provedor_fk = p.codigo_provedor
-                ORDER BY pf.competencia DESC
+                -- prioriza a fatura pendente mais antiga (a que realmente importa pro
+                -- admin agir) — sem isso, uma fatura nova gerada automaticamente pro mês
+                -- atual escondia uma parcela vencida de mês anterior ainda em aberto,
+                -- e o admin podia acabar marcando como paga a fatura errada.
+                ORDER BY (pf.status = 'pendente') DESC, CASE WHEN pf.status = 'pendente' THEN pf.competencia END ASC,
+                         pf.competencia DESC
                 LIMIT 1
             ) uf ON true
             ORDER BY provedor_nome ASC;

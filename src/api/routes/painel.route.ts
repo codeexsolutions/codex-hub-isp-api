@@ -134,8 +134,10 @@ painelRouter.patch('/admin/planos/:id/status', authMiddleware, adminMiddleware, 
 painelRouter.get('/admin/comissao/faturamento', authMiddleware, adminMiddleware, painelController.ListarFaturasComissaoAdmin.bind(painelController));
 painelRouter.patch('/admin/comissao/faturas/:id/pagar', authMiddleware, adminMiddleware, painelController.MarcarFaturaComissaoPagaAdmin.bind(painelController));
 painelRouter.patch('/admin/comissao/faturas/:id/cancelar', authMiddleware, adminMiddleware, painelController.MarcarFaturaComissaoCanceladaAdmin.bind(painelController));
+painelRouter.get('/admin/faturamento/:codigoProvedor/faturas', authMiddleware, adminMiddleware, painelController.ObterFaturasAdmin.bind(painelController));
 painelRouter.patch('/admin/faturas/:id/pagar', authMiddleware, adminMiddleware, painelController.MarcarFaturaPagaAdmin.bind(painelController));
 painelRouter.patch('/admin/faturas/:id/cancelar', authMiddleware, adminMiddleware, painelController.MarcarFaturaCanceladaAdmin.bind(painelController));
+painelRouter.patch('/admin/faturas/:id/reabrir', authMiddleware, adminMiddleware, painelController.ReabrirFaturaAdmin.bind(painelController));
 painelRouter.get('/admin/faturas/:id/recibo', authMiddleware, adminMiddleware, painelController.ObterReciboAdmin.bind(painelController));
 painelRouter.get('/admin/config-pix', authMiddleware, adminMiddleware, painelController.ObterConfigPixAdmin.bind(painelController));
 painelRouter.put('/admin/config-pix', authMiddleware, adminMiddleware, painelController.DefinirConfigPixAdmin.bind(painelController));

@@ -100,6 +100,7 @@ export default interface IPainelRepository {
     ObterFaturaComProvedor(idFatura:number) : Promise<faturaModel|null>
     MarcarFaturaPaga(idFatura:number) : Promise<faturaModel>
     MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel>
+    ReabrirFatura(idFatura:number) : Promise<faturaModel>
     VerificarInadimplenciaTodos() : Promise<number>
     ListarFaturamentoTodos() : Promise<any[]>
     ObterConfigPix() : Promise<pixConfigModel>

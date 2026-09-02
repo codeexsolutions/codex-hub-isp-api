@@ -452,12 +452,22 @@ export default class PainelService implements IPainelServices {
         return await this._painelRepository.ListarFaturamentoTodos();
     }
 
+    // Todas as faturas de um provedor (não só a mais recente/relevante que
+    // aparece na listagem geral) — pro admin ver/editar o histórico completo.
+    async ObterFaturasAdmin(codigoProvedor:number) : Promise<faturaModel[]> {
+        return await this._painelRepository.ObterFaturasProvedor(codigoProvedor);
+    }
+
     async MarcarFaturaPaga(idFatura:number) : Promise<faturaModel> {
         return await this._painelRepository.MarcarFaturaPaga(idFatura);
     }
 
     async MarcarFaturaCancelada(idFatura:number) : Promise<faturaModel> {
         return await this._painelRepository.MarcarFaturaCancelada(idFatura);
+    }
+
+    async ReabrirFatura(idFatura:number) : Promise<faturaModel> {
+        return await this._painelRepository.ReabrirFatura(idFatura);
     }
 
     async ObterRecibo(idFatura:number) {
