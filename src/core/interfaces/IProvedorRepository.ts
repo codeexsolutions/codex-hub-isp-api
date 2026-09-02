@@ -8,6 +8,7 @@ import { compraModel } from "../models/compraModel";
 import { configComissaoModel } from "../models/configComissaoModel";
 import { beneficioModel } from "../models/beneficioModel";
 import { recompensaModel } from "../models/recompensaModel";
+import { planoMovelModel } from "../models/planoMovelModel";
 import { extratoPontosModel } from "../models/extratoPontosModel";
 import { parceiroModel } from "../models/parceiroModel";
 import { homeConfigModel } from "../models/homeConfigModel";
@@ -37,6 +38,7 @@ export default interface IProvedorRepository{
     ObterSaldoPontos(codigoProvedor:string, cpfCnpj:string) : Promise<number>;
     ObterExtratoPontos(codigoProvedor:string, cpfCnpj:string) : Promise<extratoPontosModel[]>;
     ObterRecompensasAtivas(codigoProvedor:string) : Promise<recompensaModel[]>;
+    ObterPlanosMoveisAtivos(codigoProvedor:string) : Promise<planoMovelModel[]>;
     ObterRecompensaPorIdPublico(idRecompensa:number, codigoProvedor:number) : Promise<recompensaModel>;
     RegistrarResgate(codigoProvedor:number, cpfCnpj:string, nome:string, recompensa:recompensaModel, cupom:string) : Promise<extratoPontosModel>;
     ListarParceirosAtivos(codigoProvedor:string) : Promise<parceiroModel[]>;

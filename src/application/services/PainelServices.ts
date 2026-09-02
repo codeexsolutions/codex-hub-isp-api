@@ -10,6 +10,7 @@ import { beneficioModel } from "../../core/models/beneficioModel";
 import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
+import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -33,7 +34,7 @@ import crypto from "crypto";
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
 // nenhum) continuam controláveis manualmente.
-const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca"];
+const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca", "iptv", "app_tv", "planos_moveis"];
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -206,6 +207,42 @@ export default class PainelService implements IPainelServices {
 
     async ExcluirRecompensa(id:string, codigoProvedor:number) : Promise<any> {
         await this._painelRepository.ExcluiRecompensa(id, codigoProvedor);
+    }
+
+    // PLANOS DE INTERNET MÓVEL
+
+    async GravarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel> {
+        if (!plano.nome?.trim())
+            throw new Error("Informe o nome do plano.");
+        if (!(plano.gb_plano > 0))
+            throw new Error("Informe a quantidade de GB do plano.");
+        if (!(plano.valor > 0))
+            throw new Error("Informe um valor válido.");
+        return await this._painelRepository.GravarPlanoMovel(plano);
+    }
+
+    async ObterPlanosMoveis(codigoProvedor:number) : Promise<planoMovelModel[]> {
+        const planos = await this._painelRepository.ObterPlanosMoveis(codigoProvedor);
+        return planos || [];
+    }
+
+    async EditarPlanoMovel(id:number, planoEdite:planoMovelModel) : Promise<planoMovelModel> {
+        const plano = await this._painelRepository.ObterPlanoMovelPorId(id, planoEdite.codigo_provedor_fk);
+        if (!plano)
+            throw new Error("Plano não encontrado.");
+
+        if (planoEdite.nome !== undefined) plano.nome = planoEdite.nome;
+        if (planoEdite.gb_plano !== undefined) plano.gb_plano = planoEdite.gb_plano;
+        if (planoEdite.gb_bonus !== undefined) plano.gb_bonus = planoEdite.gb_bonus;
+        if (planoEdite.valor !== undefined) plano.valor = planoEdite.valor;
+        if (planoEdite.ordem !== undefined) plano.ordem = planoEdite.ordem;
+        plano.ativo = planoEdite.ativo;
+
+        return await this._painelRepository.EditarPlanoMovel(plano);
+    }
+
+    async ExcluirPlanoMovel(id:string, codigoProvedor:number) : Promise<any> {
+        await this._painelRepository.ExcluiPlanoMovel(id, codigoProvedor);
     }
 
     async ObterConfigPontos() : Promise<configPontosModel> {

@@ -60,6 +60,12 @@ painelRouter.patch('/provedor/pontos/recompensas/:id', authMiddleware, moduloMid
 painelRouter.delete('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("recompensas"), painelController.ExcluirRecompensa.bind(painelController));
 painelRouter.post('/provedor/pontos/conceder', authMiddleware, moduloMiddleware("recompensas"), painelController.ConcederPontos.bind(painelController));
 
+// PLANOS DE INTERNET MÓVEL
+painelRouter.post('/provedor/planos-moveis', authMiddleware, moduloMiddleware("planos_moveis"), painelController.GravarPlanoMovel.bind(painelController));
+painelRouter.get('/provedor/planos-moveis', authMiddleware, moduloMiddleware("planos_moveis"), painelController.ObterPlanosMoveisPainel.bind(painelController));
+painelRouter.patch('/provedor/planos-moveis/:id', authMiddleware, moduloMiddleware("planos_moveis"), painelController.EditarPlanoMovel.bind(painelController));
+painelRouter.delete('/provedor/planos-moveis/:id', authMiddleware, moduloMiddleware("planos_moveis"), painelController.ExcluirPlanoMovel.bind(painelController));
+
 // MODULOS (o próprio provedor consultando quais módulos ele tem ativos)
 painelRouter.get('/provedor/modulos', authMiddleware, painelController.ObterModulosProprio.bind(painelController));
 

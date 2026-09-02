@@ -7,6 +7,7 @@ import { provedorDto, provedorPainelDto, temaDto } from "../Dtos/provedorDto";
 import { ThemeFiles } from "../Dtos/temaFiles.dto";
 import { compraModel } from "../../core/models/compraModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
+import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
@@ -34,6 +35,7 @@ export default interface IProvedorServices {
     RegistrarLoginCliente(codigoProvedor:string, cpfCnpj:string, nome:string) : Promise<void> ;
     ObterMeusPontos(codigo:string, cpfCnpj:string) : Promise<{ saldo:number; extrato:extratoPontosModel[] }> ;
     ObterRecompensas(codigo:string) : Promise<recompensaModel[]> ;
+    ObterPlanosMoveis(codigo:string) : Promise<planoMovelModel[]> ;
     ResgatarRecompensa(codigo:string, cpfCnpj:string, clienteNome:string, idRecompensa:number) : Promise<extratoPontosModel> ;
     ListarParceirosAtivos(codigoProvedor:string) : Promise<parceiroModel[]> ;
     SalvarIndicacao(indicao:indicacaoModel) : Promise<number>

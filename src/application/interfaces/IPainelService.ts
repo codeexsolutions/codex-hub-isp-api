@@ -5,6 +5,7 @@ import { beneficioModel } from "../../core/models/beneficioModel";
 import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
+import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -57,6 +58,11 @@ export default interface IPainelServices {
     ObterRecompensas(codigoProvedor:number) : Promise<recompensaModel[]>
     EditarRecompensa(id:number, recompensa:recompensaModel) : Promise<recompensaModel>
     ExcluirRecompensa(id:string, codigoProvedor:number) : Promise<any>
+
+    GravarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel>
+    ObterPlanosMoveis(codigoProvedor:number) : Promise<planoMovelModel[]>
+    EditarPlanoMovel(id:number, plano:planoMovelModel) : Promise<planoMovelModel>
+    ExcluirPlanoMovel(id:string, codigoProvedor:number) : Promise<any>
     ObterConfigPontos() : Promise<configPontosModel>
     DefinirConfigPontos(config:configPontosModel) : Promise<configPontosModel>
 

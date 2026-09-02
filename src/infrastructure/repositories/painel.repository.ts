@@ -8,6 +8,7 @@ import { beneficioModel } from "../../core/models/beneficioModel";
 import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
+import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -311,6 +312,44 @@ export default class PainelRepository implements IPainelRepository {
     async ExcluiRecompensa(idRecompensa:string, codigoProvedor:number) : Promise<any> {
         const exclui = `DELETE FROM pontos_recompensas WHERE id = $1 AND codigo_provedor_fk = $2`;
         return await this._db.Execulte<any>(exclui, [idRecompensa, codigoProvedor]);
+    }
+
+    // PLANOS DE INTERNET MÓVEL
+
+    async GravarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel> {
+        const insert = `INSERT INTO planos_moveis
+            (codigo_provedor_fk, nome, gb_plano, gb_bonus, valor, ativo, ordem)
+            VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`;
+        const id = await this._db.Execulte<any>(insert, [
+            plano.codigo_provedor_fk, plano.nome, plano.gb_plano, plano.gb_bonus, plano.valor, plano.ativo, plano.ordem ?? 0,
+        ]);
+        return this.ObterPlanoMovelPorId(id[0].id, plano.codigo_provedor_fk);
+    }
+
+    async ObterPlanosMoveis(codigoProvedor:number) : Promise<planoMovelModel[]> {
+        const select = `SELECT * FROM planos_moveis WHERE codigo_provedor_fk = $1 ORDER BY ordem ASC, valor ASC;`;
+        return await this._db.Execulte<planoMovelModel>(select, [codigoProvedor]);
+    }
+
+    async ObterPlanoMovelPorId(idPlano:number, codigoProvedor:number) : Promise<planoMovelModel> {
+        const select = `SELECT * FROM planos_moveis WHERE id = $1 AND codigo_provedor_fk = $2;`;
+        const result = await this._db.Execulte<planoMovelModel>(select, [idPlano, codigoProvedor]);
+        return result[0];
+    }
+
+    async EditarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel> {
+        const update = `UPDATE planos_moveis SET
+                nome = $1, gb_plano = $2, gb_bonus = $3, valor = $4, ativo = $5, ordem = $6
+            WHERE codigo_provedor_fk = $7 AND id = $8 RETURNING id;`;
+        const result = await this._db.Execulte<any>(update, [
+            plano.nome, plano.gb_plano, plano.gb_bonus, plano.valor, plano.ativo, plano.ordem ?? 0, plano.codigo_provedor_fk, plano.id,
+        ]);
+        return this.ObterPlanoMovelPorId(result[0].id, plano.codigo_provedor_fk);
+    }
+
+    async ExcluiPlanoMovel(idPlano:string, codigoProvedor:number) : Promise<any> {
+        const exclui = `DELETE FROM planos_moveis WHERE id = $1 AND codigo_provedor_fk = $2`;
+        return await this._db.Execulte<any>(exclui, [idPlano, codigoProvedor]);
     }
 
     async ObterConfigPontos() : Promise<configPontosModel> {

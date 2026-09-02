@@ -314,6 +314,13 @@ export default class ProvedorServices implements IProvedorServices {
         return await this._provedorRepository.ObterRecompensasAtivas(codigo);
     }
 
+    async ObterPlanosMoveis(codigo: string) {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("planos_moveis"))
+            return [];
+        return await this._provedorRepository.ObterPlanosMoveisAtivos(codigo);
+    }
+
     async ResgatarRecompensa(codigo: string, cpfCnpj: string, clienteNome: string, idRecompensa: number) {
 
         const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);

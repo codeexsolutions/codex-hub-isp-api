@@ -12,6 +12,7 @@ import { beneficioModel } from "../../core/models/beneficioModel";
 import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
+import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
@@ -335,6 +336,11 @@ export default class ProvedorRepository implements IProvedorRepository{
     async ObterRecompensasAtivas(codigoProvedor:string) : Promise<recompensaModel[]> {
         const select = `SELECT * FROM pontos_recompensas WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY pontos_necessarios ASC;`;
         return await this._db.Execulte<recompensaModel>(select, [codigoProvedor]);
+    }
+
+    async ObterPlanosMoveisAtivos(codigoProvedor:string) : Promise<planoMovelModel[]> {
+        const select = `SELECT * FROM planos_moveis WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY ordem ASC, valor ASC;`;
+        return await this._db.Execulte<planoMovelModel>(select, [codigoProvedor]);
     }
 
     async ObterRecompensaPorIdPublico(idRecompensa:number, codigoProvedor:number) : Promise<recompensaModel> {

@@ -184,6 +184,14 @@ export default class ProvedorController{
         return res.json({ data: recompensas });
     }
 
+    async ObterPlanosMoveis(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string;
+        const planos = await this._provedorService.ObterPlanosMoveis(codigoProvedor);
+
+        return res.json({ data: planos });
+    }
+
     async ResgatarRecompensa(req:Request, res:Response){
 
         const { codigoProvedor, cpfCnpj, clienteNome, recompensaId } = req.body || {};

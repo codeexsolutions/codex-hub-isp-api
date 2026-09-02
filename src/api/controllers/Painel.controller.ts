@@ -21,6 +21,7 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { pixConfigModel } from "../../core/models/pixConfigModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import { planoMovelModel } from "../../core/models/planoMovelModel";
 import INotificacaoPainelServices from "../../application/interfaces/INotificacaoPainelServices";
 import { pushSubscriptionPainelDto } from "../../application/Dtos/pushSubscriptionPainelDto";
 
@@ -333,6 +334,46 @@ export default class PainelController {
         const codigoProvedor = req.usuario?.codigoProvedor as string
         const recompensas = await this._painelService.ObterRecompensas(Number.parseInt(codigoProvedor));
         return res.json({data: recompensas})
+    }
+
+    async GravarPlanoMovel(req:AuthRequest, res:Response){
+
+        const data = req.body as planoMovelModel;
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const plano = await this._painelService.GravarPlanoMovel(data);
+            return res.status(200).json({data: plano})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async EditarPlanoMovel(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const data = req.body as planoMovelModel;
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const plano = await this._painelService.EditarPlanoMovel(id, data);
+            return res.status(201).json({data: plano})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ExcluirPlanoMovel(req:AuthRequest, res:Response){
+
+        const id = req.params.id as string;
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const plano = await this._painelService.ExcluirPlanoMovel(id, codigoProvedor);
+        return res.status(201).json({data: plano})
+    }
+
+    async ObterPlanosMoveisPainel(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const planos = await this._painelService.ObterPlanosMoveis(Number.parseInt(codigoProvedor));
+        return res.json({data: planos})
     }
 
     async ObterMetricas(req:AuthRequest, res:Response){
