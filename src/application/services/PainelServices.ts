@@ -11,6 +11,7 @@ import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -243,6 +244,17 @@ export default class PainelService implements IPainelServices {
 
     async ExcluirPlanoMovel(id:string, codigoProvedor:number) : Promise<any> {
         await this._painelRepository.ExcluiPlanoMovel(id, codigoProvedor);
+    }
+
+    async ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]> {
+        const solicitacoes = await this._painelRepository.ListarSolicitacoesPlanoMovel(codigoProvedor);
+        return solicitacoes || [];
+    }
+
+    async AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel> {
+        if (!["pendente", "atendida", "cancelada"].includes(status))
+            throw new Error("Status inválido.");
+        return await this._painelRepository.AtualizarStatusSolicitacaoPlanoMovel(id, codigoProvedor, status);
     }
 
     async ObterConfigPontos() : Promise<configPontosModel> {

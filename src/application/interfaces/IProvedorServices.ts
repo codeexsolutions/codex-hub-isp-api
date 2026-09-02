@@ -8,6 +8,7 @@ import { ThemeFiles } from "../Dtos/temaFiles.dto";
 import { compraModel } from "../../core/models/compraModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
@@ -36,6 +37,7 @@ export default interface IProvedorServices {
     ObterMeusPontos(codigo:string, cpfCnpj:string) : Promise<{ saldo:number; extrato:extratoPontosModel[] }> ;
     ObterRecompensas(codigo:string) : Promise<recompensaModel[]> ;
     ObterPlanosMoveis(codigo:string) : Promise<planoMovelModel[]> ;
+    SolicitarPlanoMovel(codigo:string, planoId:number, cpfCnpj:string, clienteNome:string|null) : Promise<solicitacaoPlanoMovelModel> ;
     ResgatarRecompensa(codigo:string, cpfCnpj:string, clienteNome:string, idRecompensa:number) : Promise<extratoPontosModel> ;
     ListarParceirosAtivos(codigoProvedor:string) : Promise<parceiroModel[]> ;
     SalvarIndicacao(indicao:indicacaoModel) : Promise<number>

@@ -192,6 +192,17 @@ export default class ProvedorController{
         return res.json({ data: planos });
     }
 
+    async SolicitarPlanoMovel(req:Request, res:Response){
+
+        const { codigoProvedor, planoId, cpfCnpj, clienteNome } = req.body || {};
+        try {
+            const solicitacao = await this._provedorService.SolicitarPlanoMovel(codigoProvedor, Number.parseInt(planoId), cpfCnpj, clienteNome ?? null);
+            return res.status(201).json({ data: solicitacao });
+        } catch (error:any) {
+            return res.status(400).json({ statusCode: 400, message: error.message, data: error.message });
+        }
+    }
+
     async ResgatarRecompensa(req:Request, res:Response){
 
         const { codigoProvedor, cpfCnpj, clienteNome, recompensaId } = req.body || {};

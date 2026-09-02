@@ -6,6 +6,7 @@ import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -63,6 +64,8 @@ export default interface IPainelServices {
     ObterPlanosMoveis(codigoProvedor:number) : Promise<planoMovelModel[]>
     EditarPlanoMovel(id:number, plano:planoMovelModel) : Promise<planoMovelModel>
     ExcluirPlanoMovel(id:string, codigoProvedor:number) : Promise<any>
+    ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
+    AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>
     DefinirConfigPontos(config:configPontosModel) : Promise<configPontosModel>
 

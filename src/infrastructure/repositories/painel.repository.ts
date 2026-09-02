@@ -9,6 +9,7 @@ import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -350,6 +351,17 @@ export default class PainelRepository implements IPainelRepository {
     async ExcluiPlanoMovel(idPlano:string, codigoProvedor:number) : Promise<any> {
         const exclui = `DELETE FROM planos_moveis WHERE id = $1 AND codigo_provedor_fk = $2`;
         return await this._db.Execulte<any>(exclui, [idPlano, codigoProvedor]);
+    }
+
+    async ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]> {
+        const select = `SELECT * FROM solicitacoes_planos_moveis WHERE codigo_provedor_fk = $1 ORDER BY criado_em DESC LIMIT 100;`;
+        return await this._db.Execulte<solicitacaoPlanoMovelModel>(select, [codigoProvedor]);
+    }
+
+    async AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel> {
+        const update = `UPDATE solicitacoes_planos_moveis SET status = $1 WHERE id = $2 AND codigo_provedor_fk = $3 RETURNING *;`;
+        const result = await this._db.Execulte<solicitacaoPlanoMovelModel>(update, [status, id, codigoProvedor]);
+        return result[0];
     }
 
     async ObterConfigPontos() : Promise<configPontosModel> {

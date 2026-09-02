@@ -376,6 +376,26 @@ export default class PainelController {
         return res.json({data: planos})
     }
 
+    async ListarSolicitacoesPlanoMovel(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const solicitacoes = await this._painelService.ListarSolicitacoesPlanoMovel(Number.parseInt(codigoProvedor));
+        return res.json({data: solicitacoes})
+    }
+
+    async AtualizarStatusSolicitacaoPlanoMovel(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const { status } = req.body;
+        try {
+            const solicitacao = await this._painelService.AtualizarStatusSolicitacaoPlanoMovel(id, codigoProvedor, status);
+            return res.json({data: solicitacao})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     async ObterMetricas(req:AuthRequest, res:Response){
 
         const codigoProvedor = req.usuario?.codigoProvedor as string

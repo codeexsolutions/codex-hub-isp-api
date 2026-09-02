@@ -16,16 +16,21 @@ import { ManifestModel } from "../Dtos/manifest.dto";
 import { compraModel } from "../../core/models/compraModel";
 import { gerarCupom } from "../../common/utilities/cupom";
 import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
+import INotificacaoPainelServices from "../interfaces/INotificacaoPainelServices";
 
 @injectable()
 export default class ProvedorServices implements IProvedorServices {
-    
+
     private readonly _provedorRepository:IProvedorRepository;
-    
-    constructor(@inject("IProvedorRepository") provedorRepository:IProvedorRepository){
+    private readonly _notificacaoPainelService:INotificacaoPainelServices;
+
+    constructor(
+        @inject("IProvedorRepository") provedorRepository:IProvedorRepository,
+        @inject("INotificacaoPainelServices") notificacaoPainelService:INotificacaoPainelServices
+    ){
         this._provedorRepository = provedorRepository;
-        
-    }    
+        this._notificacaoPainelService = notificacaoPainelService;
+    }
     
     async Cadastrar(cadastro:cadastroProvedorDto): Promise<provedorPainelDto> {
         
@@ -319,6 +324,30 @@ export default class ProvedorServices implements IProvedorServices {
         if (!modulos.includes("planos_moveis"))
             return [];
         return await this._provedorRepository.ObterPlanosMoveisAtivos(codigo);
+    }
+
+    // Fluxo próprio do Synk (não passa pelo chamado do gerenciador — o
+    // ReceitaNet só permite 1 chamado aberto por vez, o que fazia essa
+    // solicitação falhar toda hora que o cliente já tinha outro em aberto).
+    // A solicitação vira um registro no Synk e um aviso no sino do painel.
+    async SolicitarPlanoMovel(codigo: string, planoId: number, cpfCnpj: string, clienteNome: string | null) {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("planos_moveis"))
+            throw new Error("Módulo de internet móvel não está ativo para este provedor.");
+        if (!cpfCnpj?.trim())
+            throw new Error("Dados do cliente incompletos.");
+
+        const plano = await this._provedorRepository.ObterPlanoMovelAtivoPorId(planoId, codigo);
+        if (!plano)
+            throw new Error("Plano não encontrado.");
+
+        const solicitacao = await this._provedorRepository.CriarSolicitacaoPlanoMovel(codigo, plano, cpfCnpj.trim(), clienteNome?.trim() || null);
+
+        this._notificacaoPainelService
+            .Avisar(codigo, "plano_movel", "Nova solicitação de plano móvel", `${clienteNome?.trim() || "Um cliente"} solicitou o plano "${plano.nome}" (R$ ${Number(plano.valor).toFixed(2).replace(".", ",")}/mês).`)
+            .catch((error) => console.error("Erro ao avisar provedor sobre solicitação de plano móvel:", error));
+
+        return solicitacao;
     }
 
     async ResgatarRecompensa(codigo: string, cpfCnpj: string, clienteNome: string, idRecompensa: number) {

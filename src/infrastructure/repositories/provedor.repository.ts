@@ -13,6 +13,7 @@ import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
@@ -341,6 +342,27 @@ export default class ProvedorRepository implements IProvedorRepository{
     async ObterPlanosMoveisAtivos(codigoProvedor:string) : Promise<planoMovelModel[]> {
         const select = `SELECT * FROM planos_moveis WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY ordem ASC, valor ASC;`;
         return await this._db.Execulte<planoMovelModel>(select, [codigoProvedor]);
+    }
+
+    // Busca pública mas ainda restrita a plano ativo desse provedor — usada
+    // pra revalidar o plano no servidor na hora de gravar a solicitação (não
+    // confia no nome/valor que o app manda).
+    async ObterPlanoMovelAtivoPorId(id:number, codigoProvedor:string) : Promise<planoMovelModel|null> {
+        const select = `SELECT * FROM planos_moveis WHERE id = $1 AND codigo_provedor_fk = $2 AND ativo = true;`;
+        const result = await this._db.Execulte<planoMovelModel>(select, [id, codigoProvedor]);
+        return result[0] ?? null;
+    }
+
+    // Solicitação de plano móvel — fluxo próprio do Synk (não passa pelo
+    // gerenciador, ver SQL 2026_09_solicitacoes_planos_moveis.sql).
+    async CriarSolicitacaoPlanoMovel(codigoProvedor:string, plano:planoMovelModel, cpfCnpj:string, nomeCliente:string|null) : Promise<solicitacaoPlanoMovelModel> {
+        const insert = `INSERT INTO solicitacoes_planos_moveis
+            (codigo_provedor_fk, plano_id_fk, plano_nome, plano_valor, cliente_cpf_cnpj, cliente_nome)
+            VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`;
+        const result = await this._db.Execulte<solicitacaoPlanoMovelModel>(insert, [
+            codigoProvedor, plano.id, plano.nome, plano.valor, cpfCnpj, nomeCliente,
+        ]);
+        return result[0];
     }
 
     async ObterRecompensaPorIdPublico(idRecompensa:number, codigoProvedor:number) : Promise<recompensaModel> {

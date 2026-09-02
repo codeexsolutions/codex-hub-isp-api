@@ -5,6 +5,7 @@ import { compraModel } from "../models/compraModel";
 import { configComissaoModel } from "../models/configComissaoModel";
 import { recompensaModel } from "../models/recompensaModel";
 import { planoMovelModel } from "../models/planoMovelModel";
+import { solicitacaoPlanoMovelModel } from "../models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../models/configPontosModel";
 import { parceiroModel } from "../models/parceiroModel";
 import { extratoPontosModel } from "../models/extratoPontosModel";
@@ -68,6 +69,8 @@ export default interface IPainelRepository {
     ObterPlanoMovelPorId(idPlano:number, codigoProvedor:number) : Promise<planoMovelModel>
     EditarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel>
     ExcluiPlanoMovel(idPlano:string, codigoProvedor:number) : Promise<any>
+    ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
+    AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>
     AtualizarConfigPontos(config:configPontosModel) : Promise<configPontosModel>
 
