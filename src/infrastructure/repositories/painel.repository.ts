@@ -319,10 +319,11 @@ export default class PainelRepository implements IPainelRepository {
 
     async GravarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel> {
         const insert = `INSERT INTO planos_moveis
-            (codigo_provedor_fk, nome, gb_plano, gb_bonus, valor, ativo, ordem)
-            VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`;
+            (codigo_provedor_fk, nome, tipo, gb_plano, gb_bonus, mega_fibra, beneficios, valor, ativo, ordem)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`;
         const id = await this._db.Execulte<any>(insert, [
-            plano.codigo_provedor_fk, plano.nome, plano.gb_plano, plano.gb_bonus, plano.valor, plano.ativo, plano.ordem ?? 0,
+            plano.codigo_provedor_fk, plano.nome, plano.tipo ?? "movel", plano.gb_plano, plano.gb_bonus,
+            plano.mega_fibra ?? null, plano.beneficios ?? null, plano.valor, plano.ativo, plano.ordem ?? 0,
         ]);
         return this.ObterPlanoMovelPorId(id[0].id, plano.codigo_provedor_fk);
     }
@@ -340,10 +341,11 @@ export default class PainelRepository implements IPainelRepository {
 
     async EditarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel> {
         const update = `UPDATE planos_moveis SET
-                nome = $1, gb_plano = $2, gb_bonus = $3, valor = $4, ativo = $5, ordem = $6
-            WHERE codigo_provedor_fk = $7 AND id = $8 RETURNING id;`;
+                nome = $1, tipo = $2, gb_plano = $3, gb_bonus = $4, mega_fibra = $5, beneficios = $6, valor = $7, ativo = $8, ordem = $9
+            WHERE codigo_provedor_fk = $10 AND id = $11 RETURNING id;`;
         const result = await this._db.Execulte<any>(update, [
-            plano.nome, plano.gb_plano, plano.gb_bonus, plano.valor, plano.ativo, plano.ordem ?? 0, plano.codigo_provedor_fk, plano.id,
+            plano.nome, plano.tipo ?? "movel", plano.gb_plano, plano.gb_bonus, plano.mega_fibra ?? null, plano.beneficios ?? null,
+            plano.valor, plano.ativo, plano.ordem ?? 0, plano.codigo_provedor_fk, plano.id,
         ]);
         return this.ObterPlanoMovelPorId(result[0].id, plano.codigo_provedor_fk);
     }
