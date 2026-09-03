@@ -149,8 +149,6 @@ export default class PushNotificationServices implements IPushNotificationServic
             payload.title = payload.title ?? result.nome;
             payload.icon = result.icone512 ?? undefined;
             payload.badge = result.icone192 ?? result.icone512 ?? undefined;
-            payload.image = result.icone512 ?? undefined;
-            payload.data = result.icone192 ?? undefined;
         }
 
         const cpfsUnicos = [...new Set(subscriptions.map((sub) => sub.cpf))];

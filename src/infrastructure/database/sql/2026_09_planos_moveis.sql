@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS planos_moveis (
     id SERIAL PRIMARY KEY,
     codigo_provedor_fk INTEGER NOT NULL REFERENCES provedores(codigo_provedor),
-    nome VARCHAR(30) NOT NULL,
+    nome VARCHAR(80) NOT NULL,
     gb_plano INTEGER NOT NULL,
     gb_bonus INTEGER NOT NULL DEFAULT 0,
     valor NUMERIC(10,2) NOT NULL,
