@@ -233,8 +233,11 @@ export default class PainelService implements IPainelServices {
             throw new Error("Plano não encontrado.");
 
         if (planoEdite.nome !== undefined) plano.nome = planoEdite.nome;
+        if (planoEdite.tipo !== undefined) plano.tipo = planoEdite.tipo;
         if (planoEdite.gb_plano !== undefined) plano.gb_plano = planoEdite.gb_plano;
         if (planoEdite.gb_bonus !== undefined) plano.gb_bonus = planoEdite.gb_bonus;
+        if (planoEdite.mega_fibra !== undefined) plano.mega_fibra = planoEdite.mega_fibra;
+        if (planoEdite.beneficios !== undefined) plano.beneficios = planoEdite.beneficios;
         if (planoEdite.valor !== undefined) plano.valor = planoEdite.valor;
         if (planoEdite.ordem !== undefined) plano.ordem = planoEdite.ordem;
         plano.ativo = planoEdite.ativo;
