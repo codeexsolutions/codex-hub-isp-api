@@ -17,4 +17,5 @@ export default interface IApiIxcSoftService {
     ObterMensagensOS(idChamado:number, codigoProvedor:string) : Promise<any>
     CriarMensagemOS(dados:{ idChamado:number; idEvento:number; mensagem:string }, codigoProvedor:string) : Promise<any>
     ImprimirContrato(idContrato:number, resource:string, codigoProvedor:string) : Promise<string>
+    ContarClientesAtivos(codigoProvedor:string) : Promise<number>
 }

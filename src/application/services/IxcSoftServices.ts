@@ -297,6 +297,10 @@ export default class IxcSoftServices implements IIxcSoftServices{
         }, codigoProvedor);
     }
 
+    async ContarClientesAtivos(codigoProvedor: string): Promise<number> {
+        return await this._apiIxcSoft.ContarClientesAtivos(codigoProvedor);
+    }
+
     async ObterContratoPdf(idContrato: number, codigoProvedor: string): Promise<Buffer> {
 
         const config = await this._painelRepository.ObterIxcContratoConfig(Number.parseInt(codigoProvedor));

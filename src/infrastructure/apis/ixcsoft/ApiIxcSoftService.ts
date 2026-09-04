@@ -540,6 +540,46 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
         return texto;
     }
 
+    // Total da base de clientes ATIVOS do provedor no IXC — usado no card
+    // "Clientes conectados" do dashboard. rp:1 porque só interessa o campo
+    // "total" da resposta (contagem), não os registros em si — evita puxar
+    // a base inteira só pra contar.
+    async ContarClientesAtivos(codigoProvedor:string): Promise<number> {
+
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configRequest:configRequest = {
+            method: emethodHttp.POST,
+            resource: "cliente",
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: {
+                qtype: "cliente.id",
+                query: "1",
+                oper: operadores.MAIOR_OU_IGUAL,
+                page: "1",
+                rp: "1",
+                sortname: "cliente.id",
+                sortorder: ordenacao.MENOR_MAIOR,
+                grid_param: JSON.stringify([{
+                    TB: "cliente.ativo",
+                    OP: operadores.IGUAL,
+                    P: "S"
+                }])
+            }
+        }
+
+        const response = await service.Requst(configRequest);
+        const resultado:respose<any> = await response.json();
+        return Number.parseInt(resultado.total ?? "0");
+    }
+
     public Token(provedor:Provedor): string {
         return  Buffer.from(`${provedor.ObterCodigoApiGerenciador()}:${provedor.ObterChaveApiGerenciador()}`).toString("base64");
     } 

@@ -31,6 +31,9 @@ import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
 import * as QRCode from "qrcode";
 import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
 import crypto from "crypto";
+import IProvedorRepository from "../../core/interfaces/IProvedorRepository";
+import IIxcSoftServices from "../interfaces/IIxcSoftServices";
+import { eGerenciador } from "../../common/enuns/egerenciador";
 
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
@@ -41,9 +44,17 @@ const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca"
 export default class PainelService implements IPainelServices {
 
     private readonly _painelRepository:IPainelRepository;
+    private readonly _provedorRepository:IProvedorRepository;
+    private readonly _ixcSoftServices:IIxcSoftServices;
 
-    constructor(@inject("IPainelRepository")painelRepository:IPainelRepository){
+    constructor(
+        @inject("IPainelRepository")painelRepository:IPainelRepository,
+        @inject("IProvedorRepository")provedorRepository:IProvedorRepository,
+        @inject("IIxcSoftServices")ixcSoftServices:IIxcSoftServices
+    ){
         this._painelRepository = painelRepository;
+        this._provedorRepository = provedorRepository;
+        this._ixcSoftServices = ixcSoftServices;
     }
     
     async GravarAnuncio(anuncio:anuncioModel) : Promise<anuncioModel> {
@@ -153,17 +164,33 @@ export default class PainelService implements IPainelServices {
         const resumoCompras = await this._painelRepository.ObterResumoCompras(codigoProvedor);
         const usuariosAtivos = await this._painelRepository.ContarUsuariosAtivos(codigoProvedor);
 
-        // clientesConectados (base total de assinantes do provedor) é impossível de obter:
-        // ReceitaNet/IXC só respondem consulta por cliente individual (CPF/token), não existe
-        // endpoint de listagem em massa — permanece 0 enquanto a API for só uma ponte.
+        // clientesConectados (base total de assinantes do provedor): só é possível pra
+        // provedores IXC, onde existe listagem em massa (webservice/v1/cliente). No
+        // ReceitaNet não existe endpoint assim — só consulta por CPF/token individual —
+        // então permanece 0 nesse caso.
+        const clientesConectados = await this.ObterClientesConectados(codigoProvedor);
+
         return {
-            clientesConectados: 0,
+            clientesConectados,
             usuariosAtivos,
             compras: resumoCompras.compras,
             vendasGeradas: resumoCompras.vendasGeradas,
             comissao: resumoCompras.comissao,
             beneficiosUtilizados,
         };
+    }
+
+    private async ObterClientesConectados(codigoProvedor:number) : Promise<number> {
+        try {
+            const provedor = await this._provedorRepository.ObterProvedor(String(codigoProvedor));
+            if (provedor.Gerenciador !== eGerenciador.IXCSOFT) return 0;
+            return await this._ixcSoftServices.ContarClientesAtivos(String(codigoProvedor));
+        } catch (error) {
+            // métrica auxiliar do dashboard — se o IXC estiver fora do ar ou mal
+            // configurado, não pode quebrar a tela inteira, só mostra 0.
+            console.error("Erro ao contar clientes ativos no IXC:", error);
+            return 0;
+        }
     }
 
     async ObterCompras(codigoProvedor:number) : Promise<compraModel[]> {

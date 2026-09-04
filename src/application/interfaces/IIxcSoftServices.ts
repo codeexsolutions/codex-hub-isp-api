@@ -15,4 +15,5 @@ export default interface IIxcSoftServices {
     ObterMensagensChamado(idChamado:number, codigoProvedor:string) : Promise<any[]>
     EnviarMensagemChamado(idChamado:number, codigoProvedor:string, mensagem:string) : Promise<void>
     ObterContratoPdf(idContrato:number, codigoProvedor:string) : Promise<Buffer>
+    ContarClientesAtivos(codigoProvedor:string) : Promise<number>
 }
