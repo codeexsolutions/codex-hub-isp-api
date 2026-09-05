@@ -22,6 +22,8 @@ import { ixcContratoConfigModel } from "../models/ixcContratoConfigModel";
 import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../models/licencaTvModel";
+import { planoInternetModel } from "../models/planoInternetModel";
+import { lpConfigModel } from "../models/lpConfigModel";
 
 export default interface IPainelRepository {
 
@@ -69,6 +71,15 @@ export default interface IPainelRepository {
     ObterPlanoMovelPorId(idPlano:number, codigoProvedor:number) : Promise<planoMovelModel>
     EditarPlanoMovel(plano:planoMovelModel) : Promise<planoMovelModel>
     ExcluiPlanoMovel(idPlano:string, codigoProvedor:number) : Promise<any>
+    // PLANOS DE INTERNET FIXA (fibra) — catálogo do provedor, LP
+    GravarPlanoInternet(plano:planoInternetModel) : Promise<planoInternetModel>
+    ObterPlanosInternet(codigoProvedor:number) : Promise<planoInternetModel[]>
+    ObterPlanoInternetPorId(idPlano:number, codigoProvedor:number) : Promise<planoInternetModel>
+    EditarPlanoInternet(plano:planoInternetModel) : Promise<planoInternetModel>
+    ExcluiPlanoInternet(idPlano:string, codigoProvedor:number) : Promise<any>
+    // LANDING PAGE do provedor
+    ObterLpConfig(codigoProvedor:number) : Promise<lpConfigModel>
+    DefinirLpConfig(config:lpConfigModel) : Promise<lpConfigModel>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>

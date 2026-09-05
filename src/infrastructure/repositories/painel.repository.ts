@@ -26,6 +26,8 @@ import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
+import { planoInternetModel } from "../../core/models/planoInternetModel";
+import { lpConfigModel } from "../../core/models/lpConfigModel";
 import { estatus } from "../../common/enuns/estatus";
 
 @injectable()
@@ -363,6 +365,69 @@ export default class PainelRepository implements IPainelRepository {
     async AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel> {
         const update = `UPDATE solicitacoes_planos_moveis SET status = $1 WHERE id = $2 AND codigo_provedor_fk = $3 RETURNING *;`;
         const result = await this._db.Execulte<solicitacaoPlanoMovelModel>(update, [status, id, codigoProvedor]);
+        return result[0];
+    }
+
+    // PLANOS DE INTERNET FIXA (fibra) — catálogo do provedor, alimenta a
+    // Landing Page (módulo "landpage"). Mesmo padrão de planos_moveis.
+
+    async GravarPlanoInternet(plano:planoInternetModel) : Promise<planoInternetModel> {
+        const insert = `INSERT INTO planos_internet
+            (codigo_provedor_fk, nome, velocidade_mega, valor, beneficios, destaque, ativo, ordem)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`;
+        const id = await this._db.Execulte<any>(insert, [
+            plano.codigo_provedor_fk, plano.nome, plano.velocidade_mega, plano.valor,
+            plano.beneficios ?? null, plano.destaque ?? false, plano.ativo, plano.ordem ?? 0,
+        ]);
+        return this.ObterPlanoInternetPorId(id[0].id, plano.codigo_provedor_fk);
+    }
+
+    async ObterPlanosInternet(codigoProvedor:number) : Promise<planoInternetModel[]> {
+        const select = `SELECT * FROM planos_internet WHERE codigo_provedor_fk = $1 ORDER BY ordem ASC, valor ASC;`;
+        return await this._db.Execulte<planoInternetModel>(select, [codigoProvedor]);
+    }
+
+    async ObterPlanoInternetPorId(idPlano:number, codigoProvedor:number) : Promise<planoInternetModel> {
+        const select = `SELECT * FROM planos_internet WHERE id = $1 AND codigo_provedor_fk = $2;`;
+        const result = await this._db.Execulte<planoInternetModel>(select, [idPlano, codigoProvedor]);
+        return result[0];
+    }
+
+    async EditarPlanoInternet(plano:planoInternetModel) : Promise<planoInternetModel> {
+        const update = `UPDATE planos_internet SET
+                nome = $1, velocidade_mega = $2, valor = $3, beneficios = $4, destaque = $5, ativo = $6, ordem = $7
+            WHERE codigo_provedor_fk = $8 AND id = $9 RETURNING id;`;
+        const result = await this._db.Execulte<any>(update, [
+            plano.nome, plano.velocidade_mega, plano.valor, plano.beneficios ?? null, plano.destaque ?? false,
+            plano.ativo, plano.ordem ?? 0, plano.codigo_provedor_fk, plano.id,
+        ]);
+        return this.ObterPlanoInternetPorId(result[0].id, plano.codigo_provedor_fk);
+    }
+
+    async ExcluiPlanoInternet(idPlano:string, codigoProvedor:number) : Promise<any> {
+        const exclui = `DELETE FROM planos_internet WHERE id = $1 AND codigo_provedor_fk = $2`;
+        return await this._db.Execulte<any>(exclui, [idPlano, codigoProvedor]);
+    }
+
+    // LANDING PAGE do provedor (módulo "landpage")
+
+    async ObterLpConfig(codigoProvedor:number) : Promise<lpConfigModel> {
+        const select = `SELECT * FROM provedor_lp_config WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<lpConfigModel>(select, [codigoProvedor]);
+        if (result.length > 0) return result[0];
+        return { codigo_provedor_fk: codigoProvedor, ativa: false, headline: null, subheadline: null, cidade: null };
+    }
+
+    async DefinirLpConfig(config:lpConfigModel) : Promise<lpConfigModel> {
+        const upsert = `INSERT INTO provedor_lp_config (codigo_provedor_fk, ativa, headline, subheadline, cidade, atualizado_em)
+            VALUES ($1,$2,$3,$4,$5, now())
+            ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
+                ativa = EXCLUDED.ativa, headline = EXCLUDED.headline, subheadline = EXCLUDED.subheadline,
+                cidade = EXCLUDED.cidade, atualizado_em = now()
+            RETURNING *;`;
+        const result = await this._db.Execulte<lpConfigModel>(upsert, [
+            config.codigo_provedor_fk, config.ativa, config.headline, config.subheadline, config.cidade,
+        ]);
         return result[0];
     }
 

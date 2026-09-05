@@ -326,6 +326,37 @@ export default class ProvedorServices implements IProvedorServices {
         return await this._provedorRepository.ObterPlanosMoveisAtivos(codigo);
     }
 
+    // Landing Page pública (módulo "landpage") — agrega tema, contato, planos
+    // de internet/móvel e a config de LP num payload só. headline/subheadline
+    // ficam com um texto padrão de destaque quando o provedor não preencheu
+    // nada — a LP funciona "pronta" sem exigir cadastro extra.
+    async ObterLpPublica(codigo: string) {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("landpage"))
+            return null;
+
+        const lpConfig = await this._provedorRepository.ObterLpConfig(codigo);
+        if (!lpConfig.ativa)
+            return null;
+
+        const [tema, atendimento, planosInternet, planosMoveis] = await Promise.all([
+            this.ObterTema(codigo),
+            this._provedorRepository.ObterAtendimento(codigo),
+            this._provedorRepository.ObterPlanosInternetAtivos(codigo),
+            modulos.includes("planos_moveis") ? this._provedorRepository.ObterPlanosMoveisAtivos(codigo) : Promise.resolve([]),
+        ]);
+
+        return {
+            tema,
+            atendimento,
+            cidade: lpConfig.cidade,
+            headline: lpConfig.headline?.trim() || `A internet do jeito que ${tema.nome} entrega: rápida e sem enrolação.`,
+            subheadline: lpConfig.subheadline?.trim() || "Planos de fibra e internet móvel pra você ficar conectado sem pagar caro por isso.",
+            planosInternet,
+            planosMoveis,
+        };
+    }
+
     // Fluxo próprio do Synk (não passa pelo chamado do gerenciador — o
     // ReceitaNet só permite 1 chamado aberto por vez, o que fazia essa
     // solicitação falhar toda hora que o cliente já tinha outro em aberto).

@@ -6,6 +6,8 @@ import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { planoInternetModel } from "../../core/models/planoInternetModel";
+import { lpConfigModel } from "../../core/models/lpConfigModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
@@ -64,6 +66,12 @@ export default interface IPainelServices {
     ObterPlanosMoveis(codigoProvedor:number) : Promise<planoMovelModel[]>
     EditarPlanoMovel(id:number, plano:planoMovelModel) : Promise<planoMovelModel>
     ExcluirPlanoMovel(id:string, codigoProvedor:number) : Promise<any>
+    GravarPlanoInternet(plano:planoInternetModel) : Promise<planoInternetModel>
+    ObterPlanosInternet(codigoProvedor:number) : Promise<planoInternetModel[]>
+    EditarPlanoInternet(id:number, plano:planoInternetModel) : Promise<planoInternetModel>
+    ExcluirPlanoInternet(id:string, codigoProvedor:number) : Promise<any>
+    ObterLpConfig(codigoProvedor:number) : Promise<lpConfigModel>
+    DefinirLpConfig(codigoProvedor:number, config:{ ativa:boolean; headline?:string; subheadline?:string; cidade?:string }) : Promise<lpConfigModel>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>

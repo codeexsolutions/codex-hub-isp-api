@@ -21,6 +21,8 @@ import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
+import { planoInternetModel } from "../../core/models/planoInternetModel";
+import { lpConfigModel } from "../../core/models/lpConfigModel";
 
 
 @injectable()
@@ -356,6 +358,19 @@ export default class ProvedorRepository implements IProvedorRepository{
     async ObterPlanosMoveisAtivos(codigoProvedor:string) : Promise<planoMovelModel[]> {
         const select = `SELECT * FROM planos_moveis WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY ordem ASC, valor ASC;`;
         return await this._db.Execulte<planoMovelModel>(select, [codigoProvedor]);
+    }
+
+    // Catálogo de internet fixa (fibra) ativo — usado na Landing Page pública.
+    async ObterPlanosInternetAtivos(codigoProvedor:string) : Promise<planoInternetModel[]> {
+        const select = `SELECT * FROM planos_internet WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY ordem ASC, valor ASC;`;
+        return await this._db.Execulte<planoInternetModel>(select, [codigoProvedor]);
+    }
+
+    async ObterLpConfig(codigoProvedor:string) : Promise<lpConfigModel> {
+        const select = `SELECT * FROM provedor_lp_config WHERE codigo_provedor_fk = $1;`;
+        const result = await this._db.Execulte<lpConfigModel>(select, [codigoProvedor]);
+        if (result.length > 0) return result[0];
+        return { codigo_provedor_fk: Number(codigoProvedor), ativa: false, headline: null, subheadline: null, cidade: null };
     }
 
     // Busca pública mas ainda restrita a plano ativo desse provedor — usada

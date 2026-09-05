@@ -22,6 +22,7 @@ import { pixConfigModel } from "../../core/models/pixConfigModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { planoInternetModel } from "../../core/models/planoInternetModel";
 import INotificacaoPainelServices from "../../application/interfaces/INotificacaoPainelServices";
 import { pushSubscriptionPainelDto } from "../../application/Dtos/pushSubscriptionPainelDto";
 
@@ -381,6 +382,69 @@ export default class PainelController {
         const codigoProvedor = req.usuario?.codigoProvedor as string
         const solicitacoes = await this._painelService.ListarSolicitacoesPlanoMovel(Number.parseInt(codigoProvedor));
         return res.json({data: solicitacoes})
+    }
+
+    // PLANOS DE INTERNET FIXA (fibra) — catálogo do provedor, alimenta a LP
+
+    async GravarPlanoInternet(req:AuthRequest, res:Response){
+
+        const data = req.body as planoInternetModel;
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const plano = await this._painelService.GravarPlanoInternet(data);
+            return res.status(200).json({data: plano})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async EditarPlanoInternet(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const data = req.body as planoInternetModel;
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const plano = await this._painelService.EditarPlanoInternet(id, data);
+            return res.status(201).json({data: plano})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ExcluirPlanoInternet(req:AuthRequest, res:Response){
+
+        const id = req.params.id as string;
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const plano = await this._painelService.ExcluirPlanoInternet(id, codigoProvedor);
+        return res.status(201).json({data: plano})
+    }
+
+    async ObterPlanosInternetPainel(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const planos = await this._painelService.ObterPlanosInternet(Number.parseInt(codigoProvedor));
+        return res.json({data: planos})
+    }
+
+    // LANDING PAGE do provedor
+
+    async ObterLpConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const config = await this._painelService.ObterLpConfig(Number.parseInt(codigoProvedor));
+        return res.json({ data: config });
+    }
+
+    async DefinirLpConfigProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { ativa, headline, subheadline, cidade } = req.body;
+        try {
+            const config = await this._painelService.DefinirLpConfig(Number.parseInt(codigoProvedor), { ativa, headline, subheadline, cidade });
+            return res.json({ data: config });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
     }
 
     async AtualizarStatusSolicitacaoPlanoMovel(req:AuthRequest, res:Response){

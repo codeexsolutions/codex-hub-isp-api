@@ -17,6 +17,8 @@ import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { atendimentoModel } from "../models/atendimentoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 import { ativacaoTvModel } from "../models/ativacaoTvModel";
+import { planoInternetModel } from "../models/planoInternetModel";
+import { lpConfigModel } from "../models/lpConfigModel";
 
 export default interface IProvedorRepository{
     ObterProvedor(codigoProvedor:string): Promise<Provedor>
@@ -67,4 +69,7 @@ export default interface IProvedorRepository{
     // DNS/servidor Xtream próprio do provedor pro app Synk TV
     ObterIptvUrlDns(codigoProvedor:string) : Promise<string | null>
     DefinirIptvUrlDns(codigoProvedor:string, url:string) : Promise<string | null>
+    // Landing Page pública (módulo "landpage")
+    ObterPlanosInternetAtivos(codigoProvedor:string) : Promise<planoInternetModel[]>
+    ObterLpConfig(codigoProvedor:string) : Promise<lpConfigModel>
 }

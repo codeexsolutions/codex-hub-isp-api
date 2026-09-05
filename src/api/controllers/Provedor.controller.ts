@@ -192,6 +192,19 @@ export default class ProvedorController{
         return res.json({ data: planos });
     }
 
+    // Público — Landing Page do provedor (módulo "landpage"). 404 quando o
+    // módulo não está ativo ou o provedor ainda não ligou a LP.
+    async ObterLpPublica(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string;
+        const lp = await this._provedorService.ObterLpPublica(codigoProvedor);
+
+        if (!lp)
+            return res.status(404).json({ statusCode: 404, message: "Landing page não disponível.", data: null });
+
+        return res.json({ data: lp });
+    }
+
     async SolicitarPlanoMovel(req:Request, res:Response){
 
         const { codigoProvedor, planoId, cpfCnpj, clienteNome } = req.body || {};

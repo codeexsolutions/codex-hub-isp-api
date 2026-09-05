@@ -68,6 +68,14 @@ painelRouter.delete('/provedor/planos-moveis/:id', authMiddleware, moduloMiddlew
 painelRouter.get('/provedor/planos-moveis/solicitacoes', authMiddleware, moduloMiddleware("planos_moveis"), painelController.ListarSolicitacoesPlanoMovel.bind(painelController));
 painelRouter.patch('/provedor/planos-moveis/solicitacoes/:id', authMiddleware, moduloMiddleware("planos_moveis"), painelController.AtualizarStatusSolicitacaoPlanoMovel.bind(painelController));
 
+painelRouter.post('/provedor/planos-internet', authMiddleware, moduloMiddleware("landpage"), painelController.GravarPlanoInternet.bind(painelController));
+painelRouter.get('/provedor/planos-internet', authMiddleware, moduloMiddleware("landpage"), painelController.ObterPlanosInternetPainel.bind(painelController));
+painelRouter.patch('/provedor/planos-internet/:id', authMiddleware, moduloMiddleware("landpage"), painelController.EditarPlanoInternet.bind(painelController));
+painelRouter.delete('/provedor/planos-internet/:id', authMiddleware, moduloMiddleware("landpage"), painelController.ExcluirPlanoInternet.bind(painelController));
+
+painelRouter.get('/provedor/lp-config', authMiddleware, moduloMiddleware("landpage"), painelController.ObterLpConfigProprio.bind(painelController));
+painelRouter.put('/provedor/lp-config', authMiddleware, moduloMiddleware("landpage"), painelController.DefinirLpConfigProprio.bind(painelController));
+
 // MODULOS (o próprio provedor consultando quais módulos ele tem ativos)
 painelRouter.get('/provedor/modulos', authMiddleware, painelController.ObterModulosProprio.bind(painelController));
 

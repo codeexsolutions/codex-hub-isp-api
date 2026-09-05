@@ -11,6 +11,8 @@ import { compraModel } from "../../core/models/compraModel";
 import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
+import { planoInternetModel } from "../../core/models/planoInternetModel";
+import { lpConfigModel } from "../../core/models/lpConfigModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
@@ -38,7 +40,7 @@ import { eGerenciador } from "../../common/enuns/egerenciador";
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
 // nenhum) continuam controláveis manualmente.
-const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca", "iptv", "app_tv", "planos_moveis"];
+const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca", "iptv", "app_tv", "planos_moveis", "landpage"];
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -274,6 +276,59 @@ export default class PainelService implements IPainelServices {
 
     async ExcluirPlanoMovel(id:string, codigoProvedor:number) : Promise<any> {
         await this._painelRepository.ExcluiPlanoMovel(id, codigoProvedor);
+    }
+
+    // PLANOS DE INTERNET FIXA (fibra) — catálogo do provedor, alimenta a LP
+
+    async GravarPlanoInternet(plano:planoInternetModel) : Promise<planoInternetModel> {
+        if (!plano.nome?.trim())
+            throw new Error("Informe o nome do plano.");
+        if (!(plano.velocidade_mega > 0))
+            throw new Error("Informe a velocidade em Mega.");
+        if (!(plano.valor > 0))
+            throw new Error("Informe um valor válido.");
+        return await this._painelRepository.GravarPlanoInternet(plano);
+    }
+
+    async ObterPlanosInternet(codigoProvedor:number) : Promise<planoInternetModel[]> {
+        const planos = await this._painelRepository.ObterPlanosInternet(codigoProvedor);
+        return planos || [];
+    }
+
+    async EditarPlanoInternet(id:number, planoEdite:planoInternetModel) : Promise<planoInternetModel> {
+        const plano = await this._painelRepository.ObterPlanoInternetPorId(id, planoEdite.codigo_provedor_fk);
+        if (!plano)
+            throw new Error("Plano não encontrado.");
+
+        if (planoEdite.nome !== undefined) plano.nome = planoEdite.nome;
+        if (planoEdite.velocidade_mega !== undefined) plano.velocidade_mega = planoEdite.velocidade_mega;
+        if (planoEdite.valor !== undefined) plano.valor = planoEdite.valor;
+        if (planoEdite.beneficios !== undefined) plano.beneficios = planoEdite.beneficios;
+        if (planoEdite.destaque !== undefined) plano.destaque = planoEdite.destaque;
+        if (planoEdite.ordem !== undefined) plano.ordem = planoEdite.ordem;
+        plano.ativo = planoEdite.ativo;
+
+        return await this._painelRepository.EditarPlanoInternet(plano);
+    }
+
+    async ExcluirPlanoInternet(id:string, codigoProvedor:number) : Promise<any> {
+        await this._painelRepository.ExcluiPlanoInternet(id, codigoProvedor);
+    }
+
+    // LANDING PAGE do provedor (módulo "landpage")
+
+    async ObterLpConfig(codigoProvedor:number) : Promise<lpConfigModel> {
+        return await this._painelRepository.ObterLpConfig(codigoProvedor);
+    }
+
+    async DefinirLpConfig(codigoProvedor:number, config:{ ativa:boolean; headline?:string; subheadline?:string; cidade?:string }) : Promise<lpConfigModel> {
+        return await this._painelRepository.DefinirLpConfig({
+            codigo_provedor_fk: codigoProvedor,
+            ativa: !!config.ativa,
+            headline: config.headline?.trim() || null,
+            subheadline: config.subheadline?.trim() || null,
+            cidade: config.cidade?.trim() || null,
+        });
     }
 
     async ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]> {
