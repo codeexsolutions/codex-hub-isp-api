@@ -81,6 +81,8 @@ painelRouter.patch('/notificacoes/:id/lida', authMiddleware, painelController.Ma
 // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
 painelRouter.get('/provedor/home-config', authMiddleware, painelController.ObterHomeConfigProprio.bind(painelController));
 painelRouter.put('/provedor/home-config', authMiddleware, painelController.DefinirHomeConfigProprio.bind(painelController));
+painelRouter.get('/provedor/iptv-dns', authMiddleware, painelController.ObterIptvDnsProprio.bind(painelController));
+painelRouter.put('/provedor/iptv-dns', authMiddleware, painelController.DefinirIptvDnsProprio.bind(painelController));
 
 // CANAIS DE ATENDIMENTO
 painelRouter.get('/provedor/atendimento', authMiddleware, painelController.ObterAtendimentoProprio.bind(painelController));

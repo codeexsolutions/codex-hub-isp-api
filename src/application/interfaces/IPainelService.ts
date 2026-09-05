@@ -143,6 +143,9 @@ export default interface IPainelServices {
     // IPTV (URL padrão do servidor Xtream usada pelo app de TV)
     ObterConfigIptv() : Promise<iptvConfigModel>
     DefinirConfigIptv(urlPadrao:string) : Promise<iptvConfigModel>
+    ObterUrlPadraoIptv(codigoProvedor?:string) : Promise<string>
+    ObterIptvUrlDnsProvedor(codigoProvedor:number) : Promise<string>
+    DefinirIptvUrlDnsProvedor(codigoProvedor:number, url:string) : Promise<string>
 
     // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
     ObterConfigLicencaTv() : Promise<configLicencaTvModel>

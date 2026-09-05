@@ -135,6 +135,20 @@ export default class ProvedorRepository implements IProvedorRepository{
         );
     }
 
+    // DNS/servidor Xtream próprio do provedor pro app Synk TV — em branco
+    // significa "usar o padrão do admin" (ver PainelServices.ObterUrlPadraoIptv).
+    async ObterIptvUrlDns(codigoProvedor:string) : Promise<string | null> {
+        const select = `SELECT iptv_url_dns FROM provedores WHERE codigo_provedor = $1;`;
+        const result = await this._db.Execulte<{ iptv_url_dns: string | null }>(select, [codigoProvedor]);
+        return result[0]?.iptv_url_dns ?? null;
+    }
+
+    async DefinirIptvUrlDns(codigoProvedor:string, url:string) : Promise<string | null> {
+        const update = `UPDATE provedores SET iptv_url_dns = $1 WHERE codigo_provedor = $2 RETURNING iptv_url_dns;`;
+        const result = await this._db.Execulte<{ iptv_url_dns: string | null }>(update, [url || null, codigoProvedor]);
+        return result[0]?.iptv_url_dns ?? null;
+    }
+
     async ObterTema(codigo:string) : Promise<any> {
         const select = `SELECT p.codigo_provedor as codigo, p.nome_fantasia as nome, p.gerenciador, t.tag, t.accent, t.accent2, t.logo_url,
                         t.logo,

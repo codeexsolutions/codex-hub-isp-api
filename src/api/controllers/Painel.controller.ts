@@ -964,6 +964,28 @@ export default class PainelController {
         }
     }
 
+    // Provedor informa o DNS/servidor Xtream próprio pro app Synk TV — se
+    // não informar, o app cai pro padrão do admin (ver Iptv.controller.ts).
+    async ObterIptvDnsProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const urlDns = await this._painelService.ObterIptvUrlDnsProvedor(Number.parseInt(codigoProvedor));
+        return res.json({ data: { urlDns } });
+    }
+
+    async DefinirIptvDnsProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { urlDns } = req.body;
+
+        try {
+            const salvo = await this._painelService.DefinirIptvUrlDnsProvedor(Number.parseInt(codigoProvedor), urlDns);
+            return res.json({ data: { urlDns: salvo } });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
     async ObterConfigLicencaTvAdmin(req:AuthRequest, res:Response){
 
         const config = await this._painelService.ObterConfigLicencaTv();

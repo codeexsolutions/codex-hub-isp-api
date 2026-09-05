@@ -64,4 +64,7 @@ export default interface IProvedorRepository{
     ObterAtivacaoTvAtiva(codigo:string, codigoProvedor:string) : Promise<ativacaoTvModel | null>
     MarcarAtivacaoTvUsada(id:number) : Promise<void>
     RevogarAtivacaoTv(id:number, codigoProvedor:number) : Promise<ativacaoTvModel>
+    // DNS/servidor Xtream próprio do provedor pro app Synk TV
+    ObterIptvUrlDns(codigoProvedor:string) : Promise<string | null>
+    DefinirIptvUrlDns(codigoProvedor:string, url:string) : Promise<string | null>
 }

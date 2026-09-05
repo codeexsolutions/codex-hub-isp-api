@@ -584,6 +584,27 @@ export default class PainelService implements IPainelServices {
         return await this._painelRepository.DefinirConfigIptv(urlPadrao?.trim() ?? "");
     }
 
+    // Resolve a URL do servidor Xtream que o app de TV deve usar: a do
+    // próprio provedor, se ele informou uma, senão a padrão do admin.
+    async ObterUrlPadraoIptv(codigoProvedor?: string) : Promise<string> {
+        if (codigoProvedor) {
+            const urlProvedor = await this._provedorRepository.ObterIptvUrlDns(codigoProvedor);
+            if (urlProvedor?.trim()) return urlProvedor.trim();
+        }
+        const config = await this._painelRepository.ObterConfigIptv();
+        return config?.url_padrao ?? "";
+    }
+
+    async ObterIptvUrlDnsProvedor(codigoProvedor: number) : Promise<string> {
+        const url = await this._provedorRepository.ObterIptvUrlDns(String(codigoProvedor));
+        return url ?? "";
+    }
+
+    async DefinirIptvUrlDnsProvedor(codigoProvedor: number, url: string) : Promise<string> {
+        const salvo = await this._provedorRepository.DefinirIptvUrlDns(String(codigoProvedor), url?.trim() ?? "");
+        return salvo ?? "";
+    }
+
     // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
     async ObterConfigLicencaTv() : Promise<configLicencaTvModel> {
         return await this._painelRepository.ObterConfigLicencaTv();
@@ -642,11 +663,9 @@ export default class PainelService implements IPainelServices {
         if (!licenca)
             throw new Error("Licença não encontrada.");
 
-        // "pendente" (legado) e "teste" continuam mostrando o PIX — o
-        // cliente pode pagar a qualquer momento pra virar licença cheia.
-        if (licenca.status !== "pendente" && licenca.status !== "teste")
-            return { chave: licenca.chave, status: licenca.status, vencimento: licenca.vencimento, valor: licenca.valor };
-
+        // PIX sempre disponível, não só em "pendente"/"teste" — licença "ativa"
+        // perto do vencimento e "vencida" também precisam poder renovar (a
+        // tela de perfil do app mostra o PIX de renovação nesses casos).
         const pix = await this.gerarPixLicenca(licenca);
         return { chave: licenca.chave, status: licenca.status, vencimento: licenca.vencimento, valor: licenca.valor, ...pix };
     }
