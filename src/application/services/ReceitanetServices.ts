@@ -78,7 +78,7 @@ export default class ReceitanetServices implements IReceitanetServices {
 
         const chamados = await this._servicesReceitaNet.ObterChamados(token);
 
-        return chamados.chamados.map((chamado:chamado) => {
+        return (chamados?.chamados ?? []).map((chamado:chamado) => {
             const chamadoDto:chamadoDto = {
                 id: chamado.id,
                 descricao: chamado.descricao,

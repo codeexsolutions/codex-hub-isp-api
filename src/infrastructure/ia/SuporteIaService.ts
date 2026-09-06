@@ -19,7 +19,10 @@ Regras importantes:
 - Nunca invente prazos, valores, promessas de visita técnica ou informações que você não tem.
 - Nunca peça dados pessoais, senha ou informações de pagamento.
 - Seja direto e breve (no máximo 4-5 linhas curtas). Sem saudação nem despedida formal.
-- Responda sempre em português do Brasil.`;
+- Responda sempre em português do Brasil.
+- Nunca use markdown (sem **negrito**, sem listas com "-" ou "*", sem títulos). O app mostra
+  o texto puro, sem formatação nenhuma — use só texto corrido, com números simples tipo "1)" se
+  precisar enumerar passos.`;
 
 let cliente: Anthropic | null = null;
 function obterCliente(): Anthropic {
@@ -36,5 +39,11 @@ export async function gerarSugestaoSuporte(mensagemCliente: string): Promise<str
     });
 
     const bloco = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
-    return bloco?.text?.trim() ?? "";
+    const texto = bloco?.text?.trim() ?? "";
+
+    // Defesa extra: o app mostra texto puro, então tira marcações de markdown
+    // mesmo se o modelo ignorar a instrução de não usar (acontece às vezes).
+    return texto
+        .replace(/\*\*(.+?)\*\*/g, "$1")
+        .replace(/^[*-]\s+/gm, "");
 }

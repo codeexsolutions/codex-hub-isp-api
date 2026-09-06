@@ -88,17 +88,30 @@ export default class ChamadoController{
 
         const data = req.body;
 
-        const chamados = data.gerenciador === eGerenciador.IXCSOFT.toString()
-            ? await this._ixcSoftService.ObterChamados(data.cpfCnpj, data.codigoProvedor)
-            : await this._receitaNetService.ObterChamados(data.token);
+        try {
+            const chamados = data.gerenciador === eGerenciador.IXCSOFT.toString()
+                ? await this._ixcSoftService.ObterChamados(data.cpfCnpj, data.codigoProvedor)
+                : await this._receitaNetService.ObterChamados(data.token);
 
-        const retorno: retornoPadrao<chamadoDto[]> = {
-            statusCode:200,
-            message:"Chamados",
-            data: chamados
+            const retorno: retornoPadrao<chamadoDto[]> = {
+                statusCode:200,
+                message:"Chamados",
+                data: chamados
+            }
+
+            return res.json(retorno);
+        } catch (error) {
+            // Gerenciador (ReceitaNet/IXC) fora do ar ou sessão expirada não pode
+            // derrubar a tela de Suporte inteira — mostra "nenhum chamado" em vez
+            // de erro genérico.
+            console.error("Erro ao obter chamados:", error);
+            const retorno: retornoPadrao<chamadoDto[]> = {
+                statusCode:200,
+                message:"Chamados",
+                data: []
+            }
+            return res.json(retorno);
         }
-
-        return res.json(retorno);
 
     }
 
