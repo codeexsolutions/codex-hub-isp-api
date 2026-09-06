@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/codexsolutions-tech/codex-hub-isp-api#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0",
     "@supabase/supabase-js": "^2.110.8",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

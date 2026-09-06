@@ -38,6 +38,7 @@ export default interface IProvedorServices {
     ObterRecompensas(codigo:string) : Promise<recompensaModel[]> ;
     ObterPlanosMoveis(codigo:string) : Promise<planoMovelModel[]> ;
     ObterLpPublica(codigo:string) : Promise<any>;
+    SugerirRespostaSuporte(codigo:string, mensagem:string) : Promise<string | null>;
     SolicitarPlanoMovel(codigo:string, planoId:number, cpfCnpj:string, clienteNome:string|null) : Promise<solicitacaoPlanoMovelModel> ;
     ResgatarRecompensa(codigo:string, cpfCnpj:string, clienteNome:string, idRecompensa:number) : Promise<extratoPontosModel> ;
     ListarParceirosAtivos(codigoProvedor:string) : Promise<parceiroModel[]> ;

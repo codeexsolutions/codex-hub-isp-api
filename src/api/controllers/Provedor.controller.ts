@@ -205,6 +205,20 @@ export default class ProvedorController{
         return res.json({ data: lp });
     }
 
+    // Público — sugestão de IA antes de abrir chamado (módulo "ia_suporte").
+    // sugestao null significa "módulo não ativo" ou "não foi possível gerar" —
+    // o app trata os dois casos igual: pula direto pro chamado normal.
+    async SugerirRespostaSuporte(req:Request, res:Response){
+
+        const { codigoProvedor, mensagem } = req.body || {};
+        try {
+            const sugestao = await this._provedorService.SugerirRespostaSuporte(codigoProvedor, mensagem);
+            return res.json({ data: { sugestao } });
+        } catch (error:any) {
+            return res.status(500).json({ statusCode: 500, message: error.message, data: { sugestao: null } });
+        }
+    }
+
     async SolicitarPlanoMovel(req:Request, res:Response){
 
         const { codigoProvedor, planoId, cpfCnpj, clienteNome } = req.body || {};

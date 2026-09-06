@@ -13,6 +13,7 @@ import Storage from "../../infrastructure/supabase/Storage";
 import UploadService from "./UploadServices";
 import { ETipoArquivo } from "../../infrastructure/supabase/ETipoArquivo";
 import { ManifestModel } from "../Dtos/manifest.dto";
+import { gerarSugestaoSuporte } from "../../infrastructure/ia/SuporteIaService";
 import { compraModel } from "../../core/models/compraModel";
 import { gerarCupom } from "../../common/utilities/cupom";
 import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
@@ -317,6 +318,26 @@ export default class ProvedorServices implements IProvedorServices {
         if (!modulos.includes("recompensas"))
             return [];
         return await this._provedorRepository.ObterRecompensasAtivas(codigo);
+    }
+
+    // Sugestão automática de IA antes de abrir chamado — módulo "ia_suporte".
+    // Falha "fechada": qualquer erro (módulo inativo, sem chave configurada,
+    // API fora do ar) devolve null e o app simplesmente pula pro chamado
+    // normal, sem travar o fluxo de suporte por causa de uma feature opcional.
+    async SugerirRespostaSuporte(codigo: string, mensagem: string): Promise<string | null> {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("ia_suporte"))
+            return null;
+        if (!mensagem?.trim())
+            return null;
+
+        try {
+            const sugestao = await gerarSugestaoSuporte(mensagem.trim());
+            return sugestao || null;
+        } catch (error) {
+            console.error("Erro ao gerar sugestão de IA no suporte:", error);
+            return null;
+        }
     }
 
     async ObterPlanosMoveis(codigo: string) {

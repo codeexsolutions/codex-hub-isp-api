@@ -40,7 +40,7 @@ import { eGerenciador } from "../../common/enuns/egerenciador";
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
 // nenhum) continuam controláveis manualmente.
-const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca", "iptv", "app_tv", "planos_moveis", "landpage"];
+const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca", "iptv", "app_tv", "planos_moveis", "landpage", "ia_suporte"];
 
 @injectable()
 export default class PainelService implements IPainelServices {
