@@ -869,6 +869,16 @@ export default class PainelController {
         return res.json({data: planos})
     }
 
+    // Público — usado pela LP de marketing (synk-lp) pra mostrar sempre os
+    // mesmos planos/módulos configurados no admin, sem duplicar a régua de
+    // preço em dois lugares. Só planos ativos, nessa ordem.
+    async ListarPlanosPublico(req:Request, res:Response){
+
+        const planos = await this._painelService.ListarPlanos();
+        const ativos = planos.filter((p) => p.ativo).sort((a, b) => a.ordem - b.ordem);
+        return res.json({data: ativos})
+    }
+
     async CriarPlanoAdmin(req:AuthRequest, res:Response){
 
         const { nome, valor_mensalidade, modulos, ordem } = req.body;

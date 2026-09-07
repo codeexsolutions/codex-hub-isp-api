@@ -143,6 +143,8 @@ painelRouter.get('/admin/faturamento', authMiddleware, adminMiddleware, painelCo
 painelRouter.post('/admin/faturamento/:codigoProvedor/assinatura', authMiddleware, adminMiddleware, painelController.ConfigurarAssinaturaAdmin.bind(painelController));
 
 // PLANOS DE VENDA
+// Público — a LP de marketing (synk-lp) usa pra mostrar os mesmos planos do admin.
+painelRouter.get('/planos', painelController.ListarPlanosPublico.bind(painelController));
 painelRouter.get('/admin/planos', authMiddleware, adminMiddleware, painelController.ListarPlanosAdmin.bind(painelController));
 painelRouter.post('/admin/planos', authMiddleware, adminMiddleware, painelController.CriarPlanoAdmin.bind(painelController));
 painelRouter.put('/admin/planos/:id', authMiddleware, adminMiddleware, painelController.EditarPlanoAdmin.bind(painelController));
