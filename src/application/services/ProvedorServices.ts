@@ -360,17 +360,23 @@ export default class ProvedorServices implements IProvedorServices {
         if (!lpConfig.ativa)
             return null;
 
-        const [tema, atendimento, planosInternet, planosMoveis] = await Promise.all([
+        const [tema, atendimento, planosInternet, planosMoveis, provedor] = await Promise.all([
             this.ObterTema(codigo),
             this._provedorRepository.ObterAtendimento(codigo),
             this._provedorRepository.ObterPlanosInternetAtivos(codigo),
             modulos.includes("planos_moveis") ? this._provedorRepository.ObterPlanosMoveisAtivos(codigo) : Promise.resolve([]),
+            this._provedorRepository.ObterProvedor(codigo),
         ]);
 
         return {
             tema,
             atendimento,
             cidade: lpConfig.cidade,
+            endereco: lpConfig.endereco,
+            cnpj: provedor?.CpfCnpj ?? null,
+            notaGoogle: lpConfig.nota_google,
+            qtdAvaliacoesGoogle: lpConfig.qtd_avaliacoes_google,
+            linkGoogle: lpConfig.link_google,
             headline: lpConfig.headline?.trim() || `A internet do jeito que ${tema.nome} entrega: rápida e sem enrolação.`,
             subheadline: lpConfig.subheadline?.trim() || "Planos de fibra e internet móvel pra você ficar conectado sem pagar caro por isso.",
             planosInternet,

@@ -321,13 +321,22 @@ export default class PainelService implements IPainelServices {
         return await this._painelRepository.ObterLpConfig(codigoProvedor);
     }
 
-    async DefinirLpConfig(codigoProvedor:number, config:{ ativa:boolean; headline?:string; subheadline?:string; cidade?:string }) : Promise<lpConfigModel> {
+    async DefinirLpConfig(codigoProvedor:number, config:{
+        ativa:boolean; headline?:string; subheadline?:string; cidade?:string; endereco?:string;
+        notaGoogle?:number|string; qtdAvaliacoesGoogle?:number|string; linkGoogle?:string;
+    }) : Promise<lpConfigModel> {
+        const notaGoogle = Number(config.notaGoogle);
+        const qtdAvaliacoes = Number.parseInt(String(config.qtdAvaliacoesGoogle ?? ""), 10);
         return await this._painelRepository.DefinirLpConfig({
             codigo_provedor_fk: codigoProvedor,
             ativa: !!config.ativa,
             headline: config.headline?.trim() || null,
             subheadline: config.subheadline?.trim() || null,
             cidade: config.cidade?.trim() || null,
+            endereco: config.endereco?.trim() || null,
+            nota_google: Number.isFinite(notaGoogle) && notaGoogle > 0 ? notaGoogle : null,
+            qtd_avaliacoes_google: Number.isFinite(qtdAvaliacoes) && qtdAvaliacoes > 0 ? qtdAvaliacoes : null,
+            link_google: config.linkGoogle?.trim() || null,
         });
     }
 

@@ -370,7 +370,10 @@ export default class ProvedorRepository implements IProvedorRepository{
         const select = `SELECT * FROM provedor_lp_config WHERE codigo_provedor_fk = $1;`;
         const result = await this._db.Execulte<lpConfigModel>(select, [codigoProvedor]);
         if (result.length > 0) return result[0];
-        return { codigo_provedor_fk: Number(codigoProvedor), ativa: false, headline: null, subheadline: null, cidade: null };
+        return {
+            codigo_provedor_fk: Number(codigoProvedor), ativa: false, headline: null, subheadline: null, cidade: null,
+            endereco: null, nota_google: null, qtd_avaliacoes_google: null, link_google: null,
+        };
     }
 
     // Busca pública mas ainda restrita a plano ativo desse provedor — usada

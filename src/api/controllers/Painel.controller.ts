@@ -438,9 +438,11 @@ export default class PainelController {
     async DefinirLpConfigProprio(req:AuthRequest, res:Response){
 
         const codigoProvedor = req.usuario?.codigoProvedor as string;
-        const { ativa, headline, subheadline, cidade } = req.body;
+        const { ativa, headline, subheadline, cidade, endereco, notaGoogle, qtdAvaliacoesGoogle, linkGoogle } = req.body;
         try {
-            const config = await this._painelService.DefinirLpConfig(Number.parseInt(codigoProvedor), { ativa, headline, subheadline, cidade });
+            const config = await this._painelService.DefinirLpConfig(Number.parseInt(codigoProvedor), {
+                ativa, headline, subheadline, cidade, endereco, notaGoogle, qtdAvaliacoesGoogle, linkGoogle,
+            });
             return res.json({ data: config });
         } catch (error:any) {
             return res.status(400).json({ message: error.message });

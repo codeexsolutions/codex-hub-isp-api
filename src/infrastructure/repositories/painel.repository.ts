@@ -415,18 +415,25 @@ export default class PainelRepository implements IPainelRepository {
         const select = `SELECT * FROM provedor_lp_config WHERE codigo_provedor_fk = $1;`;
         const result = await this._db.Execulte<lpConfigModel>(select, [codigoProvedor]);
         if (result.length > 0) return result[0];
-        return { codigo_provedor_fk: codigoProvedor, ativa: false, headline: null, subheadline: null, cidade: null };
+        return {
+            codigo_provedor_fk: codigoProvedor, ativa: false, headline: null, subheadline: null, cidade: null,
+            endereco: null, nota_google: null, qtd_avaliacoes_google: null, link_google: null,
+        };
     }
 
     async DefinirLpConfig(config:lpConfigModel) : Promise<lpConfigModel> {
-        const upsert = `INSERT INTO provedor_lp_config (codigo_provedor_fk, ativa, headline, subheadline, cidade, atualizado_em)
-            VALUES ($1,$2,$3,$4,$5, now())
+        const upsert = `INSERT INTO provedor_lp_config
+                (codigo_provedor_fk, ativa, headline, subheadline, cidade, endereco, nota_google, qtd_avaliacoes_google, link_google, atualizado_em)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now())
             ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
                 ativa = EXCLUDED.ativa, headline = EXCLUDED.headline, subheadline = EXCLUDED.subheadline,
-                cidade = EXCLUDED.cidade, atualizado_em = now()
+                cidade = EXCLUDED.cidade, endereco = EXCLUDED.endereco, nota_google = EXCLUDED.nota_google,
+                qtd_avaliacoes_google = EXCLUDED.qtd_avaliacoes_google, link_google = EXCLUDED.link_google,
+                atualizado_em = now()
             RETURNING *;`;
         const result = await this._db.Execulte<lpConfigModel>(upsert, [
             config.codigo_provedor_fk, config.ativa, config.headline, config.subheadline, config.cidade,
+            config.endereco, config.nota_google, config.qtd_avaliacoes_google, config.link_google,
         ]);
         return result[0];
     }

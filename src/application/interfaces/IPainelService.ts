@@ -71,7 +71,10 @@ export default interface IPainelServices {
     EditarPlanoInternet(id:number, plano:planoInternetModel) : Promise<planoInternetModel>
     ExcluirPlanoInternet(id:string, codigoProvedor:number) : Promise<any>
     ObterLpConfig(codigoProvedor:number) : Promise<lpConfigModel>
-    DefinirLpConfig(codigoProvedor:number, config:{ ativa:boolean; headline?:string; subheadline?:string; cidade?:string }) : Promise<lpConfigModel>
+    DefinirLpConfig(codigoProvedor:number, config:{
+        ativa:boolean; headline?:string; subheadline?:string; cidade?:string; endereco?:string;
+        notaGoogle?:number|string; qtdAvaliacoesGoogle?:number|string; linkGoogle?:string;
+    }) : Promise<lpConfigModel>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>
