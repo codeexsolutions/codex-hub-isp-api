@@ -360,12 +360,14 @@ export default class ProvedorServices implements IProvedorServices {
         if (!lpConfig.ativa)
             return null;
 
-        const [tema, atendimento, planosInternet, planosMoveis, provedor] = await Promise.all([
+        const [tema, atendimento, planosInternet, planosMoveis, provedor, vantagens, apps] = await Promise.all([
             this.ObterTema(codigo),
             this._provedorRepository.ObterAtendimento(codigo),
             this._provedorRepository.ObterPlanosInternetAtivos(codigo),
             modulos.includes("planos_moveis") ? this._provedorRepository.ObterPlanosMoveisAtivos(codigo) : Promise.resolve([]),
             this._provedorRepository.ObterProvedor(codigo),
+            this._provedorRepository.ObterLpVantagensAtivas(codigo),
+            this._provedorRepository.ObterLpAppsAtivos(codigo),
         ]);
 
         return {
@@ -381,6 +383,8 @@ export default class ProvedorServices implements IProvedorServices {
             subheadline: lpConfig.subheadline?.trim() || "Planos de fibra e internet móvel pra você ficar conectado sem pagar caro por isso.",
             planosInternet,
             planosMoveis,
+            vantagens,
+            apps,
         };
     }
 

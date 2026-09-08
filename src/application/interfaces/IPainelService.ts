@@ -8,6 +8,8 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
 import { lpConfigModel } from "../../core/models/lpConfigModel";
+import { lpVantagemModel } from "../../core/models/lpVantagemModel";
+import { lpAppModel } from "../../core/models/lpAppModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
@@ -75,6 +77,14 @@ export default interface IPainelServices {
         ativa:boolean; headline?:string; subheadline?:string; cidade?:string; endereco?:string;
         notaGoogle?:number|string; qtdAvaliacoesGoogle?:number|string; linkGoogle?:string;
     }) : Promise<lpConfigModel>
+    GravarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel>
+    ObterLpVantagens(codigoProvedor:number) : Promise<lpVantagemModel[]>
+    EditarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel>
+    ExcluirLpVantagem(id:string, codigoProvedor:number) : Promise<any>
+    GravarLpApp(a:lpAppModel) : Promise<lpAppModel>
+    ObterLpApps(codigoProvedor:number) : Promise<lpAppModel[]>
+    EditarLpApp(a:lpAppModel) : Promise<lpAppModel>
+    ExcluirLpApp(id:string, codigoProvedor:number) : Promise<any>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>

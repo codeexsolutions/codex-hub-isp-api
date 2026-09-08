@@ -28,6 +28,8 @@ import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
 import { lpConfigModel } from "../../core/models/lpConfigModel";
+import { lpVantagemModel } from "../../core/models/lpVantagemModel";
+import { lpAppModel } from "../../core/models/lpAppModel";
 import { estatus } from "../../common/enuns/estatus";
 
 @injectable()
@@ -436,6 +438,59 @@ export default class PainelRepository implements IPainelRepository {
             config.endereco, config.nota_google, config.qtd_avaliacoes_google, config.link_google,
         ]);
         return result[0];
+    }
+
+    // "POR QUE ASSINAR" (vantagens) e "APPS INCLUSOS" da LP — o provedor monta
+    // no painel. Mesmo padrão de planos_internet.
+
+    async GravarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel> {
+        const insert = `INSERT INTO provedor_lp_vantagens (codigo_provedor_fk, titulo, descricao, icone, ordem, ativo)
+            VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`;
+        const result = await this._db.Execulte<lpVantagemModel>(insert, [
+            v.codigo_provedor_fk, v.titulo, v.descricao, v.icone ?? "zap", v.ordem ?? 0, v.ativo,
+        ]);
+        return result[0];
+    }
+
+    async ObterLpVantagens(codigoProvedor:number) : Promise<lpVantagemModel[]> {
+        const select = `SELECT * FROM provedor_lp_vantagens WHERE codigo_provedor_fk = $1 ORDER BY ordem ASC, id ASC;`;
+        return await this._db.Execulte<lpVantagemModel>(select, [codigoProvedor]);
+    }
+
+    async EditarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel> {
+        const update = `UPDATE provedor_lp_vantagens SET titulo = $1, descricao = $2, icone = $3, ordem = $4, ativo = $5
+            WHERE id = $6 AND codigo_provedor_fk = $7 RETURNING *;`;
+        const result = await this._db.Execulte<lpVantagemModel>(update, [
+            v.titulo, v.descricao, v.icone ?? "zap", v.ordem ?? 0, v.ativo, v.id, v.codigo_provedor_fk,
+        ]);
+        return result[0];
+    }
+
+    async ExcluirLpVantagem(id:string, codigoProvedor:number) : Promise<any> {
+        return await this._db.Execulte<any>(`DELETE FROM provedor_lp_vantagens WHERE id = $1 AND codigo_provedor_fk = $2`, [id, codigoProvedor]);
+    }
+
+    async GravarLpApp(a:lpAppModel) : Promise<lpAppModel> {
+        const insert = `INSERT INTO provedor_lp_apps (codigo_provedor_fk, nome, ordem, ativo)
+            VALUES ($1,$2,$3,$4) RETURNING *;`;
+        const result = await this._db.Execulte<lpAppModel>(insert, [a.codigo_provedor_fk, a.nome, a.ordem ?? 0, a.ativo]);
+        return result[0];
+    }
+
+    async ObterLpApps(codigoProvedor:number) : Promise<lpAppModel[]> {
+        const select = `SELECT * FROM provedor_lp_apps WHERE codigo_provedor_fk = $1 ORDER BY ordem ASC, id ASC;`;
+        return await this._db.Execulte<lpAppModel>(select, [codigoProvedor]);
+    }
+
+    async EditarLpApp(a:lpAppModel) : Promise<lpAppModel> {
+        const update = `UPDATE provedor_lp_apps SET nome = $1, ordem = $2, ativo = $3
+            WHERE id = $4 AND codigo_provedor_fk = $5 RETURNING *;`;
+        const result = await this._db.Execulte<lpAppModel>(update, [a.nome, a.ordem ?? 0, a.ativo, a.id, a.codigo_provedor_fk]);
+        return result[0];
+    }
+
+    async ExcluirLpApp(id:string, codigoProvedor:number) : Promise<any> {
+        return await this._db.Execulte<any>(`DELETE FROM provedor_lp_apps WHERE id = $1 AND codigo_provedor_fk = $2`, [id, codigoProvedor]);
     }
 
     async ObterConfigPontos() : Promise<configPontosModel> {

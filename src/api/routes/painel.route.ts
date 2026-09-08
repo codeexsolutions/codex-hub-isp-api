@@ -76,6 +76,16 @@ painelRouter.delete('/provedor/planos-internet/:id', authMiddleware, moduloMiddl
 painelRouter.get('/provedor/lp-config', authMiddleware, moduloMiddleware("landpage"), painelController.ObterLpConfigProprio.bind(painelController));
 painelRouter.put('/provedor/lp-config', authMiddleware, moduloMiddleware("landpage"), painelController.DefinirLpConfigProprio.bind(painelController));
 
+painelRouter.post('/provedor/lp-vantagens', authMiddleware, moduloMiddleware("landpage"), painelController.GravarLpVantagem.bind(painelController));
+painelRouter.get('/provedor/lp-vantagens', authMiddleware, moduloMiddleware("landpage"), painelController.ObterLpVantagensPainel.bind(painelController));
+painelRouter.patch('/provedor/lp-vantagens/:id', authMiddleware, moduloMiddleware("landpage"), painelController.EditarLpVantagem.bind(painelController));
+painelRouter.delete('/provedor/lp-vantagens/:id', authMiddleware, moduloMiddleware("landpage"), painelController.ExcluirLpVantagem.bind(painelController));
+
+painelRouter.post('/provedor/lp-apps', authMiddleware, moduloMiddleware("landpage"), painelController.GravarLpApp.bind(painelController));
+painelRouter.get('/provedor/lp-apps', authMiddleware, moduloMiddleware("landpage"), painelController.ObterLpAppsPainel.bind(painelController));
+painelRouter.patch('/provedor/lp-apps/:id', authMiddleware, moduloMiddleware("landpage"), painelController.EditarLpApp.bind(painelController));
+painelRouter.delete('/provedor/lp-apps/:id', authMiddleware, moduloMiddleware("landpage"), painelController.ExcluirLpApp.bind(painelController));
+
 // MODULOS (o próprio provedor consultando quais módulos ele tem ativos)
 painelRouter.get('/provedor/modulos', authMiddleware, painelController.ObterModulosProprio.bind(painelController));
 

@@ -19,6 +19,8 @@ import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 import { ativacaoTvModel } from "../models/ativacaoTvModel";
 import { planoInternetModel } from "../models/planoInternetModel";
 import { lpConfigModel } from "../models/lpConfigModel";
+import { lpVantagemModel } from "../models/lpVantagemModel";
+import { lpAppModel } from "../models/lpAppModel";
 
 export default interface IProvedorRepository{
     ObterProvedor(codigoProvedor:string): Promise<Provedor>
@@ -72,4 +74,6 @@ export default interface IProvedorRepository{
     // Landing Page pública (módulo "landpage")
     ObterPlanosInternetAtivos(codigoProvedor:string) : Promise<planoInternetModel[]>
     ObterLpConfig(codigoProvedor:string) : Promise<lpConfigModel>
+    ObterLpVantagensAtivas(codigoProvedor:string) : Promise<lpVantagemModel[]>
+    ObterLpAppsAtivos(codigoProvedor:string) : Promise<lpAppModel[]>
 }

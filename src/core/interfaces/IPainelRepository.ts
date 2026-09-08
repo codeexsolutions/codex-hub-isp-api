@@ -24,6 +24,8 @@ import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../models/licencaTvModel";
 import { planoInternetModel } from "../models/planoInternetModel";
 import { lpConfigModel } from "../models/lpConfigModel";
+import { lpVantagemModel } from "../models/lpVantagemModel";
+import { lpAppModel } from "../models/lpAppModel";
 
 export default interface IPainelRepository {
 
@@ -80,6 +82,14 @@ export default interface IPainelRepository {
     // LANDING PAGE do provedor
     ObterLpConfig(codigoProvedor:number) : Promise<lpConfigModel>
     DefinirLpConfig(config:lpConfigModel) : Promise<lpConfigModel>
+    GravarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel>
+    ObterLpVantagens(codigoProvedor:number) : Promise<lpVantagemModel[]>
+    EditarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel>
+    ExcluirLpVantagem(id:string, codigoProvedor:number) : Promise<any>
+    GravarLpApp(a:lpAppModel) : Promise<lpAppModel>
+    ObterLpApps(codigoProvedor:number) : Promise<lpAppModel[]>
+    EditarLpApp(a:lpAppModel) : Promise<lpAppModel>
+    ExcluirLpApp(id:string, codigoProvedor:number) : Promise<any>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>

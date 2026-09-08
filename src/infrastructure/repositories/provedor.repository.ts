@@ -23,6 +23,8 @@ import { parceiroModel } from "../../core/models/parceiroModel";
 import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
 import { lpConfigModel } from "../../core/models/lpConfigModel";
+import { lpVantagemModel } from "../../core/models/lpVantagemModel";
+import { lpAppModel } from "../../core/models/lpAppModel";
 
 
 @injectable()
@@ -364,6 +366,16 @@ export default class ProvedorRepository implements IProvedorRepository{
     async ObterPlanosInternetAtivos(codigoProvedor:string) : Promise<planoInternetModel[]> {
         const select = `SELECT * FROM planos_internet WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY ordem ASC, valor ASC;`;
         return await this._db.Execulte<planoInternetModel>(select, [codigoProvedor]);
+    }
+
+    async ObterLpVantagensAtivas(codigoProvedor:string) : Promise<lpVantagemModel[]> {
+        const select = `SELECT * FROM provedor_lp_vantagens WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY ordem ASC, id ASC;`;
+        return await this._db.Execulte<lpVantagemModel>(select, [codigoProvedor]);
+    }
+
+    async ObterLpAppsAtivos(codigoProvedor:string) : Promise<lpAppModel[]> {
+        const select = `SELECT * FROM provedor_lp_apps WHERE codigo_provedor_fk = $1 AND ativo = true ORDER BY ordem ASC, id ASC;`;
+        return await this._db.Execulte<lpAppModel>(select, [codigoProvedor]);
     }
 
     async ObterLpConfig(codigoProvedor:string) : Promise<lpConfigModel> {

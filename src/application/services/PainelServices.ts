@@ -13,6 +13,8 @@ import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
 import { lpConfigModel } from "../../core/models/lpConfigModel";
+import { lpVantagemModel } from "../../core/models/lpVantagemModel";
+import { lpAppModel } from "../../core/models/lpAppModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
@@ -338,6 +340,50 @@ export default class PainelService implements IPainelServices {
             qtd_avaliacoes_google: Number.isFinite(qtdAvaliacoes) && qtdAvaliacoes > 0 ? qtdAvaliacoes : null,
             link_google: config.linkGoogle?.trim() || null,
         });
+    }
+
+    // "POR QUE ASSINAR" (vantagens) da LP
+
+    async GravarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel> {
+        if (!v.titulo?.trim() || !v.descricao?.trim())
+            throw new Error("Informe o título e a descrição.");
+        return await this._painelRepository.GravarLpVantagem(v);
+    }
+
+    async ObterLpVantagens(codigoProvedor:number) : Promise<lpVantagemModel[]> {
+        return await this._painelRepository.ObterLpVantagens(codigoProvedor) || [];
+    }
+
+    async EditarLpVantagem(v:lpVantagemModel) : Promise<lpVantagemModel> {
+        if (!v.titulo?.trim() || !v.descricao?.trim())
+            throw new Error("Informe o título e a descrição.");
+        return await this._painelRepository.EditarLpVantagem(v);
+    }
+
+    async ExcluirLpVantagem(id:string, codigoProvedor:number) : Promise<any> {
+        return await this._painelRepository.ExcluirLpVantagem(id, codigoProvedor);
+    }
+
+    // "APPS INCLUSOS" da LP
+
+    async GravarLpApp(a:lpAppModel) : Promise<lpAppModel> {
+        if (!a.nome?.trim())
+            throw new Error("Informe o nome do app.");
+        return await this._painelRepository.GravarLpApp(a);
+    }
+
+    async ObterLpApps(codigoProvedor:number) : Promise<lpAppModel[]> {
+        return await this._painelRepository.ObterLpApps(codigoProvedor) || [];
+    }
+
+    async EditarLpApp(a:lpAppModel) : Promise<lpAppModel> {
+        if (!a.nome?.trim())
+            throw new Error("Informe o nome do app.");
+        return await this._painelRepository.EditarLpApp(a);
+    }
+
+    async ExcluirLpApp(id:string, codigoProvedor:number) : Promise<any> {
+        return await this._painelRepository.ExcluirLpApp(id, codigoProvedor);
     }
 
     async ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]> {

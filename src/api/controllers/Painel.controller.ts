@@ -23,6 +23,8 @@ import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
+import { lpVantagemModel } from "../../core/models/lpVantagemModel";
+import { lpAppModel } from "../../core/models/lpAppModel";
 import INotificacaoPainelServices from "../../application/interfaces/INotificacaoPainelServices";
 import { pushSubscriptionPainelDto } from "../../application/Dtos/pushSubscriptionPainelDto";
 
@@ -447,6 +449,90 @@ export default class PainelController {
         } catch (error:any) {
             return res.status(400).json({ message: error.message });
         }
+    }
+
+    // "POR QUE ASSINAR" (vantagens) da LP
+
+    async GravarLpVantagem(req:AuthRequest, res:Response){
+
+        const data = req.body as lpVantagemModel;
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const vantagem = await this._painelService.GravarLpVantagem(data);
+            return res.status(200).json({ data: vantagem });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ObterLpVantagensPainel(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const vantagens = await this._painelService.ObterLpVantagens(Number.parseInt(codigoProvedor));
+        return res.json({ data: vantagens });
+    }
+
+    async EditarLpVantagem(req:AuthRequest, res:Response){
+
+        const data = req.body as lpVantagemModel;
+        data.id = Number.parseInt(req.params.id as string);
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const vantagem = await this._painelService.EditarLpVantagem(data);
+            return res.status(200).json({ data: vantagem });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ExcluirLpVantagem(req:AuthRequest, res:Response){
+
+        const id = req.params.id as string;
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        await this._painelService.ExcluirLpVantagem(id, codigoProvedor);
+        return res.status(200).json({ data: null });
+    }
+
+    // "APPS INCLUSOS" da LP
+
+    async GravarLpApp(req:AuthRequest, res:Response){
+
+        const data = req.body as lpAppModel;
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const app = await this._painelService.GravarLpApp(data);
+            return res.status(200).json({ data: app });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ObterLpAppsPainel(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const apps = await this._painelService.ObterLpApps(Number.parseInt(codigoProvedor));
+        return res.json({ data: apps });
+    }
+
+    async EditarLpApp(req:AuthRequest, res:Response){
+
+        const data = req.body as lpAppModel;
+        data.id = Number.parseInt(req.params.id as string);
+        data.codigo_provedor_fk = Number.parseInt(req.usuario?.codigoProvedor as string);
+        try {
+            const app = await this._painelService.EditarLpApp(data);
+            return res.status(200).json({ data: app });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ExcluirLpApp(req:AuthRequest, res:Response){
+
+        const id = req.params.id as string;
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        await this._painelService.ExcluirLpApp(id, codigoProvedor);
+        return res.status(200).json({ data: null });
     }
 
     async AtualizarStatusSolicitacaoPlanoMovel(req:AuthRequest, res:Response){
