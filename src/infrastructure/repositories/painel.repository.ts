@@ -834,9 +834,15 @@ export default class PainelRepository implements IPainelRepository {
 
         const { competencia, vencimento } = this.calcularCompetenciaEVencimento(assinatura.data_adesao);
 
+        // Se a fatura do mês já existe e ainda está pendente, sincroniza valor/vencimento
+        // com a assinatura atual — sem isso, mudar o plano/valor no admin nunca refletia
+        // numa fatura já gerada (nem no PIX, que é montado a partir do valor dela).
+        // Fatura já paga ou cancelada nunca é tocada (é histórico).
         const insert = `INSERT INTO provedor_faturas (codigo_provedor_fk, competencia, vencimento, valor)
             VALUES ($1, $2, $3, $4)
-            ON CONFLICT (codigo_provedor_fk, competencia) DO NOTHING;`;
+            ON CONFLICT (codigo_provedor_fk, competencia) DO UPDATE SET
+                valor = EXCLUDED.valor, vencimento = EXCLUDED.vencimento
+            WHERE provedor_faturas.status = 'pendente';`;
         await this._db.Execulte<any>(insert, [codigoProvedor, competencia, vencimento, assinatura.valor_mensalidade]);
     }
 
