@@ -4,6 +4,12 @@ import webpush from "./infrastructure/notification/webpush.config";
 
 const app = express();
 
+// Necessário pro rate limit (iaSuporteRateLimit) enxergar o IP real do
+// cliente — a API roda atrás do proxy do Railway, sem isso req.ip vira o IP
+// do proxy pra todo mundo (ou o express-rate-limit recusa de vez, com erro
+// de validação, ao ver X-Forwarded-For sem confiar nele).
+app.set("trust proxy", 1);
+
 // Express gera ETag automaticamente em toda resposta JSON — pra uma API
 // dinâmica isso faz o navegador (ou qualquer camada de cache no meio, ex.:
 // CDN do Railway) devolver 304 "não mudou" quando o corpo real já não está

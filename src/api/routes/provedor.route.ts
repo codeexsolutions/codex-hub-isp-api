@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { container } from "tsyringe";
 import ProvedorController from "../controllers/Provedor.controller";
+import { iaSuporteRateLimit } from "../middleware/iaSuporteRateLimit";
 
 const provedorRoute = Router();
 const provedorController = container.resolve(ProvedorController);
@@ -23,7 +24,7 @@ provedorRoute.get('/pontos/recompensas/:codigoProvedor', provedorController.Obte
 provedorRoute.get('/planos-moveis/:codigoProvedor', provedorController.ObterPlanosMoveis.bind(provedorController));
 provedorRoute.post('/planos-moveis/solicitar', provedorController.SolicitarPlanoMovel.bind(provedorController));
 provedorRoute.get('/lp/:codigoProvedor', provedorController.ObterLpPublica.bind(provedorController));
-provedorRoute.post('/suporte/sugestao', provedorController.SugerirRespostaSuporte.bind(provedorController));
+provedorRoute.post('/suporte/sugestao', iaSuporteRateLimit, provedorController.SugerirRespostaSuporte.bind(provedorController));
 provedorRoute.post('/pontos/resgatar', provedorController.ResgatarRecompensa.bind(provedorController));
 provedorRoute.get('/pontos/:codigoProvedor', provedorController.ObterMeusPontos.bind(provedorController));
 provedorRoute.get('/parceiros/:codigoProvedor', provedorController.ListarParceirosAtivos.bind(provedorController));
