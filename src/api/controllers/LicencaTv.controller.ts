@@ -40,17 +40,31 @@ export default class LicencaTvController {
     // página no navegador do aparelho via Linking.openURL, fora do app.
     async PaginaPagamento(req:Request, res:Response){
         const chave = (req.params.chave as string)?.trim() ?? "";
+
+        let licenca: any;
         try {
-            const licenca = await this._painelService.ObterStatusLicencaTv(chave);
-            return res.type("html").send(this.renderPaginaPagamento(licenca));
+            licenca = await this._painelService.ObterStatusLicencaTv(chave);
         } catch (error:any) {
             return res.status(404).type("html").send(this.renderPaginaErro(error.message || "Licença não encontrada."));
         }
+
+        try {
+            return res.type("html").send(this.renderPaginaPagamento(licenca));
+        } catch (error:any) {
+            // Bug de renderização não é "licença não encontrada" — não vaza a
+            // mensagem crua pro público, só loga pra investigar.
+            console.error("Erro ao renderizar página de pagamento da licença TV:", error);
+            return res.status(500).type("html").send(this.renderPaginaErro("Não foi possível carregar a página agora. Tente de novo em instantes."));
+        }
     }
 
-    private formatarData(data: string | null): string {
+    private formatarData(data: string | Date | null): string {
         if (!data) return "-";
-        const [ano, mes, dia] = data.split("-");
+        // vencimento vem como coluna DATE do Postgres — o driver devolve um
+        // Date de verdade (não string) nesse caminho, diferente da rota JSON
+        // de status, onde res.json() já converte pra string sozinho.
+        const iso = data instanceof Date ? data.toISOString() : String(data);
+        const [ano, mes, dia] = iso.slice(0, 10).split("-");
         return `${dia}/${mes}/${ano}`;
     }
 

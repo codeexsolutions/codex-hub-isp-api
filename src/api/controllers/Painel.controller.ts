@@ -451,6 +451,31 @@ export default class PainelController {
         }
     }
 
+    // Onboarding rápido — variante de AtualizarTema pro admin configurar o
+    // tema de OUTRO provedor. Não reaproveita AtualizarTema direto porque o
+    // token do admin tem codigoProvedor:"" (string vazia) — `??` não cairia
+    // pro :codigoProvedor da URL nesse caso, só em null/undefined.
+    async AtualizarTemaAdmin(req:AuthRequest, res:Response){
+
+        const data = req.body as any;
+        const files = req.files as ThemeFiles;
+        data.codigo = Number.parseInt(req.params.codigoProvedor as string);
+        const result = await this._provedorService.AtualizarTema(data, files);
+        return res.json({ data: result });
+    }
+
+    // Onboarding rápido — admin configura tudo de um provedor novo num save só.
+    async OnboardingRapidoAdmin(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.params.codigoProvedor as string);
+        try {
+            await this._painelService.OnboardingRapido(codigoProvedor, req.body || {});
+            return res.status(200).json({ data: null });
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
     // "POR QUE ASSINAR" (vantagens) da LP
 
     async GravarLpVantagem(req:AuthRequest, res:Response){

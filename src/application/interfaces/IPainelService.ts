@@ -85,6 +85,11 @@ export default interface IPainelServices {
     ObterLpApps(codigoProvedor:number) : Promise<lpAppModel[]>
     EditarLpApp(a:lpAppModel) : Promise<lpAppModel>
     ExcluirLpApp(id:string, codigoProvedor:number) : Promise<any>
+    OnboardingRapido(codigoProvedor:number, dados:{
+        whatsapp?:string; telefone?:string; cidade?:string; endereco?:string;
+        planosInternet?: { nome:string; velocidade_mega:number; valor:number; beneficios?:string|null; destaque?:boolean }[];
+        modulos?: string[];
+    }) : Promise<void>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
     ObterConfigPontos() : Promise<configPontosModel>

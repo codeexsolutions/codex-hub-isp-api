@@ -130,6 +130,12 @@ painelRouter.get('/provedor/avaliacoes', authMiddleware, painelController.ObterA
 // ADMIN (tela interna de ativação de módulos — login separado do provedor)
 painelRouter.post('/admin/login', painelController.LoginAdmin.bind(painelController));
 painelRouter.get('/admin/provedores', authMiddleware, adminMiddleware, painelController.ListarProvedoresAdmin.bind(painelController));
+// Onboarding rápido: reaproveita o mesmo endpoint de tema do provedor (o
+// controller já cai pro :codigoProvedor da URL quando não tem token de
+// provedor logado) + o novo endpoint que grava atendimento/planos/LP/módulos
+// de uma vez.
+painelRouter.put('/admin/provedores/:codigoProvedor/temas', authMiddleware, adminMiddleware, uploadMiddleware, painelController.AtualizarTemaAdmin.bind(painelController));
+painelRouter.post('/admin/provedores/:codigoProvedor/onboarding-rapido', authMiddleware, adminMiddleware, painelController.OnboardingRapidoAdmin.bind(painelController));
 painelRouter.patch('/admin/provedores/:codigoProvedor/modulos/:modulo', authMiddleware, adminMiddleware, painelController.DefinirModuloAdmin.bind(painelController));
 painelRouter.patch('/admin/provedores/:codigoProvedor/status', authMiddleware, adminMiddleware, painelController.DefinirStatusProvedorAdmin.bind(painelController));
 painelRouter.get('/admin/config-comissao', authMiddleware, adminMiddleware, painelController.ObterConfigComissaoAdmin.bind(painelController));

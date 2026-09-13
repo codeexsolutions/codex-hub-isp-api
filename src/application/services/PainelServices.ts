@@ -443,6 +443,55 @@ export default class PainelService implements IPainelServices {
         await this._painelRepository.DefinirModulo(codigoProvedor, modulo, ativo);
     }
 
+    // Onboarding rápido (admin) — deixa um provedor novo pronto pra usar num
+    // save só (atendimento, planos de internet, Vitrine de Planos e módulos),
+    // em vez do provedor precisar configurar aba por aba sozinho. O tema
+    // (cor/logo) continua usando o endpoint de tema já existente, reaproveitado
+    // com o código do provedor vindo da URL em vez do token de login dele.
+    async OnboardingRapido(codigoProvedor:number, dados:{
+        whatsapp?:string; telefone?:string;
+        cidade?:string; endereco?:string;
+        planosInternet?: { nome:string; velocidade_mega:number; valor:number; beneficios?:string|null; destaque?:boolean }[];
+        modulos?: string[];
+    }) : Promise<void> {
+        if (dados.whatsapp?.trim() || dados.telefone?.trim()) {
+            await this._painelRepository.DefinirAtendimento(codigoProvedor, {
+                whatsapp: dados.whatsapp?.trim() || null,
+                telefone: dados.telefone?.trim() || null,
+                email: null, site: null, instagram: null,
+            });
+        }
+
+        for (const modulo of dados.modulos ?? []) {
+            await this._painelRepository.DefinirModulo(codigoProvedor, modulo, true);
+        }
+
+        for (const plano of dados.planosInternet ?? []) {
+            if (!plano.nome?.trim() || !(plano.velocidade_mega > 0) || !(plano.valor > 0)) continue;
+            await this._painelRepository.GravarPlanoInternet({
+                codigo_provedor_fk: codigoProvedor,
+                nome: plano.nome.trim(),
+                velocidade_mega: plano.velocidade_mega,
+                valor: plano.valor,
+                beneficios: plano.beneficios?.trim() || null,
+                destaque: !!plano.destaque,
+                ativo: true,
+                ordem: 0,
+            } as any);
+        }
+
+        if (dados.cidade || dados.endereco) {
+            await this._painelRepository.DefinirLpConfig({
+                codigo_provedor_fk: codigoProvedor,
+                ativa: true,
+                headline: null, subheadline: null,
+                cidade: dados.cidade?.trim() || null,
+                endereco: dados.endereco?.trim() || null,
+                nota_google: null, qtd_avaliacoes_google: null, link_google: null,
+            });
+        }
+    }
+
     async DefinirStatusProvedor(codigoProvedor:number, status:string) : Promise<void> {
         if(status !== "ATIVO" && status !== "INATIVO")
             throw new Error("Status inválido.");
