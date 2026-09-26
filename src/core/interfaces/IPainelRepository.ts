@@ -6,6 +6,7 @@ import { configComissaoModel } from "../models/configComissaoModel";
 import { recompensaModel } from "../models/recompensaModel";
 import { planoMovelModel } from "../models/planoMovelModel";
 import { solicitacaoPlanoMovelModel } from "../models/solicitacaoPlanoMovelModel";
+import { solicitacaoTrocaPlanoModel } from "../models/solicitacaoTrocaPlanoModel";
 import { configPontosModel } from "../models/configPontosModel";
 import { parceiroModel } from "../models/parceiroModel";
 import { extratoPontosModel } from "../models/extratoPontosModel";
@@ -92,6 +93,8 @@ export default interface IPainelRepository {
     ExcluirLpApp(id:string, codigoProvedor:number) : Promise<any>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
+    ListarSolicitacoesTrocaPlano(codigoProvedor:number) : Promise<solicitacaoTrocaPlanoModel[]>
+    AtualizarStatusSolicitacaoTrocaPlano(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoTrocaPlanoModel>
     ObterConfigPontos() : Promise<configPontosModel>
     AtualizarConfigPontos(config:configPontosModel) : Promise<configPontosModel>
 
@@ -183,4 +186,5 @@ export default interface IPainelRepository {
     // IMPRESSÃO DE CONTRATO IXC (resource do endpoint — específico por instalação)
     ObterIxcContratoConfig(codigoProvedor:number) : Promise<ixcContratoConfigModel>
     DefinirIxcContratoConfig(codigoProvedor:number, resourceImprimir:string) : Promise<ixcContratoConfigModel>
+    DefinirIxcResourceRebootOnu(codigoProvedor:number, resourceRebootOnu:string) : Promise<ixcContratoConfigModel>
 }

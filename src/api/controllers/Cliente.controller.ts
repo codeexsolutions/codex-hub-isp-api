@@ -8,6 +8,9 @@ import { clienteDto } from "../../application/Dtos/clienteDto";
 import IIxcSoftServices from "../../application/interfaces/IIxcSoftServices";
 import { multiplos } from "../../infrastructure/apis/receitanet/responseModels/responseMultiContratos";
 import IProvedorServices from "../../application/interfaces/IProvedorServices";
+import FaturaProviderFactory from "../../infrastructure/providers/fatura/FaturaProviderFactory";
+import ClienteProviderFactory from "../../infrastructure/providers/cliente/ClienteProviderFactory";
+import { SessaoErp } from "../../core/contracts/SessaoErp";
 
 @injectable()
 export default class ClienteController {
@@ -15,59 +18,55 @@ export default class ClienteController {
     private readonly _receitaNetService:IReceitanetServices;
     private readonly _ixcSoftService:IIxcSoftServices;
     private readonly _provedorService:IProvedorServices;
+    private readonly _faturaProviderFactory:FaturaProviderFactory;
+    private readonly _clienteProviderFactory:ClienteProviderFactory;
 
     constructor(
         @inject("IReceitanetServices")receitaNetService:IReceitanetServices,
         @inject("IIxcSoftServices")ixcSoftService:IIxcSoftServices,
-        @inject("IProvedorServices")provedorService:IProvedorServices
+        @inject("IProvedorServices")provedorService:IProvedorServices,
+        @inject(FaturaProviderFactory)faturaProviderFactory:FaturaProviderFactory,
+        @inject(ClienteProviderFactory)clienteProviderFactory:ClienteProviderFactory
     ){
         this._receitaNetService = receitaNetService;
         this._ixcSoftService = ixcSoftService;
         this._provedorService = provedorService;
+        this._faturaProviderFactory = faturaProviderFactory;
+        this._clienteProviderFactory = clienteProviderFactory;
     }
 
     async ObterDadosCliente(req:Request, res:Response){
 
         const data:reqBodyDadosClienteDto = req.body;
         try {
-            
-            if(data.gerenciador === eGerenciador.RECEITANET){
-                const result = await this._receitaNetService.ObterDadosCliente(data.token);
+            const sessao:SessaoErp = {
+                gerenciador: data.gerenciador,
+                token: data.token,
+                cpfCnpj: data.cpfCnpj,
+                codigoProvedor: data.codigoProvedor,
+                contratoId: data.contratoId,
+            };
 
-                this._provedorService.RegistrarLoginCliente(data.codigoProvedor, data.cpfCnpj, result.dadosCadastrais?.nome ?? "").catch(() => {});
+            const result = await this._clienteProviderFactory.criar(data.gerenciador).obterDados(sessao);
 
-                const retorno: retornoPadrao<clienteDto> = {
-                    statusCode:200,
+            if(result === null){
+                const retorno: retornoPadrao<any> = {
+                    statusCode:400,
                     message:"Dados Cliente "+ data.gerenciador,
-                    data: result
+                    data: "Cliente com contrato inativo"
                 }
-
-                return res.json(retorno);
-            }
-
-            if(data.gerenciador === eGerenciador.IXCSOFT){
-                const result = await this._ixcSoftService.ObterDadosCliente(data.cpfCnpj, data.codigoProvedor, data.contratoId as number)
-
-                if(result === null){
-                    const retorno: retornoPadrao<any> = {
-                        statusCode:400,
-                        message:"Dados Cliente "+ data.gerenciador,
-                        data: "Cliente com contrato inativo"
-                }
-
                 return res.status(400).json(retorno);
-                }
-
-                this._provedorService.RegistrarLoginCliente(data.codigoProvedor, data.cpfCnpj, (result as any).dadosCadastrais?.nome ?? "").catch(() => {});
-
-                const retorno: retornoPadrao<clienteDto|multiplos> = {
-                    statusCode:200,
-                    message:"Dados Cliente "+ data.gerenciador,
-                    data: result
-                }
-
-                return res.json(retorno);
             }
+
+            this._provedorService.RegistrarLoginCliente(data.codigoProvedor, data.cpfCnpj, result.dadosCadastrais?.nome ?? "").catch(() => {});
+
+            const retorno: retornoPadrao<clienteDto|multiplos> = {
+                statusCode:200,
+                message:"Dados Cliente "+ data.gerenciador,
+                data: result
+            }
+
+            return res.json(retorno);
         } catch (error:any) {
 
             const retorno: retornoPadrao<any> = {
@@ -75,7 +74,7 @@ export default class ClienteController {
                 message:"Dados Cliente "+ data.gerenciador,
                 data: error.message
             }
-            
+
             return res.status(500).json(retorno);
         }
     }
@@ -223,31 +222,184 @@ export default class ClienteController {
         }
     }
 
+    // As 3 funcionalidades de autoatendimento IXC (perfil, reiniciar roteador,
+    // WiFi) ficam atrás de um módulo só ("autoatendimento_ixc"), ativável pelo
+    // admin igual aos outros módulos — o provedor decide se quer oferecer isso
+    // pros clientes dele antes de aparecer no app.
+    private async moduloAutoatendimentoIxcAtivo(codigoProvedor:string) : Promise<boolean> {
+        const modulos = await this._provedorService.ObterModulosAtivos(codigoProvedor);
+        return modulos.includes("autoatendimento_ixc");
+    }
+
+    // Autoatendimento: cliente edita e-mail/telefone/celular do próprio
+    // cadastro. Por ora só IXC (ver ApiIxcSoftService.AtualizarCliente —
+    // ainda não testado contra uma instalação real, ver comentário lá).
+    async AtualizarPerfil(req:Request, res:Response){
+
+        const data = req.body;
+
+        if(data.gerenciador !== eGerenciador.IXCSOFT.toString()){
+            const retorno: retornoPadrao<string> = {
+                statusCode: 400,
+                message: "Edição de cadastro indisponível",
+                data: "Edição de cadastro ainda não disponível para este gerenciador."
+            }
+            return res.status(400).json(retorno);
+        }
+
+        if(!(await this.moduloAutoatendimentoIxcAtivo(data.codigoProvedor))){
+            const retorno: retornoPadrao<string> = {
+                statusCode: 403,
+                message: "Módulo não ativo",
+                data: "Autoatendimento não está ativo para este provedor."
+            }
+            return res.status(403).json(retorno);
+        }
+
+        try {
+            await this._ixcSoftService.AtualizarPerfil(data.cpfCnpj, data.codigoProvedor, {
+                email: data.email,
+                telefone: data.telefone,
+                celular: data.celular,
+            });
+
+            const retorno: retornoPadrao<null> = {
+                statusCode: 200,
+                message: "Cadastro atualizado",
+                data: null
+            }
+            return res.json(retorno);
+
+        } catch (error:any) {
+            const retorno: retornoPadrao<string> = {
+                statusCode: 500,
+                message: "Edição de cadastro",
+                data: error.message
+            }
+            return res.status(500).json(retorno);
+        }
+    }
+
+    // Autoatendimento: cliente reinicia o próprio roteador/ONU remotamente
+    // (Reboot ONU). Por ora só IXC — precisa do botão configurado pelo
+    // provedor (ver DefinirIxcResourceRebootOnu).
+    async ReiniciarRoteador(req:Request, res:Response){
+
+        const data = req.body;
+
+        if(data.gerenciador !== eGerenciador.IXCSOFT.toString()){
+            const retorno: retornoPadrao<string> = {
+                statusCode: 400,
+                message: "Reiniciar roteador indisponível",
+                data: "Reiniciar roteador ainda não disponível para este gerenciador."
+            }
+            return res.status(400).json(retorno);
+        }
+
+        if(!(await this.moduloAutoatendimentoIxcAtivo(data.codigoProvedor))){
+            const retorno: retornoPadrao<string> = {
+                statusCode: 403,
+                message: "Módulo não ativo",
+                data: "Autoatendimento não está ativo para este provedor."
+            }
+            return res.status(403).json(retorno);
+        }
+
+        try {
+            await this._ixcSoftService.ReiniciarRoteador(data.cpfCnpj, data.codigoProvedor);
+
+            const retorno: retornoPadrao<null> = {
+                statusCode: 200,
+                message: "Roteador reiniciado",
+                data: null
+            }
+            return res.json(retorno);
+
+        } catch (error:any) {
+            const retorno: retornoPadrao<string> = {
+                statusCode: 500,
+                message: "Reiniciar roteador",
+                data: error.message
+            }
+            return res.status(500).json(retorno);
+        }
+    }
+
+    // Autoatendimento: cliente troca SSID/senha do WiFi (2.4GHz e/ou 5GHz).
+    // Por ora só IXC, e só funciona se o provedor não usa ACS vinculado ao
+    // login (ver ApiIxcSoftService.AtualizarLogin).
+    async AlterarSenhaWifi(req:Request, res:Response){
+
+        const data = req.body;
+
+        if(data.gerenciador !== eGerenciador.IXCSOFT.toString()){
+            const retorno: retornoPadrao<string> = {
+                statusCode: 400,
+                message: "Alterar WiFi indisponível",
+                data: "Alterar WiFi ainda não disponível para este gerenciador."
+            }
+            return res.status(400).json(retorno);
+        }
+
+        if(!(await this.moduloAutoatendimentoIxcAtivo(data.codigoProvedor))){
+            const retorno: retornoPadrao<string> = {
+                statusCode: 403,
+                message: "Módulo não ativo",
+                data: "Autoatendimento não está ativo para este provedor."
+            }
+            return res.status(403).json(retorno);
+        }
+
+        try {
+            await this._ixcSoftService.AlterarSenhaWifi(data.cpfCnpj, data.codigoProvedor, {
+                ssidWifi: data.ssidWifi,
+                senhaWifi: data.senhaWifi,
+                ssidWifi5ghz: data.ssidWifi5ghz,
+                senhaWifi5ghz: data.senhaWifi5ghz,
+            });
+
+            const retorno: retornoPadrao<null> = {
+                statusCode: 200,
+                message: "WiFi atualizado",
+                data: null
+            }
+            return res.json(retorno);
+
+        } catch (error:any) {
+            const retorno: retornoPadrao<string> = {
+                statusCode: 500,
+                message: "Alterar WiFi",
+                data: error.message
+            }
+            return res.status(500).json(retorno);
+        }
+    }
+
+    // O app manda o corpo em formato diferente por gerenciador (ver
+    // getFaturas em synk-app/src/screens/Faturas.jsx) — RECEITANET manda
+    // { gerenciador, data: token }, IXC manda { token, idContrato }. Em vez
+    // de duplicar esse "if" aqui, normaliza pra SessaoErp e delega pro
+    // FaturaProviderFactory — a Application não precisa mais saber o formato
+    // de nenhum dos dois.
     async ObterFaturas(req:Request, res:Response){
 
         const data = req.body;
-        if(data.gerenciador === eGerenciador.RECEITANET){
+        const gerenciador = data.token?.gerenciador ?? data.gerenciador;
+        const sessao:SessaoErp = {
+            gerenciador,
+            token: data.data?.token,
+            codigoProvedor: data.token?.codigoProvedor,
+            contratoId: data.idContrato,
+        };
 
-            const faturas = await this._receitaNetService.ObterFaturas(data.data.token)
-            const retorno: retornoPadrao<any> = {
-                    statusCode:200,
-                    message:"Faturas "+ data.gerenciador,
-                    data: faturas 
-                }
-    
-                return res.json(retorno);
+        const provider = this._faturaProviderFactory.criar(gerenciador);
+        const faturas = await provider.listar(sessao);
+
+        const retorno: retornoPadrao<any> = {
+            statusCode: 200,
+            message: "Faturas " + gerenciador,
+            data: faturas
         }
-
-        if(data.token.gerenciador === eGerenciador.IXCSOFT){
-
-            const faturas = await this._ixcSoftService.ObterFaturas(data.idContrato, data.token.codigoProvedor);
-            const retorno: retornoPadrao<any> = {
-                    statusCode:200,
-                    message:"Faturas "+ data.gerenciador,
-                    data: faturas 
-                }
-    
-            return res.json(retorno);
-        }
+        return res.json(retorno);
     }
 }

@@ -11,5 +11,8 @@ export type cadastroProvedorModel = {
     codigo_api_gerenciador?:number;
     chave_api_gerenciador?:string;
     codigo_provedor?:number;
+    dominio_ixc?:string;
+    dominio_mkauth?:string;
+    mkauth_client_id?:string;
 
 }

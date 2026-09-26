@@ -72,6 +72,8 @@ painelRouter.post('/provedor/planos-internet', authMiddleware, moduloMiddleware(
 painelRouter.get('/provedor/planos-internet', authMiddleware, moduloMiddleware("landpage"), painelController.ObterPlanosInternetPainel.bind(painelController));
 painelRouter.patch('/provedor/planos-internet/:id', authMiddleware, moduloMiddleware("landpage"), painelController.EditarPlanoInternet.bind(painelController));
 painelRouter.delete('/provedor/planos-internet/:id', authMiddleware, moduloMiddleware("landpage"), painelController.ExcluirPlanoInternet.bind(painelController));
+painelRouter.get('/provedor/planos-internet/solicitacoes', authMiddleware, moduloMiddleware("landpage"), painelController.ListarSolicitacoesTrocaPlano.bind(painelController));
+painelRouter.patch('/provedor/planos-internet/solicitacoes/:id', authMiddleware, moduloMiddleware("landpage"), painelController.AtualizarStatusSolicitacaoTrocaPlano.bind(painelController));
 
 painelRouter.get('/provedor/lp-config', authMiddleware, moduloMiddleware("landpage"), painelController.ObterLpConfigProprio.bind(painelController));
 painelRouter.put('/provedor/lp-config', authMiddleware, moduloMiddleware("landpage"), painelController.DefinirLpConfigProprio.bind(painelController));
@@ -122,6 +124,7 @@ painelRouter.delete('/provedor/ixc-assuntos/:id', authMiddleware, painelControll
 // IMPRESSÃO DE CONTRATO IXC (resource do endpoint — específico por instalação)
 painelRouter.get('/provedor/ixc-contrato-config', authMiddleware, painelController.ObterIxcContratoConfigProprio.bind(painelController));
 painelRouter.put('/provedor/ixc-contrato-config', authMiddleware, painelController.DefinirIxcContratoConfigProprio.bind(painelController));
+painelRouter.put('/provedor/ixc-reboot-onu-config', authMiddleware, painelController.DefinirIxcResourceRebootOnuProprio.bind(painelController));
 
 painelRouter.get('/provedor/indicacoes', authMiddleware, painelController.ObterIndicacoes.bind(painelController));
 painelRouter.patch('/provedor/indicacoes/:id/efetivar', authMiddleware, moduloMiddleware("beneficios"), painelController.MarcarIndicacaoEfetivada.bind(painelController));

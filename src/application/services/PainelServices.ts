@@ -16,6 +16,7 @@ import { lpConfigModel } from "../../core/models/lpConfigModel";
 import { lpVantagemModel } from "../../core/models/lpVantagemModel";
 import { lpAppModel } from "../../core/models/lpAppModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
+import { solicitacaoTrocaPlanoModel } from "../../core/models/solicitacaoTrocaPlanoModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -42,7 +43,7 @@ import { eGerenciador } from "../../common/enuns/egerenciador";
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
 // nenhum) continuam controláveis manualmente.
-const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca", "iptv", "app_tv", "planos_moveis", "landpage", "ia_suporte"];
+const MODULOS_CONHECIDOS = ["beneficios", "recompensas", "desbloqueio_confianca", "iptv", "app_tv", "planos_moveis", "landpage", "ia_suporte", "autoatendimento_ixc"];
 
 @injectable()
 export default class PainelService implements IPainelServices {
@@ -397,6 +398,17 @@ export default class PainelService implements IPainelServices {
         return await this._painelRepository.AtualizarStatusSolicitacaoPlanoMovel(id, codigoProvedor, status);
     }
 
+    async ListarSolicitacoesTrocaPlano(codigoProvedor:number) : Promise<solicitacaoTrocaPlanoModel[]> {
+        const solicitacoes = await this._painelRepository.ListarSolicitacoesTrocaPlano(codigoProvedor);
+        return solicitacoes || [];
+    }
+
+    async AtualizarStatusSolicitacaoTrocaPlano(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoTrocaPlanoModel> {
+        if (!["pendente", "atendida", "cancelada"].includes(status))
+            throw new Error("Status inválido.");
+        return await this._painelRepository.AtualizarStatusSolicitacaoTrocaPlano(id, codigoProvedor, status);
+    }
+
     async ObterConfigPontos() : Promise<configPontosModel> {
         return await this._painelRepository.ObterConfigPontos();
     }
@@ -683,6 +695,12 @@ export default class PainelService implements IPainelServices {
         if (!resourceImprimir?.trim())
             throw new Error("Informe o recurso de impressão de contrato do IXC.");
         return await this._painelRepository.DefinirIxcContratoConfig(codigoProvedor, resourceImprimir.trim());
+    }
+
+    async DefinirIxcResourceRebootOnu(codigoProvedor:number, resourceRebootOnu:string) : Promise<ixcContratoConfigModel> {
+        if (!resourceRebootOnu?.trim())
+            throw new Error("Informe o recurso do botão Reboot ONU do IXC.");
+        return await this._painelRepository.DefinirIxcResourceRebootOnu(codigoProvedor, resourceRebootOnu.trim());
     }
 
     async ListarFaturamentoTodos() : Promise<any[]> {

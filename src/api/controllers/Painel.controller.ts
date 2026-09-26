@@ -386,6 +386,26 @@ export default class PainelController {
         return res.json({data: solicitacoes})
     }
 
+    async ListarSolicitacoesTrocaPlano(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string
+        const solicitacoes = await this._painelService.ListarSolicitacoesTrocaPlano(Number.parseInt(codigoProvedor));
+        return res.json({data: solicitacoes})
+    }
+
+    async AtualizarStatusSolicitacaoTrocaPlano(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const { status } = req.body;
+        try {
+            const solicitacao = await this._painelService.AtualizarStatusSolicitacaoTrocaPlano(id, codigoProvedor, status);
+            return res.json({data: solicitacao})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     // PLANOS DE INTERNET FIXA (fibra) — catálogo do provedor, alimenta a LP
 
     async GravarPlanoInternet(req:AuthRequest, res:Response){
@@ -723,6 +743,19 @@ export default class PainelController {
 
         try {
             const config = await this._painelService.DefinirIxcContratoConfig(Number.parseInt(codigoProvedor), resource_imprimir);
+            return res.json({data: config})
+        } catch (error:any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async DefinirIxcResourceRebootOnuProprio(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+        const { resource_reboot_onu } = req.body;
+
+        try {
+            const config = await this._painelService.DefinirIxcResourceRebootOnu(Number.parseInt(codigoProvedor), resource_reboot_onu);
             return res.json({data: config})
         } catch (error:any) {
             return res.status(400).json({ message: error.message })

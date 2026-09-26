@@ -1,4 +1,5 @@
 export enum eGerenciador {
     RECEITANET = "RECEITANET",
-    IXCSOFT = "IXCSOFT"
+    IXCSOFT = "IXCSOFT",
+    MKAUTH = "MKAUTH"
 }

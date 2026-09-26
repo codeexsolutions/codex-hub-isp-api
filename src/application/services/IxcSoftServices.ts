@@ -27,8 +27,14 @@ export default class IxcSoftServices implements IIxcSoftServices{
     async ObterDadosCliente(cpf:string, codigoProvedor: string, idContrato:number): Promise<clienteDto | multiplos | null> {
 
         const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
-        const clientesAtivos = await responseCliente.registros.filter((s:any) => s.ativo === 'S');
+        // Cliente não encontrado no IXC pra esse CPF: a resposta vem sem
+        // "registros" (não uma lista vazia), então sem essa defesa isso
+        // quebrava com "Cannot read properties of undefined" em vez de
+        // devolver null (que o controller já trata como "contrato inativo").
+        const clientesAtivos = (responseCliente.registros ?? []).filter((s:any) => s.ativo === 'S');
         const cliente = clientesAtivos[0];
+
+        if (!cliente) return null;
 
         const responseCidade = await this._apiIxcSoft.ObterCidade(cliente.cidade, codigoProvedor);
         const cidade = await responseCidade.registros[0];
@@ -43,7 +49,10 @@ export default class IxcSoftServices implements IIxcSoftServices{
         else
             responseContrato = await this._apiIxcSoft.ObterContratoPorId(idContrato, codigoProvedor);        
         
-        const contratos = await responseContrato.registros.filter((s:any) => s.status === 'A');
+        // Sem contrato encontrado, a resposta vem sem "registros" em vez de
+        // lista vazia — sem essa defesa quebrava com "Cannot read properties
+        // of undefined" em vez de devolver null/lista vazia.
+        const contratos = (responseContrato.registros ?? []).filter((s:any) => s.status === 'A');
 
         if(contratos.length < 1)
             return null;
@@ -73,9 +82,13 @@ export default class IxcSoftServices implements IIxcSoftServices{
         const produto = await this._apiIxcSoft.ObterProdutoContrato(contratos[0].id_vd_contrato, codigoProvedor);
         const faturas = await this._apiIxcSoft.ObterFaturas(contratos[0].id, codigoProvedor);
         const loginUsuario = await this._apiIxcSoft.ObterLogin(codigoProvedor, contratos[0].id);
-        const consumos = await this._apiIxcSoft.ObterConsumo(loginUsuario.registros[0].id, codigoProvedor);
+        const idLogin = loginUsuario.registros?.[0]?.id;
+        const consumos = idLogin ? await this._apiIxcSoft.ObterConsumo(idLogin, codigoProvedor) : { registros: [] };
         const agora = new Date();
-        const consumoMes = consumos.registros.filter((c: any) => {
+        // Contrato sem consumo sincronizado ainda (contrato novo, sem login
+        // encontrado etc.) — a resposta vem sem "registros" em vez de lista
+        // vazia; sem essa defesa quebrava em vez de mostrar 0 de consumo.
+        const consumoMes = (consumos.registros ?? []).filter((c: any) => {
                 const data = new Date(c.data);
 
                 return (
@@ -128,7 +141,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
                     dataVencimento: fat.data_vencimento,
                     linhaDigitavel: fat.linha_digitavel,
                     linkFatura: fat.gateway_link,
-                    linkFaturaPdf: fat.gateway_link,
+                    linkFaturaPdf: await this.ObterLinkFaturaPdf(fat, codigoProvedor),
                     linkRecibo: "",
                     qrCode: pix.qrCode,
                     qrCodeImg: pix.qrCodeImg,
@@ -154,7 +167,7 @@ export default class IxcSoftServices implements IIxcSoftServices{
                 dataVencimento: fat.data_vencimento,
                 linhaDigitavel: fat.linha_digitavel,
                 linkFatura: fat.gateway_link,
-                linkFaturaPdf: fat.gateway_link,
+                linkFaturaPdf: await this.ObterLinkFaturaPdf(fat, codigoProvedor),
                 linkRecibo: "",
                 qrCode: pix.qrCode,
                 qrCodeImg: pix.qrCodeImg,
@@ -194,13 +207,33 @@ export default class IxcSoftServices implements IIxcSoftServices{
         }
     }
 
+    // Fallback pra quando o boleto não tem gateway_link preenchido (alguns
+    // gateways/configurações não geram esse link) — busca a 2ª via em PDF
+    // (base64) via get_boleto e devolve como data URI, que o app já sabe
+    // abrir do mesmo jeito que um link normal.
+    private async ObterLinkFaturaPdf(fat:any, codigoProvedor:string) : Promise<string> {
+        if (fat.gateway_link) return fat.gateway_link;
+
+        try {
+            const base64 = await this._apiIxcSoft.ObterBoletoArquivo(Number.parseInt(fat.id), codigoProvedor);
+            return `data:application/pdf;base64,${base64}`;
+        } catch {
+            // Sem gateway_link e sem conseguir gerar a 2ª via — devolve vazio em
+            // vez de quebrar a fatura inteira; a tela trata como "sem link".
+            return "";
+        }
+    }
+
     async ObterContratos(cpf:string, codigoProvedor: string ) : Promise<string | multiplos> {
         
         const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
         const cliente = await responseCliente.registros[0]
 
         const responseContrato = await this._apiIxcSoft.ObterContratoPorId(cliente.id, codigoProvedor);
-        const contratos = await responseContrato.registros.filter((s:any) => s.status === 'A');   
+        // Sem contrato encontrado, a resposta vem sem "registros" em vez de
+        // lista vazia — sem essa defesa quebrava com "Cannot read properties
+        // of undefined" em vez de devolver null/lista vazia.
+        const contratos = (responseContrato.registros ?? []).filter((s:any) => s.status === 'A');   
         
         if(contratos.length > 1){
 
@@ -309,6 +342,74 @@ export default class IxcSoftServices implements IIxcSoftServices{
 
         const base64 = await this._apiIxcSoft.ImprimirContrato(idContrato, config.resource_imprimir, codigoProvedor);
         return Buffer.from(base64, "base64");
+    }
+
+    // Edita e-mail/telefone/celular do cadastro do cliente. Resolve cliente.id a
+    // partir do CPF (mesma consulta usada em ObterDadosCliente) antes de editar,
+    // já que a API do IXC exige o id, não o CPF, pra alterar.
+    async AtualizarPerfil(cpf: string, codigoProvedor: string, dados: { email?: string; telefone?: string; celular?: string }): Promise<void> {
+
+        const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
+        const clientesAtivos = (responseCliente.registros ?? []).filter((s: any) => s.ativo === 'S');
+        const cliente = clientesAtivos[0];
+
+        if (!cliente)
+            throw new Error("Cliente não encontrado no IXC.");
+
+        await this._apiIxcSoft.AtualizarCliente(cliente.id, dados, codigoProvedor);
+    }
+
+    // Reinicia o roteador/ONU do cliente remotamente (Reboot ONU). Resolve
+    // cliente -> contrato ativo -> registro da ONU (radpop_radio_cliente_fibra)
+    // antes de chamar o botão configurado pelo provedor.
+    async ReiniciarRoteador(cpf: string, codigoProvedor: string): Promise<void> {
+
+        const config = await this._painelRepository.ObterIxcContratoConfig(Number.parseInt(codigoProvedor));
+        if (!config.resource_reboot_onu)
+            throw new Error("Reiniciar roteador ainda não foi configurado pra este provedor.");
+
+        const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
+        const clientesAtivos = (responseCliente.registros ?? []).filter((s: any) => s.ativo === 'S');
+        const cliente = clientesAtivos[0];
+        if (!cliente)
+            throw new Error("Cliente não encontrado no IXC.");
+
+        const responseContrato = await this._apiIxcSoft.ObterContratoPorIdCliente(cliente.id, codigoProvedor);
+        const contratos = (responseContrato.registros ?? []).filter((c: any) => c.status === 'A');
+        const contrato = contratos[0];
+        if (!contrato)
+            throw new Error("Contrato ativo não encontrado.");
+
+        const responseFibra = await this._apiIxcSoft.ObterFibraPorContrato(contrato.id, codigoProvedor);
+        const fibra = (responseFibra.registros ?? [])[0];
+        if (!fibra)
+            throw new Error("Equipamento (ONU) não encontrado pra este contrato.");
+
+        await this._apiIxcSoft.ReiniciarOnu(fibra.id, config.resource_reboot_onu, codigoProvedor);
+    }
+
+    // Troca SSID/senha do WiFi (2.4GHz e/ou 5GHz). Resolve cliente -> contrato
+    // ativo -> registro de Login (radusuarios) antes de editar.
+    async AlterarSenhaWifi(cpf: string, codigoProvedor: string, dados: { ssidWifi?: string; senhaWifi?: string; ssidWifi5ghz?: string; senhaWifi5ghz?: string }): Promise<void> {
+
+        const responseCliente = await this._apiIxcSoft.ObterClientePorCpfCnpj(cpf, codigoProvedor);
+        const clientesAtivos = (responseCliente.registros ?? []).filter((s: any) => s.ativo === 'S');
+        const cliente = clientesAtivos[0];
+        if (!cliente)
+            throw new Error("Cliente não encontrado no IXC.");
+
+        const responseContrato = await this._apiIxcSoft.ObterContratoPorIdCliente(cliente.id, codigoProvedor);
+        const contratos = (responseContrato.registros ?? []).filter((c: any) => c.status === 'A');
+        const contrato = contratos[0];
+        if (!contrato)
+            throw new Error("Contrato ativo não encontrado.");
+
+        const responseLogin = await this._apiIxcSoft.ObterLogin(codigoProvedor, contrato.id);
+        const login = (responseLogin.registros ?? [])[0];
+        if (!login)
+            throw new Error("Login (conexão) não encontrado pra este contrato.");
+
+        await this._apiIxcSoft.AtualizarLogin(login.id, dados, codigoProvedor);
     }
 
 }

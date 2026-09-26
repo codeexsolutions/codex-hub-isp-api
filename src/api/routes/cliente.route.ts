@@ -10,5 +10,8 @@ clienteRoute.post("/dados-cliente", clienteController.ObterDadosCliente.bind(cli
 clienteRoute.post('/faturas', clienteController.ObterFaturas.bind(clienteController));
 clienteRoute.post('/contrato', clienteController.ObterContrato.bind(clienteController));
 clienteRoute.post('/notificar-pagamento', clienteController.NotificarPagamento.bind(clienteController));
+clienteRoute.put('/perfil', clienteController.AtualizarPerfil.bind(clienteController));
+clienteRoute.post('/reiniciar-roteador', clienteController.ReiniciarRoteador.bind(clienteController));
+clienteRoute.put('/wifi', clienteController.AlterarSenhaWifi.bind(clienteController));
 
 export default clienteRoute;

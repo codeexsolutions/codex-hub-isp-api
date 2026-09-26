@@ -9,6 +9,8 @@ import { compraModel } from "../../core/models/compraModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
+import { solicitacaoTrocaPlanoModel } from "../../core/models/solicitacaoTrocaPlanoModel";
+import { planoInternetModel } from "../../core/models/planoInternetModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
 import { homeConfigModel } from "../../core/models/homeConfigModel";
 import { atendimentoModel } from "../../core/models/atendimentoModel";
@@ -40,6 +42,8 @@ export default interface IProvedorServices {
     ObterLpPublica(codigo:string) : Promise<any>;
     SugerirRespostaSuporte(codigo:string, mensagem:string) : Promise<string | null>;
     SolicitarPlanoMovel(codigo:string, planoId:number, cpfCnpj:string, clienteNome:string|null) : Promise<solicitacaoPlanoMovelModel> ;
+    SolicitarTrocaPlanoInternet(codigo:string, planoId:number, cpfCnpj:string, clienteNome:string|null) : Promise<solicitacaoTrocaPlanoModel> ;
+    ObterPlanosInternet(codigo:string) : Promise<planoInternetModel[]> ;
     ResgatarRecompensa(codigo:string, cpfCnpj:string, clienteNome:string, idRecompensa:number) : Promise<extratoPontosModel> ;
     ListarParceirosAtivos(codigoProvedor:string) : Promise<parceiroModel[]> ;
     SalvarIndicacao(indicao:indicacaoModel) : Promise<number>

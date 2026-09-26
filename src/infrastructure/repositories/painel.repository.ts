@@ -10,6 +10,7 @@ import { configComissaoModel } from "../../core/models/configComissaoModel";
 import { recompensaModel } from "../../core/models/recompensaModel";
 import { planoMovelModel } from "../../core/models/planoMovelModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
+import { solicitacaoTrocaPlanoModel } from "../../core/models/solicitacaoTrocaPlanoModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -367,6 +368,19 @@ export default class PainelRepository implements IPainelRepository {
     async AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel> {
         const update = `UPDATE solicitacoes_planos_moveis SET status = $1 WHERE id = $2 AND codigo_provedor_fk = $3 RETURNING *;`;
         const result = await this._db.Execulte<solicitacaoPlanoMovelModel>(update, [status, id, codigoProvedor]);
+        return result[0];
+    }
+
+    // Mesma ideia de ListarSolicitacoesPlanoMovel/AtualizarStatusSolicitacaoPlanoMovel,
+    // sobre solicitacoes_troca_plano (internet/fibra) em vez de planos_moveis.
+    async ListarSolicitacoesTrocaPlano(codigoProvedor:number) : Promise<solicitacaoTrocaPlanoModel[]> {
+        const select = `SELECT * FROM solicitacoes_troca_plano WHERE codigo_provedor_fk = $1 ORDER BY criado_em DESC LIMIT 100;`;
+        return await this._db.Execulte<solicitacaoTrocaPlanoModel>(select, [codigoProvedor]);
+    }
+
+    async AtualizarStatusSolicitacaoTrocaPlano(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoTrocaPlanoModel> {
+        const update = `UPDATE solicitacoes_troca_plano SET status = $1 WHERE id = $2 AND codigo_provedor_fk = $3 RETURNING *;`;
+        const result = await this._db.Execulte<solicitacaoTrocaPlanoModel>(update, [status, id, codigoProvedor]);
         return result[0];
     }
 
@@ -1142,13 +1156,13 @@ export default class PainelRepository implements IPainelRepository {
 
     async ObterIxcContratoConfig(codigoProvedor: number): Promise<ixcContratoConfigModel> {
 
-        const select = `SELECT resource_imprimir FROM provedor_ixc_contrato_config WHERE codigo_provedor_fk = $1;`;
+        const select = `SELECT resource_imprimir, resource_reboot_onu FROM provedor_ixc_contrato_config WHERE codigo_provedor_fk = $1;`;
         const result = await this._db.Execulte<ixcContratoConfigModel>(select, [codigoProvedor]);
 
         if (result.length > 0)
             return result[0];
 
-        return { resource_imprimir: null };
+        return { resource_imprimir: null, resource_reboot_onu: null };
     }
 
     async DefinirIxcContratoConfig(codigoProvedor: number, resourceImprimir: string): Promise<ixcContratoConfigModel> {
@@ -1157,9 +1171,24 @@ export default class PainelRepository implements IPainelRepository {
             VALUES ($1,$2)
             ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
                 resource_imprimir = EXCLUDED.resource_imprimir, atualizado_em = now()
-            RETURNING resource_imprimir;`;
+            RETURNING resource_imprimir, resource_reboot_onu;`;
 
         const result = await this._db.Execulte<ixcContratoConfigModel>(upsert, [codigoProvedor, resourceImprimir]);
+
+        return result[0];
+    }
+
+    // Mesmo padrão de DefinirIxcContratoConfig, pro botão "Reboot ONU"
+    // (também um recurso numérico específico da instalação do provedor).
+    async DefinirIxcResourceRebootOnu(codigoProvedor: number, resourceRebootOnu: string): Promise<ixcContratoConfigModel> {
+
+        const upsert = `INSERT INTO provedor_ixc_contrato_config (codigo_provedor_fk, resource_reboot_onu)
+            VALUES ($1,$2)
+            ON CONFLICT (codigo_provedor_fk) DO UPDATE SET
+                resource_reboot_onu = EXCLUDED.resource_reboot_onu, atualizado_em = now()
+            RETURNING resource_imprimir, resource_reboot_onu;`;
+
+        const result = await this._db.Execulte<ixcContratoConfigModel>(upsert, [codigoProvedor, resourceRebootOnu]);
 
         return result[0];
     }

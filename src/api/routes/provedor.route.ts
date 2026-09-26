@@ -23,6 +23,8 @@ provedorRoute.get('/beneficios/compras/:codigoProvedor', provedorController.Obte
 provedorRoute.get('/pontos/recompensas/:codigoProvedor', provedorController.ObterRecompensas.bind(provedorController));
 provedorRoute.get('/planos-moveis/:codigoProvedor', provedorController.ObterPlanosMoveis.bind(provedorController));
 provedorRoute.post('/planos-moveis/solicitar', provedorController.SolicitarPlanoMovel.bind(provedorController));
+provedorRoute.get('/planos-internet/:codigoProvedor', provedorController.ObterPlanosInternet.bind(provedorController));
+provedorRoute.post('/planos-internet/solicitar-troca', provedorController.SolicitarTrocaPlanoInternet.bind(provedorController));
 provedorRoute.get('/lp/:codigoProvedor', provedorController.ObterLpPublica.bind(provedorController));
 provedorRoute.post('/suporte/sugestao', iaSuporteRateLimit, provedorController.SugerirRespostaSuporte.bind(provedorController));
 provedorRoute.post('/pontos/resgatar', provedorController.ResgatarRecompensa.bind(provedorController));

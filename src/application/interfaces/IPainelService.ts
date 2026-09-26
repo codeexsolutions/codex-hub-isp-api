@@ -11,6 +11,7 @@ import { lpConfigModel } from "../../core/models/lpConfigModel";
 import { lpVantagemModel } from "../../core/models/lpVantagemModel";
 import { lpAppModel } from "../../core/models/lpAppModel";
 import { solicitacaoPlanoMovelModel } from "../../core/models/solicitacaoPlanoMovelModel";
+import { solicitacaoTrocaPlanoModel } from "../../core/models/solicitacaoTrocaPlanoModel";
 import { configPontosModel } from "../../core/models/configPontosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { extratoPontosModel } from "../../core/models/extratoPontosModel";
@@ -92,6 +93,8 @@ export default interface IPainelServices {
     }) : Promise<void>
     ListarSolicitacoesPlanoMovel(codigoProvedor:number) : Promise<solicitacaoPlanoMovelModel[]>
     AtualizarStatusSolicitacaoPlanoMovel(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoPlanoMovelModel>
+    ListarSolicitacoesTrocaPlano(codigoProvedor:number) : Promise<solicitacaoTrocaPlanoModel[]>
+    AtualizarStatusSolicitacaoTrocaPlano(id:number, codigoProvedor:number, status:string) : Promise<solicitacaoTrocaPlanoModel>
     ObterConfigPontos() : Promise<configPontosModel>
     DefinirConfigPontos(config:configPontosModel) : Promise<configPontosModel>
 
@@ -148,6 +151,7 @@ export default interface IPainelServices {
     // IMPRESSÃO DE CONTRATO IXC
     ObterIxcContratoConfig(codigoProvedor:number) : Promise<ixcContratoConfigModel>
     DefinirIxcContratoConfig(codigoProvedor:number, resourceImprimir:string) : Promise<ixcContratoConfigModel>
+    DefinirIxcResourceRebootOnu(codigoProvedor:number, resourceRebootOnu:string) : Promise<ixcContratoConfigModel>
 
     ListarFaturamentoTodos() : Promise<any[]>
     ObterFaturasAdmin(codigoProvedor:number) : Promise<faturaModel[]>

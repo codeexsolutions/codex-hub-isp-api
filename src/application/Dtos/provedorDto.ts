@@ -39,6 +39,8 @@ export type provedorPainelDto = {
     nome_administrador:string;
     cnpj:string;
     dominio_ixc?:string;
+    dominio_mkauth?:string;
+    mkauth_client_id?:string;
     usuario:string;
     senha?: string;
 }

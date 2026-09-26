@@ -36,10 +36,23 @@ export default class ProvedorController{
     async ObterProvedorPorCodigo(req:Request, res:Response){
 
         const codigoProvedor = req.params.codigo as string;
-        const provedor = await this._provedorService.ObterProvedor(codigoProvedor);
 
-        return res.json(provedor)
+        // Essa rota é o "catch-all" de /provedores/:codigo — qualquer chamada
+        // pra uma rota mais específica (ex.: /provedores/modulos/:x) que perca
+        // o segundo segmento (codigoProvedor vazio no front) cai aqui com o
+        // nome da própria rota como "codigo" (ex.: "modulos", "temas"). Sem essa
+        // validação, isso vira erro de tipo não tratado direto no banco
+        // ("invalid input syntax for type bigint").
+        if (!codigoProvedor || !/^\d+$/.test(codigoProvedor)) {
+            return res.status(404).json({ statusCode: 404, message: "Provedor não encontrado", data: null });
+        }
 
+        try {
+            const provedor = await this._provedorService.ObterProvedor(codigoProvedor);
+            return res.json(provedor);
+        } catch (error:any) {
+            return res.status(404).json({ statusCode: 404, message: "Provedor não encontrado", data: error.message });
+        }
     }
 
     // Público — o app de TV chama antes de liberar sem cobrar a licença anual.
@@ -192,6 +205,14 @@ export default class ProvedorController{
         return res.json({ data: planos });
     }
 
+    async ObterPlanosInternet(req:Request, res:Response){
+
+        const codigoProvedor = req.params.codigoProvedor as string;
+        const planos = await this._provedorService.ObterPlanosInternet(codigoProvedor);
+
+        return res.json({ data: planos });
+    }
+
     // Público — Landing Page do provedor (módulo "landpage"). 404 quando o
     // módulo não está ativo ou o provedor ainda não ligou a LP.
     async ObterLpPublica(req:Request, res:Response){
@@ -224,6 +245,17 @@ export default class ProvedorController{
         const { codigoProvedor, planoId, cpfCnpj, clienteNome } = req.body || {};
         try {
             const solicitacao = await this._provedorService.SolicitarPlanoMovel(codigoProvedor, Number.parseInt(planoId), cpfCnpj, clienteNome ?? null);
+            return res.status(201).json({ data: solicitacao });
+        } catch (error:any) {
+            return res.status(400).json({ statusCode: 400, message: error.message, data: error.message });
+        }
+    }
+
+    async SolicitarTrocaPlanoInternet(req:Request, res:Response){
+
+        const { codigoProvedor, planoId, cpfCnpj, clienteNome } = req.body || {};
+        try {
+            const solicitacao = await this._provedorService.SolicitarTrocaPlanoInternet(codigoProvedor, Number.parseInt(planoId), cpfCnpj, clienteNome ?? null);
             return res.status(201).json({ data: solicitacao });
         } catch (error:any) {
             return res.status(400).json({ statusCode: 400, message: error.message, data: error.message });

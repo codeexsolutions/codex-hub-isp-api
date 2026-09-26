@@ -580,6 +580,220 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
         return Number.parseInt(resultado.total ?? "0");
     }
 
+    // Edita um registro de cliente (tabela "cliente"). Confirmado na doc oficial
+    // (docs.doc-api-provedor.com, coleção Postman "API - IXC Provedor"): edição é
+    // PUT /webservice/v1/cliente/{id} (id na URL, sem header "ixcsoft"), e a API
+    // exige o registro INTEIRO no corpo — "é necessário trazer todos os campos,
+    // não necessariamente preenchidos". Por isso busca o cadastro atual primeiro
+    // (mesmo endpoint de listar já usado em ObterClientePorCpfCnpj) e sobrescreve
+    // só os campos pedidos, pra não apagar o resto do cadastro do cliente.
+    async AtualizarCliente(idCliente:number, dados:{ email?:string; telefone?:string; celular?:string }, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configListar:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'cliente',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: { grid_param: JSON.stringify([{
+                TB: "cliente.id",
+                OP: operadores.IGUAL,
+                P: idCliente
+            }])}
+        }
+
+        const responseListar = await service.Requst(configListar);
+        const listagem = await responseListar.json();
+        const clienteAtual = listagem?.registros?.[0];
+
+        if (!clienteAtual)
+            throw new Error("Cliente não encontrado no IXC pra atualizar.");
+
+        // campos de contato confirmados no schema de inserir/editar da doc oficial
+        const clienteCompleto: any = { ...clienteAtual };
+        delete clienteCompleto.id;
+        if (dados.email !== undefined) clienteCompleto.email = dados.email;
+        if (dados.telefone !== undefined) clienteCompleto.fone = dados.telefone;
+        if (dados.celular !== undefined) clienteCompleto.telefone_celular = dados.celular;
+
+        const configEditar:configRequest = {
+            method: emethodHttp.PUT,
+            resource: `cliente/${idCliente}`,
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`
+            },
+            body: clienteCompleto
+        }
+
+        const response = await service.Requst(configEditar);
+        const resultado = await response.json();
+        if (resultado?.type === 'error')
+            throw new Error(resultado.message ?? 'Erro ao atualizar o cadastro no IXC.');
+        return resultado;
+    }
+
+    // Busca o registro da ONU (radpop_radio_cliente_fibra) vinculado ao
+    // contrato — confirmado na doc oficial que essa tabela tem "id_contrato".
+    async ObterFibraPorContrato(idContrato:number, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'radpop_radio_cliente_fibra',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: { grid_param: JSON.stringify([{
+                TB: "radpop_radio_cliente_fibra.id_contrato",
+                OP: operadores.IGUAL,
+                P: idContrato
+            }])}
+        }
+
+        const response = await service.Requst(configReques);
+        return response.json();
+    }
+
+    // Reboot ONU — "resource" é o endpoint "botão" específico da instalação
+    // (ex.: radpop_radio_cliente_fibra_26379), configurado por provedor (ver
+    // provedor_ixc_contrato_config.resource_reboot_onu), igual ImprimirContrato.
+    async ReiniciarOnu(idClienteFibra:number, resource:string, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource,
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`
+            },
+            body: { id: String(idClienteFibra) }
+        }
+
+        const response = await service.Requst(configReques);
+        const resultado = await response.json();
+        if (resultado?.type === 'error')
+            throw new Error(resultado.message ?? 'Erro ao reiniciar o roteador no IXC.');
+        return resultado;
+    }
+
+    // 2ª via de boleto — resposta não tem exemplo documentado, então trata
+    // como texto puro (mesmo esquema de ImprimirContrato): se vier um JSON de
+    // erro, lança; senão assume que o corpo é o base64 cru do PDF.
+    async ObterBoletoArquivo(idBoleto:number, codigoProvedor:string) : Promise<string> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configReques:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'get_boleto',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: {
+                boletos: String(idBoleto),
+                juro: "S",
+                multa: "S",
+                atualiza_boleto: "S",
+                tipo_boleto: "arquivo",
+                base64: "S"
+            }
+        }
+
+        const response = await service.Requst(configReques);
+        const texto = await response.text();
+
+        try {
+            const possivelErro = JSON.parse(texto);
+            if (possivelErro?.type === 'error')
+                throw new Error(possivelErro.message ?? 'Erro ao gerar a 2ª via do boleto no IXC.');
+            // Veio JSON mas não é um erro conhecido — formato de sucesso não
+            // documentado, melhor recusar do que arriscar um PDF corrompido.
+            throw new Error('Resposta inesperada da API do IXC ao gerar a 2ª via do boleto.');
+        } catch (e) {
+            if (e instanceof SyntaxError)
+                return texto;
+            throw e;
+        }
+    }
+
+    // Igual AtualizarCliente: PUT exige o registro inteiro. Busca o login
+    // atual (mesmo endpoint de listar já usado em ObterLogin) e sobrescreve só
+    // os campos de WiFi pedidos, pra não apagar o resto da configuração de
+    // conexão do cliente (PPPoE, IP, VLAN etc.).
+    async AtualizarLogin(idLogin:number, dados:{ ssidWifi?:string; senhaWifi?:string; ssidWifi5ghz?:string; senhaWifi5ghz?:string }, codigoProvedor:string) : Promise<any> {
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        const configListar:configRequest = {
+            method: emethodHttp.POST,
+            resource: 'radusuarios',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: { grid_param: JSON.stringify([{
+                TB: "radusuarios.id",
+                OP: operadores.IGUAL,
+                P: idLogin
+            }])}
+        }
+
+        const responseListar = await service.Requst(configListar);
+        const listagem = await responseListar.json();
+        const loginAtual = listagem?.registros?.[0];
+
+        if (!loginAtual)
+            throw new Error("Login não encontrado no IXC pra atualizar.");
+
+        const loginCompleto: any = { ...loginAtual };
+        delete loginCompleto.id;
+        if (dados.ssidWifi !== undefined) loginCompleto.ssid_router_wifi = dados.ssidWifi;
+        if (dados.senhaWifi !== undefined) loginCompleto.senha_rede_sem_fio = dados.senhaWifi;
+        if (dados.ssidWifi5ghz !== undefined) loginCompleto.ssid_router_wifi_5ghz = dados.ssidWifi5ghz;
+        if (dados.senhaWifi5ghz !== undefined) loginCompleto.senha_rede_sem_fio_5ghz = dados.senhaWifi5ghz;
+
+        const configEditar:configRequest = {
+            method: emethodHttp.PUT,
+            resource: `radusuarios/${idLogin}`,
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`
+            },
+            body: loginCompleto
+        }
+
+        const response = await service.Requst(configEditar);
+        const resultado = await response.json();
+        if (resultado?.type === 'error')
+            throw new Error(resultado.message ?? 'Erro ao atualizar o WiFi no IXC.');
+        return resultado;
+    }
+
     public Token(provedor:Provedor): string {
         return  Buffer.from(`${provedor.ObterCodigoApiGerenciador()}:${provedor.ObterChaveApiGerenciador()}`).toString("base64");
     } 

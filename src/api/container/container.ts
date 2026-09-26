@@ -13,6 +13,8 @@ import ITokenService from "../../application/interfaces/ITokenService";
 import TokenService from "../../application/services/TokenService";
 import IApiIxcSoftService from "../../infrastructure/apis/ixcsoft/interfaces/IApiIxcSoftService";
 import ApiIxcSoftService from "../../infrastructure/apis/ixcsoft/ApiIxcSoftService";
+import IApiMkAuthService from "../../infrastructure/apis/mkauth/interfaces/IApiMkAuthService";
+import ApiMkAuthService from "../../infrastructure/apis/mkauth/ApiMkAuthService";
 import IIxcSoftServices from "../../application/interfaces/IIxcSoftServices";
 import IxcSoftServices from "../../application/services/IxcSoftServices";
 import IPainelServices from "../../application/interfaces/IPainelService";
@@ -47,6 +49,7 @@ container.registerSingleton<IIxcSoftServices>("IIxcSoftServices", IxcSoftService
 container.registerSingleton<IReceitanetServices>("IReceitanetServices", ReceitanetServices);
 container.registerSingleton<IApiReceitanetServices>("IApiReceitanetServices", ApiReceitanetServices);
 container.registerSingleton<IApiIxcSoftService>("IApiIxcSoftService", ApiIxcSoftService);
+container.registerSingleton<IApiMkAuthService>("IApiMkAuthService", ApiMkAuthService);
 container.registerSingleton<IProvedorRepository>("IProvedorRepository", ProvedorRepository);
 container.registerSingleton<IProvedorServices>("IProvedorServices", ProvedorServices);
 container.registerSingleton<IPainelServices>("IPainelServices", PainelService);

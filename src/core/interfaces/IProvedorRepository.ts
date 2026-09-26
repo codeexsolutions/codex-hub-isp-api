@@ -21,6 +21,7 @@ import { planoInternetModel } from "../models/planoInternetModel";
 import { lpConfigModel } from "../models/lpConfigModel";
 import { lpVantagemModel } from "../models/lpVantagemModel";
 import { lpAppModel } from "../models/lpAppModel";
+import { solicitacaoTrocaPlanoModel } from "../models/solicitacaoTrocaPlanoModel";
 
 export default interface IProvedorRepository{
     ObterProvedor(codigoProvedor:string): Promise<Provedor>
@@ -46,6 +47,8 @@ export default interface IProvedorRepository{
     ObterPlanosMoveisAtivos(codigoProvedor:string) : Promise<planoMovelModel[]>;
     ObterPlanoMovelAtivoPorId(id:number, codigoProvedor:string) : Promise<planoMovelModel|null>;
     CriarSolicitacaoPlanoMovel(codigoProvedor:string, plano:planoMovelModel, cpfCnpj:string, nomeCliente:string|null) : Promise<solicitacaoPlanoMovelModel>;
+    ObterPlanoInternetAtivoPorId(id:number, codigoProvedor:string) : Promise<planoInternetModel|null>;
+    CriarSolicitacaoTrocaPlano(codigoProvedor:string, plano:planoInternetModel, cpfCnpj:string, nomeCliente:string|null) : Promise<solicitacaoTrocaPlanoModel>;
     ObterRecompensaPorIdPublico(idRecompensa:number, codigoProvedor:number) : Promise<recompensaModel>;
     RegistrarResgate(codigoProvedor:number, cpfCnpj:string, nome:string, recompensa:recompensaModel, cupom:string) : Promise<extratoPontosModel>;
     ListarParceirosAtivos(codigoProvedor:string) : Promise<parceiroModel[]>;

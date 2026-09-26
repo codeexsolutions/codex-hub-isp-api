@@ -22,6 +22,7 @@ import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { parceiroModel } from "../../core/models/parceiroModel";
 import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
+import { solicitacaoTrocaPlanoModel } from "../../core/models/solicitacaoTrocaPlanoModel";
 import { lpConfigModel } from "../../core/models/lpConfigModel";
 import { lpVantagemModel } from "../../core/models/lpVantagemModel";
 import { lpAppModel } from "../../core/models/lpAppModel";
@@ -49,18 +50,22 @@ export default class ProvedorRepository implements IProvedorRepository{
     }
 
     async Atualizar(provedorEdite: cadastroProvedorModel) : Promise<Provedor> {
-        
-        const update =`UPDATE provedores SET 
-            nome_fantasia = $1, 
-            nome_administrador = $2, 
-            codigo_api_gerenciador = $3, 
-            chave_api_gerenciador = $4, 
-            usuario = $5, 
-            senha = $6 
+
+        const update =`UPDATE provedores SET
+            nome_fantasia = $1,
+            nome_administrador = $2,
+            codigo_api_gerenciador = $3,
+            chave_api_gerenciador = $4,
+            usuario = $5,
+            senha = $6,
+            gerenciador = COALESCE($8, gerenciador),
+            dominio_ixc = COALESCE($9, dominio_ixc),
+            dominio_mkauth = COALESCE($10, dominio_mkauth),
+            mkauth_client_id = COALESCE($11, mkauth_client_id)
             WHERE codigo_provedor = $7
             RETURNING id`
-        
-        const alterado = await this._db.Execulte(update, [provedorEdite.nome_fantasia, provedorEdite.nome_administrador, provedorEdite.codigo_api_gerenciador, provedorEdite.chave_api_gerenciador, provedorEdite.usuario, provedorEdite.senha, provedorEdite.codigo_provedor])
+
+        const alterado = await this._db.Execulte(update, [provedorEdite.nome_fantasia, provedorEdite.nome_administrador, provedorEdite.codigo_api_gerenciador, provedorEdite.chave_api_gerenciador, provedorEdite.usuario, provedorEdite.senha, provedorEdite.codigo_provedor, provedorEdite.gerenciador, provedorEdite.dominio_ixc, provedorEdite.dominio_mkauth, provedorEdite.mkauth_client_id])
         
         if(alterado.length == 0)
             throw new Error("Não foi possivel cadastrar o provedor.")
@@ -88,7 +93,9 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.cnpj,
             provedor.dominio_ixc,
             provedor.usuario,
-            provedor.senha
+            provedor.senha,
+            provedor.dominio_mkauth,
+            provedor.mkauth_client_id
         );
     }
 
@@ -112,7 +119,9 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.cnpj,
             provedor.dominio_ixc,
             provedor.usuario,
-            provedor.senha
+            provedor.senha,
+            provedor.dominio_mkauth,
+            provedor.mkauth_client_id
         );
     }
 
@@ -135,7 +144,9 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.cnpj,
             provedor.dominio_ixc,
             provedor.usuario,
-            provedor.senha
+            provedor.senha,
+            provedor.dominio_mkauth,
+            provedor.mkauth_client_id
         );
     }
 
@@ -409,6 +420,27 @@ export default class ProvedorRepository implements IProvedorRepository{
         return result[0];
     }
 
+    // Idem ObterPlanoMovelAtivoPorId, mas sobre o catálogo planos_internet
+    // (Vitrine de Planos) — revalida no servidor antes de gravar a solicitação.
+    async ObterPlanoInternetAtivoPorId(id:number, codigoProvedor:string) : Promise<planoInternetModel|null> {
+        const select = `SELECT * FROM planos_internet WHERE id = $1 AND codigo_provedor_fk = $2 AND ativo = true;`;
+        const result = await this._db.Execulte<planoInternetModel>(select, [id, codigoProvedor]);
+        return result[0] ?? null;
+    }
+
+    // Solicitação de troca de plano de internet — mesmo espírito de
+    // CriarSolicitacaoPlanoMovel (fluxo próprio do Synk, não mexe direto no
+    // gerenciador; o provedor confirma e troca manualmente no IXC/ReceitaNet).
+    async CriarSolicitacaoTrocaPlano(codigoProvedor:string, plano:planoInternetModel, cpfCnpj:string, nomeCliente:string|null) : Promise<solicitacaoTrocaPlanoModel> {
+        const insert = `INSERT INTO solicitacoes_troca_plano
+            (codigo_provedor_fk, plano_id_fk, plano_nome, plano_valor, cliente_cpf_cnpj, cliente_nome)
+            VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`;
+        const result = await this._db.Execulte<solicitacaoTrocaPlanoModel>(insert, [
+            codigoProvedor, plano.id, plano.nome, plano.valor, cpfCnpj, nomeCliente,
+        ]);
+        return result[0];
+    }
+
     async ObterRecompensaPorIdPublico(idRecompensa:number, codigoProvedor:number) : Promise<recompensaModel> {
         const select = `SELECT * FROM pontos_recompensas WHERE id = $1 AND codigo_provedor_fk = $2 AND ativo = true;`;
         const result = await this._db.Execulte<recompensaModel>(select, [idRecompensa, codigoProvedor]);
@@ -452,7 +484,9 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.cnpj,
             provedor.dominio_ixc,
             provedor.usuario,
-            provedor.senha
+            provedor.senha,
+            provedor.dominio_mkauth,
+            provedor.mkauth_client_id
         );
     }
 

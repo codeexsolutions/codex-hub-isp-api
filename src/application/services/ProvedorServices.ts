@@ -51,6 +51,8 @@ export default class ProvedorServices implements IProvedorServices {
                 status: provedor.Status,
                 usuario: provedor.Usuario,
                 dominio_ixc: provedor.DominioIxc,
+                dominio_mkauth: provedor.DominioMkAuth,
+                mkauth_client_id: provedor.MkAuthClientId,
                 senha: provedor?.Senha()
             }
         }
@@ -70,23 +72,29 @@ export default class ProvedorServices implements IProvedorServices {
             status: novoProvedor.Status,
             usuario: novoProvedor.Usuario,
             dominio_ixc: novoProvedor.DominioIxc,
+            dominio_mkauth: novoProvedor.DominioMkAuth,
+            mkauth_client_id: novoProvedor.MkAuthClientId,
             senha: novoProvedor.Senha()
         }
     }
 
     async Atualizar(update:cadastroProvedorModel) : Promise<provedorPainelDto> {
-       
+
         const provedorAtualizado =  await this._provedorRepository.Atualizar(
-            { 
-                nome_fantasia: update.nome_fantasia, 
+            {
+                nome_fantasia: update.nome_fantasia,
                 nome_administrador: update.nome_administrador,
-                codigo_api_gerenciador: update.codigo_api_gerenciador, 
-                chave_api_gerenciador: update.chave_api_gerenciador, 
+                codigo_api_gerenciador: update.codigo_api_gerenciador,
+                chave_api_gerenciador: update.chave_api_gerenciador,
                 codigo_provedor: update.codigo_provedor,
                 usuario: update.usuario,
-                senha: update.senha
+                senha: update.senha,
+                gerenciador: update.gerenciador,
+                dominio_ixc: update.dominio_ixc,
+                dominio_mkauth: update.dominio_mkauth,
+                mkauth_client_id: update.mkauth_client_id
 
-            })  
+            })
 
         return {
             id: provedorAtualizado.Id,
@@ -101,6 +109,8 @@ export default class ProvedorServices implements IProvedorServices {
             status: provedorAtualizado.Status,
             usuario: provedorAtualizado.Usuario,
             dominio_ixc: provedorAtualizado.DominioIxc,
+            dominio_mkauth: provedorAtualizado.DominioMkAuth,
+            mkauth_client_id: provedorAtualizado.MkAuthClientId,
             senha: provedorAtualizado.Senha()
         }
     }
@@ -347,6 +357,15 @@ export default class ProvedorServices implements IProvedorServices {
         return await this._provedorRepository.ObterPlanosMoveisAtivos(codigo);
     }
 
+    // Público (app do cliente) — planos de internet pra pedir troca. Mesmo
+    // módulo ("landpage") que gate SolicitarTrocaPlanoInternet.
+    async ObterPlanosInternet(codigo: string) {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("landpage"))
+            return [];
+        return await this._provedorRepository.ObterPlanosInternetAtivos(codigo);
+    }
+
     // Landing Page pública (módulo "landpage") — agrega tema, contato, planos
     // de internet/móvel e a config de LP num payload só. headline/subheadline
     // ficam com um texto padrão de destaque quando o provedor não preencheu
@@ -408,6 +427,30 @@ export default class ProvedorServices implements IProvedorServices {
         this._notificacaoPainelService
             .Avisar(codigo, "plano_movel", "Nova solicitação de plano móvel", `${clienteNome?.trim() || "Um cliente"} solicitou o plano "${plano.nome}" (R$ ${Number(plano.valor).toFixed(2).replace(".", ",")}/mês).`)
             .catch((error) => console.error("Erro ao avisar provedor sobre solicitação de plano móvel:", error));
+
+        return solicitacao;
+    }
+
+    // Mesmo espírito de SolicitarPlanoMovel, sobre o catálogo planos_internet
+    // (Vitrine de Planos) — o Synk só registra o pedido e avisa o provedor; a
+    // troca em si (com pró-rata/faturamento) é feita manualmente por ele no
+    // próprio gerenciador, não é aplicada automaticamente via API do ERP.
+    async SolicitarTrocaPlanoInternet(codigo: string, planoId: number, cpfCnpj: string, clienteNome: string | null) {
+        const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
+        if (!modulos.includes("landpage"))
+            throw new Error("Vitrine de Planos não está ativa para este provedor.");
+        if (!cpfCnpj?.trim())
+            throw new Error("Dados do cliente incompletos.");
+
+        const plano = await this._provedorRepository.ObterPlanoInternetAtivoPorId(planoId, codigo);
+        if (!plano)
+            throw new Error("Plano não encontrado.");
+
+        const solicitacao = await this._provedorRepository.CriarSolicitacaoTrocaPlano(codigo, plano, cpfCnpj.trim(), clienteNome?.trim() || null);
+
+        this._notificacaoPainelService
+            .Avisar(codigo, "troca_plano", "Nova solicitação de troca de plano", `${clienteNome?.trim() || "Um cliente"} quer trocar para o plano "${plano.nome}" (R$ ${Number(plano.valor).toFixed(2).replace(".", ",")}/mês).`)
+            .catch((error) => console.error("Erro ao avisar provedor sobre solicitação de troca de plano:", error));
 
         return solicitacao;
     }

@@ -16,4 +16,7 @@ export default interface IIxcSoftServices {
     EnviarMensagemChamado(idChamado:number, codigoProvedor:string, mensagem:string) : Promise<void>
     ObterContratoPdf(idContrato:number, codigoProvedor:string) : Promise<Buffer>
     ContarClientesAtivos(codigoProvedor:string) : Promise<number>
+    AtualizarPerfil(cpf:string, codigoProvedor:string, dados:{ email?:string; telefone?:string; celular?:string }) : Promise<void>
+    ReiniciarRoteador(cpf:string, codigoProvedor:string) : Promise<void>
+    AlterarSenhaWifi(cpf:string, codigoProvedor:string, dados:{ ssidWifi?:string; senhaWifi?:string; ssidWifi5ghz?:string; senhaWifi5ghz?:string }) : Promise<void>
 }
