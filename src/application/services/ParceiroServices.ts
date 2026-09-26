@@ -121,6 +121,41 @@ export default class ParceiroServices implements IParceiroServices {
         return validada;
     }
 
+    // PERFIL
+
+    async ObterMeuPerfil(parceiroId:number) : Promise<parceiroModel> {
+        const parceiro = await this._parceiroRepository.ObterPorId(parceiroId);
+        if (!parceiro)
+            throw new Error("Parceiro não encontrado.");
+        return parceiro;
+    }
+
+    async AtualizarMeuPerfil(parceiroId:number, dados:{ nome?:string; cidade?:string|null; uf?:string|null; endereco?:string|null; contato?:string|null }) : Promise<parceiroModel> {
+        const atual = await this._parceiroRepository.ObterPorId(parceiroId);
+        if (!atual)
+            throw new Error("Parceiro não encontrado.");
+
+        if (dados.nome !== undefined) atual.nome = dados.nome;
+        if (dados.cidade !== undefined) atual.cidade = dados.cidade;
+        if (dados.uf !== undefined) atual.uf = dados.uf;
+        if (dados.endereco !== undefined) atual.endereco = dados.endereco;
+        if (dados.contato !== undefined) atual.contato = dados.contato;
+
+        if (!atual.nome?.trim())
+            throw new Error("Informe o nome do seu negócio.");
+
+        return await this._parceiroRepository.AtualizarPerfil(atual);
+    }
+
+    async AlterarSenha(parceiroId:number, senhaAtual:string, senhaNova:string) : Promise<void> {
+        if (!senhaNova?.trim() || senhaNova.trim().length < 4)
+            throw new Error("A nova senha precisa ter pelo menos 4 caracteres.");
+
+        const trocou = await this._parceiroRepository.AlterarSenha(parceiroId, senhaAtual, senhaNova.trim());
+        if (!trocou)
+            throw new Error("Senha atual incorreta.");
+    }
+
     async CancelarCupom(cupom:string, parceiroId:number) : Promise<compraModel> {
         const compra = await this._parceiroRepository.ObterCompraPorCupom(cupom, parceiroId);
         if (!compra)

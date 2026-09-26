@@ -35,6 +35,39 @@ export default class ParceiroRepository implements IParceiroRepository {
         return result[0];
     }
 
+    async ObterPorId(id:number) : Promise<parceiroModel|null> {
+        const select = `SELECT id, nome_parceiro AS nome, usuario, ativo, cidade, uf, endereco, contato, codigo_provedor_fk, created_at AS criado_em
+            FROM parceiros WHERE id = $1;`;
+        const result = await this._db.Execulte<parceiroModel>(select, [id]);
+        return result[0] ?? null;
+    }
+
+    // "Meu perfil" — o parceiro atualiza os próprios dados de cadastro
+    // (nome do negócio, cidade/UF, endereço, contato). Não mexe em
+    // usuario/senha/ativo/status aqui de propósito.
+    async AtualizarPerfil(parceiro:parceiroModel) : Promise<parceiroModel> {
+        const update = `UPDATE parceiros SET
+                nome_parceiro = $1, cidade = $2, uf = $3, endereco = $4, contato = $5
+            WHERE id = $6
+            RETURNING id, nome_parceiro AS nome, usuario, ativo, cidade, uf, endereco, contato, created_at AS criado_em;`;
+        const result = await this._db.Execulte<parceiroModel>(update, [
+            parceiro.nome, parceiro.cidade ?? null, parceiro.uf ?? null,
+            parceiro.endereco ?? null, parceiro.contato ?? null, parceiro.id,
+        ]);
+        if (result.length === 0)
+            throw new Error("Parceiro não encontrado.");
+        return result[0];
+    }
+
+    // Verifica a senha atual e troca na mesma consulta (evita corrida entre
+    // checar e gravar) — mesmo esquema de comparação em texto puro já usado
+    // em ObterPorUsuarioSenha.
+    async AlterarSenha(id:number, senhaAtual:string, senhaNova:string) : Promise<boolean> {
+        const update = `UPDATE parceiros SET senha = $1 WHERE id = $2 AND senha = $3 RETURNING id;`;
+        const result = await this._db.Execulte<{ id:number }>(update, [senhaNova, id, senhaAtual]);
+        return result.length > 0;
+    }
+
     async ObterResumoFinanceiro(parceiroId:number) : Promise<{ status:string; qtd:number; total:number; synk:number; provedor:number }[]> {
         const select = `
             SELECT c.status,

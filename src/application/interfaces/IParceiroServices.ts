@@ -20,6 +20,11 @@ export default interface IParceiroServices {
     ValidarCupom(cupom:string, parceiroId:number) : Promise<compraModel>
     CancelarCupom(cupom:string, parceiroId:number) : Promise<compraModel>
 
+    // PERFIL
+    ObterMeuPerfil(parceiroId:number) : Promise<parceiroModel>
+    AtualizarMeuPerfil(parceiroId:number, dados:{ nome?:string; cidade?:string|null; uf?:string|null; endereco?:string|null; contato?:string|null }) : Promise<parceiroModel>
+    AlterarSenha(parceiroId:number, senhaAtual:string, senhaNova:string) : Promise<void>
+
     // OFERTAS
     CriarOferta(oferta:beneficioModel) : Promise<beneficioModel>
     ObterMinhasOfertas(parceiroId:number) : Promise<beneficioModel[]>

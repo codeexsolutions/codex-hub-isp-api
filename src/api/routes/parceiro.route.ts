@@ -18,6 +18,11 @@ parceiroRoute.get('/cupom/:codigo', authMiddleware, parceiroMiddleware, parceiro
 parceiroRoute.patch('/cupom/:codigo/validar', authMiddleware, parceiroMiddleware, parceiroController.ValidarCupom.bind(parceiroController));
 parceiroRoute.patch('/cupom/:codigo/cancelar', authMiddleware, parceiroMiddleware, parceiroController.CancelarCupom.bind(parceiroController));
 
+// PERFIL
+parceiroRoute.get('/perfil', authMiddleware, parceiroMiddleware, parceiroController.ObterMeuPerfil.bind(parceiroController));
+parceiroRoute.patch('/perfil', authMiddleware, parceiroMiddleware, parceiroController.AtualizarMeuPerfil.bind(parceiroController));
+parceiroRoute.patch('/perfil/senha', authMiddleware, parceiroMiddleware, parceiroController.AlterarSenha.bind(parceiroController));
+
 // OFERTAS (o parceiro cria/gerencia — o provedor só ativa, ver /painel/provedor/ofertas)
 parceiroRoute.post('/ofertas', authMiddleware, parceiroMiddleware, upload.single("imagem"), parceiroController.CriarOferta.bind(parceiroController));
 parceiroRoute.get('/ofertas', authMiddleware, parceiroMiddleware, parceiroController.ObterMinhasOfertas.bind(parceiroController));

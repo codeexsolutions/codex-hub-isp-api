@@ -139,6 +139,45 @@ export default class ParceiroController {
         }
     }
 
+    // PERFIL
+
+    async ObterMeuPerfil(req:AuthRequest, res:Response){
+
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        try {
+            const perfil = await this._parceiroService.ObterMeuPerfil(parceiroId);
+            return res.json({ data: perfil });
+        } catch (error: any) {
+            return res.status(404).json({ message: error.message });
+        }
+    }
+
+    async AtualizarMeuPerfil(req:AuthRequest, res:Response){
+
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const { nome, cidade, uf, endereco, contato } = req.body || {};
+
+        try {
+            const perfil = await this._parceiroService.AtualizarMeuPerfil(parceiroId, { nome, cidade, uf, endereco, contato });
+            return res.json({ data: perfil });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async AlterarSenha(req:AuthRequest, res:Response){
+
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const { senhaAtual, senhaNova } = req.body || {};
+
+        try {
+            await this._parceiroService.AlterarSenha(parceiroId, senhaAtual, senhaNova);
+            return res.json({ data: null });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
     async ExcluirOferta(req:AuthRequest, res:Response){
 
         const id = req.params.id as string;
