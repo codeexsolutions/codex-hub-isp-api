@@ -190,5 +190,6 @@ painelRouter.get('/admin/licencas-tv', authMiddleware, adminMiddleware, painelCo
 painelRouter.post('/admin/licencas-tv', authMiddleware, adminMiddleware, painelController.CriarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/aprovar', authMiddleware, adminMiddleware, painelController.AprovarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/cancelar', authMiddleware, adminMiddleware, painelController.CancelarLicencaTvAdmin.bind(painelController));
+painelRouter.patch('/admin/licencas-tv/:id/link-lista', authMiddleware, adminMiddleware, painelController.DefinirLinkPagamentoListaLicencaTvAdmin.bind(painelController));
 
 export default painelRouter;

@@ -1044,6 +1044,16 @@ export default class PainelRepository implements IPainelRepository {
         return result[0];
     }
 
+    // Link individual do cliente no Mercado Pago pra renovar a LISTA IPTV
+    // (Xtream) — cada cliente tem o seu, diferente do PIX único da licença do
+    // app (config_licenca_tv). Guardado na mesma licença (mesma chave que o
+    // cliente já usa no app) pra não precisar de outro cadastro.
+    async DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel> {
+        const update = `UPDATE licencas_tv SET link_pagamento_lista = $1 WHERE id = $2 RETURNING *;`;
+        const result = await this._db.Execulte<licencaTvModel>(update, [link, id]);
+        return result[0];
+    }
+
     async VencerLicencasTvExpiradas() : Promise<void> {
         const update = `UPDATE licencas_tv SET status = 'vencida' WHERE status IN ('ativa','teste') AND vencimento < CURRENT_DATE;`;
         await this._db.Execulte<any>(update, []);

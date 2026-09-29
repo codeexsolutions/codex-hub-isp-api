@@ -8,6 +8,7 @@ export type licencaTvModel = {
     vencimento: string | null;
     criado_em: string;
     ativado_em: string | null;
+    link_pagamento_lista?: string | null;
 };
 
 export type configLicencaTvModel = {

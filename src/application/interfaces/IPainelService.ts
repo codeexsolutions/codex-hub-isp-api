@@ -180,11 +180,12 @@ export default interface IPainelServices {
     // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
     ObterConfigLicencaTv() : Promise<configLicencaTvModel>
     DefinirConfigLicencaTv(config:configLicencaTvModel) : Promise<configLicencaTvModel>
-    SolicitarLicencaTv(nome:string, telefone:string) : Promise<{ chave:string; valor:number; status:string; vencimento:string|null; pixCopiaCola:string|null; pixQrCode:string|null }>
-    ObterStatusLicencaTv(chave:string) : Promise<{ chave:string; status:string; vencimento:string|null; valor:number; pixCopiaCola?:string|null; pixQrCode?:string|null }>
+    SolicitarLicencaTv(nome:string, telefone:string) : Promise<{ chave:string; valor:number; status:string; vencimento:string|null; pixCopiaCola:string|null; pixQrCode:string|null; linkPagamentoLista:string|null }>
+    ObterStatusLicencaTv(chave:string) : Promise<{ chave:string; status:string; vencimento:string|null; valor:number; pixCopiaCola?:string|null; pixQrCode?:string|null; linkPagamentoLista?:string|null }>
     ListarLicencasTv() : Promise<licencaTvModel[]>
     AprovarLicencaTv(id:number) : Promise<licencaTvModel>
     CancelarLicencaTv(id:number) : Promise<licencaTvModel>
+    DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel>
 
     // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
     ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel>

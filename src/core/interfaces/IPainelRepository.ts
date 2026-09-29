@@ -152,6 +152,7 @@ export default interface IPainelRepository {
     ListarLicencasTv() : Promise<licencaTvModel[]>
     AprovarLicencaTv(id:number) : Promise<licencaTvModel>
     CancelarLicencaTv(id:number) : Promise<licencaTvModel>
+    DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel>
     VencerLicencasTvExpiradas() : Promise<void>
 
     // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)

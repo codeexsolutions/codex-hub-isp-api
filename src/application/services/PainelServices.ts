@@ -831,7 +831,7 @@ export default class PainelService implements IPainelServices {
         const licenca = await this._painelRepository.CriarLicencaTv(chave, nome.trim(), telefone.trim(), Number(config.valor_anual));
         const pix = await this.gerarPixLicenca(licenca);
 
-        return { chave: licenca.chave, valor: licenca.valor, status: licenca.status, vencimento: licenca.vencimento, ...pix };
+        return { chave: licenca.chave, valor: licenca.valor, status: licenca.status, vencimento: licenca.vencimento, linkPagamentoLista: licenca.link_pagamento_lista ?? null, ...pix };
     }
 
     async ObterStatusLicencaTv(chave:string) {
@@ -844,7 +844,7 @@ export default class PainelService implements IPainelServices {
         // perto do vencimento e "vencida" também precisam poder renovar (a
         // tela de perfil do app mostra o PIX de renovação nesses casos).
         const pix = await this.gerarPixLicenca(licenca);
-        return { chave: licenca.chave, status: licenca.status, vencimento: licenca.vencimento, valor: licenca.valor, ...pix };
+        return { chave: licenca.chave, status: licenca.status, vencimento: licenca.vencimento, valor: licenca.valor, linkPagamentoLista: licenca.link_pagamento_lista ?? null, ...pix };
     }
 
     async ListarLicencasTv() : Promise<licencaTvModel[]> {
@@ -858,6 +858,10 @@ export default class PainelService implements IPainelServices {
 
     async CancelarLicencaTv(id:number) : Promise<licencaTvModel> {
         return await this._painelRepository.CancelarLicencaTv(id);
+    }
+
+    async DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel> {
+        return await this._painelRepository.DefinirLinkPagamentoListaLicencaTv(id, link?.trim() || null);
     }
 
     async ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel> {

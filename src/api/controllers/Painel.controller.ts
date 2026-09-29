@@ -1271,4 +1271,18 @@ export default class PainelController {
         }
     }
 
+    // Link individual do cliente no Mercado Pago pra renovar a lista IPTV —
+    // cada cliente tem o seu, por isso fica gravado na própria licença.
+    async DefinirLinkPagamentoListaLicencaTvAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const { link } = req.body;
+        try {
+            const licenca = await this._painelService.DefinirLinkPagamentoListaLicencaTv(id, link ?? null);
+            return res.json({data: licenca})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
 }
