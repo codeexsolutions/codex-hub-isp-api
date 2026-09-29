@@ -236,6 +236,11 @@ export default class PainelRepository implements IPainelRepository {
         return result[0];
     }
 
+    // Provedores 1 ("Synk Isp", conta antiga de testes internos) e 999 ("Synk
+    // Net Telecom (demonstração)") não são clientes reais — ficam fora de
+    // qualquer relatório/comissão pra não inflar números com dados de teste.
+    private static readonly PROVEDORES_TESTE = [1, 999];
+
     async ObterComprasTodos() : Promise<compraModel[]> {
         const select = `
             SELECT c.*, b.titulo AS beneficio_titulo, b.parceiro AS beneficio_parceiro,
@@ -243,6 +248,7 @@ export default class PainelRepository implements IPainelRepository {
             FROM beneficio_compras c
             JOIN marketing_beneficios b ON b.id = c.beneficio_id
             JOIN provedores p ON p.codigo_provedor = c.codigo_provedor_fk
+            WHERE c.codigo_provedor_fk NOT IN (${PainelRepository.PROVEDORES_TESTE.join(",")})
             ORDER BY c.criado_em DESC;
         `;
         return await this._db.Execulte<any>(select, []);
@@ -256,7 +262,7 @@ export default class PainelRepository implements IPainelRepository {
                    COALESCE(SUM(valor_synk), 0) AS total_synk,
                    COALESCE(SUM(valor_provedor), 0) AS total_provedor
             FROM beneficio_compras
-            WHERE status = 'utilizado';
+            WHERE status = 'utilizado' AND codigo_provedor_fk NOT IN (${PainelRepository.PROVEDORES_TESTE.join(",")});
         `;
         const result = await this._db.Execulte<{ compras:string; total_vendas:string; total_parceiro:string; total_synk:string; total_provedor:string }>(select, []);
         const linha = result[0];

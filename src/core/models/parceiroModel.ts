@@ -16,6 +16,9 @@ export type parceiroModel = {
     // pra ele já saber onde/como usar o cupom.
     endereco?:string|null;
     contato?:string|null;
+    // Chave PIX estática do parceiro — mostrada pro cliente pagar direto a
+    // ele. O Synk nunca recebe nem intermedia esse valor.
+    pix_chave?:string|null;
     criado_em?:string;
     // pré-cadastro (self-service) começa 'pendente' até o admin aprovar/rejeitar;
     // parceiro criado direto pelo admin (CriarParceiro) já nasce 'aprovado'.

@@ -22,7 +22,7 @@ export default interface IParceiroServices {
 
     // PERFIL
     ObterMeuPerfil(parceiroId:number) : Promise<parceiroModel>
-    AtualizarMeuPerfil(parceiroId:number, dados:{ nome?:string; cidade?:string|null; uf?:string|null; endereco?:string|null; contato?:string|null }) : Promise<parceiroModel>
+    AtualizarMeuPerfil(parceiroId:number, dados:{ nome?:string; cidade?:string|null; uf?:string|null; endereco?:string|null; contato?:string|null; pix_chave?:string|null }) : Promise<parceiroModel>
     AlterarSenha(parceiroId:number, senhaAtual:string, senhaNova:string) : Promise<void>
 
     // OFERTAS

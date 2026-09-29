@@ -130,7 +130,7 @@ export default class ParceiroServices implements IParceiroServices {
         return parceiro;
     }
 
-    async AtualizarMeuPerfil(parceiroId:number, dados:{ nome?:string; cidade?:string|null; uf?:string|null; endereco?:string|null; contato?:string|null }) : Promise<parceiroModel> {
+    async AtualizarMeuPerfil(parceiroId:number, dados:{ nome?:string; cidade?:string|null; uf?:string|null; endereco?:string|null; contato?:string|null; pix_chave?:string|null }) : Promise<parceiroModel> {
         const atual = await this._parceiroRepository.ObterPorId(parceiroId);
         if (!atual)
             throw new Error("Parceiro não encontrado.");
@@ -140,6 +140,7 @@ export default class ParceiroServices implements IParceiroServices {
         if (dados.uf !== undefined) atual.uf = dados.uf;
         if (dados.endereco !== undefined) atual.endereco = dados.endereco;
         if (dados.contato !== undefined) atual.contato = dados.contato;
+        if (dados.pix_chave !== undefined) atual.pix_chave = dados.pix_chave;
 
         if (!atual.nome?.trim())
             throw new Error("Informe o nome do seu negócio.");

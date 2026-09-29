@@ -23,6 +23,13 @@ parceiroRoute.get('/perfil', authMiddleware, parceiroMiddleware, parceiroControl
 parceiroRoute.patch('/perfil', authMiddleware, parceiroMiddleware, parceiroController.AtualizarMeuPerfil.bind(parceiroController));
 parceiroRoute.patch('/perfil/senha', authMiddleware, parceiroMiddleware, parceiroController.AlterarSenha.bind(parceiroController));
 
+// NOTIFICAÇÕES (sino do painel do parceiro)
+parceiroRoute.post('/notificacoes/inscrever', authMiddleware, parceiroMiddleware, parceiroController.InscreverNotificacaoParceiro.bind(parceiroController));
+parceiroRoute.post('/notificacoes/desinscrever', authMiddleware, parceiroMiddleware, parceiroController.DesinscreverNotificacaoParceiro.bind(parceiroController));
+parceiroRoute.get('/notificacoes', authMiddleware, parceiroMiddleware, parceiroController.ListarNotificacoesParceiro.bind(parceiroController));
+parceiroRoute.get('/notificacoes/nao-lidas', authMiddleware, parceiroMiddleware, parceiroController.ContarNotificacoesParceiroNaoLidas.bind(parceiroController));
+parceiroRoute.patch('/notificacoes/:id/lida', authMiddleware, parceiroMiddleware, parceiroController.MarcarNotificacaoParceiroLida.bind(parceiroController));
+
 // OFERTAS (o parceiro cria/gerencia — o provedor só ativa, ver /painel/provedor/ofertas)
 parceiroRoute.post('/ofertas', authMiddleware, parceiroMiddleware, upload.single("imagem"), parceiroController.CriarOferta.bind(parceiroController));
 parceiroRoute.get('/ofertas', authMiddleware, parceiroMiddleware, parceiroController.ObterMinhasOfertas.bind(parceiroController));

@@ -8,7 +8,8 @@ function criarService(overrides: Partial<{ provedorRepo: any; notificacaoPainel:
         CriarSolicitacaoTrocaPlano: vi.fn().mockResolvedValue({ id: 1, status: "pendente" }),
     };
     const notificacaoPainel = overrides.notificacaoPainel ?? { Avisar: vi.fn().mockResolvedValue(undefined) };
-    return { service: new ProvedorServices(provedorRepo, notificacaoPainel), provedorRepo, notificacaoPainel };
+    const notificacaoParceiro: any = { Avisar: vi.fn().mockResolvedValue(undefined) };
+    return { service: new ProvedorServices(provedorRepo, notificacaoPainel, notificacaoParceiro), provedorRepo, notificacaoPainel };
 }
 
 describe("ProvedorServices.SolicitarTrocaPlanoInternet", () => {

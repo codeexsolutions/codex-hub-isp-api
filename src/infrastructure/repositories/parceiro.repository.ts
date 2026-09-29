@@ -36,23 +36,23 @@ export default class ParceiroRepository implements IParceiroRepository {
     }
 
     async ObterPorId(id:number) : Promise<parceiroModel|null> {
-        const select = `SELECT id, nome_parceiro AS nome, usuario, ativo, cidade, uf, endereco, contato, codigo_provedor_fk, created_at AS criado_em
+        const select = `SELECT id, nome_parceiro AS nome, usuario, ativo, cidade, uf, endereco, contato, pix_chave, codigo_provedor_fk, created_at AS criado_em
             FROM parceiros WHERE id = $1;`;
         const result = await this._db.Execulte<parceiroModel>(select, [id]);
         return result[0] ?? null;
     }
 
     // "Meu perfil" — o parceiro atualiza os próprios dados de cadastro
-    // (nome do negócio, cidade/UF, endereço, contato). Não mexe em
+    // (nome do negócio, cidade/UF, endereço, contato, PIX). Não mexe em
     // usuario/senha/ativo/status aqui de propósito.
     async AtualizarPerfil(parceiro:parceiroModel) : Promise<parceiroModel> {
         const update = `UPDATE parceiros SET
-                nome_parceiro = $1, cidade = $2, uf = $3, endereco = $4, contato = $5
-            WHERE id = $6
-            RETURNING id, nome_parceiro AS nome, usuario, ativo, cidade, uf, endereco, contato, created_at AS criado_em;`;
+                nome_parceiro = $1, cidade = $2, uf = $3, endereco = $4, contato = $5, pix_chave = $6
+            WHERE id = $7
+            RETURNING id, nome_parceiro AS nome, usuario, ativo, cidade, uf, endereco, contato, pix_chave, created_at AS criado_em;`;
         const result = await this._db.Execulte<parceiroModel>(update, [
             parceiro.nome, parceiro.cidade ?? null, parceiro.uf ?? null,
-            parceiro.endereco ?? null, parceiro.contato ?? null, parceiro.id,
+            parceiro.endereco ?? null, parceiro.contato ?? null, parceiro.pix_chave ?? null, parceiro.id,
         ]);
         if (result.length === 0)
             throw new Error("Parceiro não encontrado.");

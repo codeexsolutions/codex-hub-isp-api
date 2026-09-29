@@ -5,14 +5,56 @@ import IParceiroServices from "../../application/interfaces/IParceiroServices";
 import { beneficioModel } from "../../core/models/beneficioModel";
 import { ofertaEditeDto } from "../../application/Dtos/ofertaEditeDto";
 import { parceiroModel } from "../../core/models/parceiroModel";
+import INotificacaoParceiroServices from "../../application/interfaces/INotificacaoParceiroServices";
+import { pushSubscriptionParceiroDto } from "../../application/Dtos/pushSubscriptionParceiroDto";
 
 @injectable()
 export default class ParceiroController {
 
     private readonly _parceiroService:IParceiroServices;
+    private readonly _notificacaoParceiroService:INotificacaoParceiroServices;
 
-    constructor(@inject("IParceiroServices") parceiroService:IParceiroServices){
+    constructor(@inject("IParceiroServices") parceiroService:IParceiroServices,
+                @inject("INotificacaoParceiroServices") notificacaoParceiroService:INotificacaoParceiroServices){
         this._parceiroService = parceiroService;
+        this._notificacaoParceiroService = notificacaoParceiroService;
+    }
+
+    // CENTRAL DE NOTIFICAÇÕES DO PARCEIRO (sino do painel do parceiro) —
+    // separada da central de notificações do provedor. Avisa sobre novas
+    // compras de benefícios (ver ProvedorServices.ComprarBeneficio).
+    async InscreverNotificacaoParceiro(req:AuthRequest, res:Response){
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const data = req.body as pushSubscriptionParceiroDto;
+        data.parceiroId = parceiroId;
+        await this._notificacaoParceiroService.Inscrever(data);
+        return res.json({ data: null });
+    }
+
+    async DesinscreverNotificacaoParceiro(req:AuthRequest, res:Response){
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const { endpoint } = req.body;
+        await this._notificacaoParceiroService.Desinscrever(endpoint, parceiroId);
+        return res.json({ data: null });
+    }
+
+    async ListarNotificacoesParceiro(req:AuthRequest, res:Response){
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const notificacoes = await this._notificacaoParceiroService.Listar(parceiroId);
+        return res.json({ data: notificacoes });
+    }
+
+    async ContarNotificacoesParceiroNaoLidas(req:AuthRequest, res:Response){
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const total = await this._notificacaoParceiroService.ContarNaoLidas(parceiroId);
+        return res.json({ data: total });
+    }
+
+    async MarcarNotificacaoParceiroLida(req:AuthRequest, res:Response){
+        const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
+        const id = Number.parseInt(req.params.id as string);
+        await this._notificacaoParceiroService.MarcarLida(id, parceiroId);
+        return res.json({ data: null });
     }
 
     async Login(req:Request, res:Response){
@@ -155,10 +197,10 @@ export default class ParceiroController {
     async AtualizarMeuPerfil(req:AuthRequest, res:Response){
 
         const parceiroId = Number.parseInt(req.usuario?.parceiroId as string);
-        const { nome, cidade, uf, endereco, contato } = req.body || {};
+        const { nome, cidade, uf, endereco, contato, pix_chave } = req.body || {};
 
         try {
-            const perfil = await this._parceiroService.AtualizarMeuPerfil(parceiroId, { nome, cidade, uf, endereco, contato });
+            const perfil = await this._parceiroService.AtualizarMeuPerfil(parceiroId, { nome, cidade, uf, endereco, contato, pix_chave });
             return res.json({ data: perfil });
         } catch (error: any) {
             return res.status(400).json({ message: error.message });

@@ -18,19 +18,24 @@ import { compraModel } from "../../core/models/compraModel";
 import { gerarCupom } from "../../common/utilities/cupom";
 import { ativacaoTvModel } from "../../core/models/ativacaoTvModel";
 import INotificacaoPainelServices from "../interfaces/INotificacaoPainelServices";
+import { gerarPixCopiaCola } from "../../infrastructure/pix/gerarPixCopiaCola";
+import INotificacaoParceiroServices from "../interfaces/INotificacaoParceiroServices";
 
 @injectable()
 export default class ProvedorServices implements IProvedorServices {
 
     private readonly _provedorRepository:IProvedorRepository;
     private readonly _notificacaoPainelService:INotificacaoPainelServices;
+    private readonly _notificacaoParceiroService:INotificacaoParceiroServices;
 
     constructor(
         @inject("IProvedorRepository") provedorRepository:IProvedorRepository,
-        @inject("INotificacaoPainelServices") notificacaoPainelService:INotificacaoPainelServices
+        @inject("INotificacaoPainelServices") notificacaoPainelService:INotificacaoPainelServices,
+        @inject("INotificacaoParceiroServices") notificacaoParceiroService:INotificacaoParceiroServices
     ){
         this._provedorRepository = provedorRepository;
         this._notificacaoPainelService = notificacaoPainelService;
+        this._notificacaoParceiroService = notificacaoParceiroService;
     }
     
     async Cadastrar(cadastro:cadastroProvedorDto): Promise<provedorPainelDto> {
@@ -219,11 +224,35 @@ export default class ProvedorServices implements IProvedorServices {
         return await this._provedorRepository.ObterAnuncios(codigo);
     }
 
+    // Monta o PIX copia-e-cola do PRÓPRIO parceiro (chave dele) pra mostrar
+    // pro cliente — o Synk nunca recebe nem intermedia esse valor, só exibe.
+    // Sem chave cadastrada ou sem valor fixo (oferta não-comprável), não gera nada.
+    private montarPixParceiro(item: any, valor: number | null | undefined, txid: string): string | null {
+        if (!item.parceiro_pix_chave || valor == null || Number(valor) <= 0)
+            return null;
+        try {
+            return gerarPixCopiaCola({
+                chave: item.parceiro_pix_chave,
+                nomeRecebedor: item.parceiro_nome_pix || item.parceiro || item.beneficio_parceiro || "PARCEIRO",
+                cidade: item.parceiro_cidade || "BRASIL",
+                valor: Number(valor),
+                txid,
+            });
+        } catch {
+            // chave/nome mal formatados não podem quebrar a tela de benefícios.
+            return null;
+        }
+    }
+
     async ObterBeneficios(codigo: string): Promise<any> {
         const modulos = await this._provedorRepository.ObterModulosAtivos(codigo);
         if(!modulos.includes("beneficios"))
             return [];
-        return await this._provedorRepository.ObterBeneficios(codigo);
+        const beneficios = await this._provedorRepository.ObterBeneficios(codigo);
+        return beneficios.map((item: any) => ({
+            ...item,
+            parceiro_pix_copia_cola: this.montarPixParceiro(item, item.valor, `BNF${item.id}`),
+        }));
     }
 
     async ObterModulosAtivos(codigo: string): Promise<string[]> {
@@ -302,13 +331,30 @@ export default class ProvedorServices implements IProvedorServices {
         if (!compraGravada)
             throw new Error("Não foi possível gerar o cupom da compra.");
 
+        if (beneficio.parceiro_id_fk) {
+            try {
+                await this._notificacaoParceiroService.Avisar(
+                    beneficio.parceiro_id_fk,
+                    "nova_compra",
+                    "Nova compra recebida",
+                    `${clienteNome} comprou "${beneficio.titulo}". Cupom: ${compraGravada.cupom_codigo}`
+                );
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
         // compra nasce "pendente" — pontos só são creditados quando o parceiro validar o
         // cupom (ParceiroServices.ValidarCupom) ou o admin confirmar manualmente.
         return compraGravada;
     }
 
     async ObterMinhasCompras(codigoProvedor: string, cpfCnpj: string): Promise<compraModel[]> {
-        return await this._provedorRepository.ObterComprasCliente(codigoProvedor, cpfCnpj);
+        const compras = await this._provedorRepository.ObterComprasCliente(codigoProvedor, cpfCnpj);
+        return compras.map((item: any) => ({
+            ...item,
+            parceiro_pix_copia_cola: this.montarPixParceiro(item, item.valor, item.cupom_codigo || `CMP${item.id}`),
+        }));
     }
 
     async RegistrarLoginCliente(codigoProvedor: string, cpfCnpj: string, nome: string): Promise<void> {

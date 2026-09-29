@@ -226,7 +226,8 @@ export default class ProvedorRepository implements IProvedorRepository{
     async ObterBeneficios(codigo:string) : Promise<any> {
         const select = `
             SELECT mb.*, pa.cidade AS parceiro_cidade, pa.uf AS parceiro_uf,
-                   pa.endereco AS parceiro_endereco, pa.contato AS parceiro_contato
+                   pa.endereco AS parceiro_endereco, pa.contato AS parceiro_contato,
+                   pa.pix_chave AS parceiro_pix_chave, pa.nome_parceiro AS parceiro_nome_pix
             FROM marketing_beneficios mb
             JOIN beneficio_provedores bp ON bp.beneficio_id = mb.id
             LEFT JOIN parceiros pa ON pa.id = mb.parceiro_id_fk
@@ -325,9 +326,13 @@ export default class ProvedorRepository implements IProvedorRepository{
 
     async ObterComprasCliente(codigoProvedor:string, cpfCnpj:string) : Promise<compraModel[]> {
         const select = `
-            SELECT c.*, b.titulo AS beneficio_titulo, b.parceiro AS beneficio_parceiro
+            SELECT c.*, b.titulo AS beneficio_titulo, b.parceiro AS beneficio_parceiro,
+                   pa.cidade AS parceiro_cidade, pa.uf AS parceiro_uf,
+                   pa.endereco AS parceiro_endereco, pa.contato AS parceiro_contato,
+                   pa.pix_chave AS parceiro_pix_chave, pa.nome_parceiro AS parceiro_nome_pix
             FROM beneficio_compras c
             JOIN marketing_beneficios b ON b.id = c.beneficio_id
+            LEFT JOIN parceiros pa ON pa.id = b.parceiro_id_fk
             WHERE c.codigo_provedor_fk = $1 AND c.cliente_cpf_cnpj = $2
             ORDER BY c.criado_em DESC;
         `;
