@@ -85,24 +85,33 @@ export default class IxcSoftServices implements IIxcSoftServices{
         const idLogin = loginUsuario.registros?.[0]?.id;
         const consumos = idLogin ? await this._apiIxcSoft.ObterConsumo(idLogin, codigoProvedor) : { registros: [] };
         const agora = new Date();
-        // Contrato sem consumo sincronizado ainda (contrato novo, sem login
-        // encontrado etc.) — a resposta vem sem "registros" em vez de lista
-        // vazia; sem essa defesa quebrava em vez de mostrar 0 de consumo.
-        const consumoMes = (consumos.registros ?? []).filter((c: any) => {
-                const data = new Date(c.data);
 
-                return (
-                    data.getMonth() === agora.getMonth() &&
-                    data.getFullYear() === agora.getFullYear()
-                );
-            });
-       
-        // Cliente sem consumo sincronizado ainda no mês atual (contrato novo, IXC
-        // não gerou registro do dia, etc.) — consumoMes vem vazio; mostra 0 em vez
-        // de quebrar a tela inteira de dados do cliente por causa disso.
-        const consumoAtual = consumoMes[0];
-        const download = consumoAtual ? (Number(consumoAtual.consumo) / (1024 ** 3)).toFixed(1) : "0.0";
-        const upload = consumoAtual ? (Number(consumoAtual.consumo_upload) / (1024 ** 3)).toFixed(1) : "0.0";
+        // radusuarios_consumo_m devolve um registro por mês (às vezes mais de
+        // um por causa de reprocessamento do IXC) — agrupa por mês/ano somando
+        // os bytes, em vez de olhar só o mês atual, senão o gráfico do app
+        // nunca mostra histórico (fica sempre um ponto só), diferente do
+        // ReceitaNet que já devolve vários meses prontos.
+        const porMes = new Map<string, { ano: number; mes: number; download: number; upload: number }>();
+        for (const c of (consumos.registros ?? [])) {
+            const data = new Date(c.data);
+            if (Number.isNaN(data.getTime())) continue;
+            const chave = `${data.getFullYear()}-${data.getMonth()}`;
+            const acumulado = porMes.get(chave) ?? { ano: data.getFullYear(), mes: data.getMonth(), download: 0, upload: 0 };
+            acumulado.download += Number(c.consumo) || 0;
+            acumulado.upload += Number(c.consumo_upload) || 0;
+            porMes.set(chave, acumulado);
+        }
+
+        // Últimos 4 meses (mesma quantidade do demo do ReceitaNet), mais
+        // antigo primeiro — é a ordem que o gráfico do app espera.
+        const historico = [...porMes.values()]
+            .sort((a, b) => (a.ano - b.ano) || (a.mes - b.mes))
+            .slice(-4);
+
+        // Cliente sem consumo sincronizado ainda (contrato novo, IXC não
+        // gerou registro do mês, etc.) — mostra 0 no mês atual em vez de
+        // quebrar a tela inteira de dados do cliente por causa disso.
+        if (historico.length === 0) historico.push({ ano: agora.getFullYear(), mes: agora.getMonth(), download: 0, upload: 0 });
         const clienteDto:clienteDto = {
             idContrato : contratos[0].id,
             dadosCadastrais :{
@@ -129,9 +138,9 @@ export default class IxcSoftServices implements IIxcSoftServices{
                 total: produto.total,
             }],
             consumos: {
-                consumoMensalLabels :  [`${(consumoAtual ? new Date(consumoAtual.data) : agora).getMonth() + 1}/${(consumoAtual ? new Date(consumoAtual.data) : agora).getFullYear()}`],
-                consumoMensalDown :  [Number.parseFloat(download)],
-                consumoMensalUp : [Number.parseFloat(upload)]
+                consumoMensalLabels: historico.map((h) => `${h.mes + 1}/${h.ano}`),
+                consumoMensalDown: historico.map((h) => Number.parseFloat((h.download / (1024 ** 3)).toFixed(1))),
+                consumoMensalUp: historico.map((h) => Number.parseFloat((h.upload / (1024 ** 3)).toFixed(1))),
             },
             ultimasFaturas: await Promise.all((faturas.registros ?? []).map(async (fat:any) => {
                 const pix = await this.ObterPixSeAberta(fat, codigoProvedor);
