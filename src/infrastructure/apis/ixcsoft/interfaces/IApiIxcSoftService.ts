@@ -40,4 +40,10 @@ export default interface IApiIxcSoftService {
     // OBS: só funciona se o provedor não usa ACS vinculado ao login (nesse caso
     // o próprio IXC move esses campos pra dentro do dispositivo ACS).
     AtualizarLogin(idLogin:number, dados:{ ssidWifi?:string; senhaWifi?:string; ssidWifi5ghz?:string; senhaWifi5ghz?:string }, codigoProvedor:string) : Promise<any>
+    // Checagem rápida de credencial — só confirma que domínio + usuário/senha
+    // da API ainda são aceitos pelo servidor IXC do provedor (sem buscar dado
+    // nenhum de cliente). Usado pelo botão "Testar conexão" no painel, pra
+    // avisar na hora quando a credencial cai (ex.: revogada no painel IXC),
+    // em vez de só descobrir quando um cliente reclama.
+    TestarConexao(codigoProvedor:string) : Promise<void>
 }

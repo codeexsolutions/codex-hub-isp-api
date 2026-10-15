@@ -15,6 +15,8 @@ import IApiIxcSoftService from "../../infrastructure/apis/ixcsoft/interfaces/IAp
 import ApiIxcSoftService from "../../infrastructure/apis/ixcsoft/ApiIxcSoftService";
 import IApiMkAuthService from "../../infrastructure/apis/mkauth/interfaces/IApiMkAuthService";
 import ApiMkAuthService from "../../infrastructure/apis/mkauth/ApiMkAuthService";
+import IApiSgpService from "../../infrastructure/apis/sgp/interfaces/IApiSgpService";
+import ApiSgpService from "../../infrastructure/apis/sgp/ApiSgpService";
 import IIxcSoftServices from "../../application/interfaces/IIxcSoftServices";
 import IxcSoftServices from "../../application/services/IxcSoftServices";
 import IPainelServices from "../../application/interfaces/IPainelService";
@@ -45,6 +47,10 @@ import INotificacaoParceiroRepository from "../../core/interfaces/INotificacaoPa
 import NotificacaoParceiroRepository from "../../infrastructure/repositories/NotificacaoParceiroRepository";
 import INotificacaoParceiroServices from "../../application/interfaces/INotificacaoParceiroServices";
 import NotificacaoParceiroServices from "../../application/services/NotificacaoParceiroServices";
+import IRevendedorRepository from "../../core/interfaces/IRevendedorRepository";
+import RevendedorRepository from "../../infrastructure/repositories/RevendedorRepository";
+import IRevendedorServices from "../../application/interfaces/IRevendedorServices";
+import RevendedorServices from "../../application/services/RevendedorServices";
 
 
 container.registerSingleton<IDBContext>("IDBContext", DBContext);
@@ -54,6 +60,7 @@ container.registerSingleton<IReceitanetServices>("IReceitanetServices", Receitan
 container.registerSingleton<IApiReceitanetServices>("IApiReceitanetServices", ApiReceitanetServices);
 container.registerSingleton<IApiIxcSoftService>("IApiIxcSoftService", ApiIxcSoftService);
 container.registerSingleton<IApiMkAuthService>("IApiMkAuthService", ApiMkAuthService);
+container.registerSingleton<IApiSgpService>("IApiSgpService", ApiSgpService);
 container.registerSingleton<IProvedorRepository>("IProvedorRepository", ProvedorRepository);
 container.registerSingleton<IProvedorServices>("IProvedorServices", ProvedorServices);
 container.registerSingleton<IPainelServices>("IPainelServices", PainelService);
@@ -70,3 +77,5 @@ container.registerSingleton<INotificacaoPainelRepository>("INotificacaoPainelRep
 container.registerSingleton<INotificacaoPainelServices>("INotificacaoPainelServices", NotificacaoPainelServices);
 container.registerSingleton<INotificacaoParceiroRepository>("INotificacaoParceiroRepository", NotificacaoParceiroRepository);
 container.registerSingleton<INotificacaoParceiroServices>("INotificacaoParceiroServices", NotificacaoParceiroServices);
+container.registerSingleton<IRevendedorRepository>("IRevendedorRepository", RevendedorRepository);
+container.registerSingleton<IRevendedorServices>("IRevendedorServices", RevendedorServices);

@@ -19,4 +19,5 @@ export default interface IIxcSoftServices {
     AtualizarPerfil(cpf:string, codigoProvedor:string, dados:{ email?:string; telefone?:string; celular?:string }) : Promise<void>
     ReiniciarRoteador(cpf:string, codigoProvedor:string) : Promise<void>
     AlterarSenhaWifi(cpf:string, codigoProvedor:string, dados:{ ssidWifi?:string; senhaWifi?:string; ssidWifi5ghz?:string; senhaWifi5ghz?:string }) : Promise<void>
+    TestarConexao(codigoProvedor:string) : Promise<void>
 }

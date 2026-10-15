@@ -28,6 +28,7 @@ import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
+import { revendedorModel } from "../../core/models/revendedorModel";
 
 export default interface IPainelServices {
 
@@ -101,6 +102,7 @@ export default interface IPainelServices {
     // PONTOS MANUAIS (pagamento em dia / indicação efetivada)
     ConcederPontosManual(codigoProvedor:number, clienteCpfCnpj:string, clienteNome:string, pontos:number, motivo:string) : Promise<extratoPontosModel>
     MarcarIndicacaoEfetivada(idIndicacao:number, codigoProvedor:number) : Promise<{ indicacao:any; extrato:extratoPontosModel }>
+    ValidarCupomPontos(codigoProvedor:number, cupom:string) : Promise<extratoPontosModel>
 
     // MODULOS
     ObterModulosAtivos(codigoProvedor:number) : Promise<string[]>
@@ -186,6 +188,9 @@ export default interface IPainelServices {
     AprovarLicencaTv(id:number) : Promise<licencaTvModel>
     CancelarLicencaTv(id:number) : Promise<licencaTvModel>
     DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel>
+    CriarRevendedor(nome:string, usuario:string, senha:string) : Promise<revendedorModel>
+    ListarRevendedores() : Promise<revendedorModel[]>
+    DefinirStatusRevendedor(id:number, ativo:boolean) : Promise<revendedorModel>
 
     // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)
     ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel>

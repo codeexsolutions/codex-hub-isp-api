@@ -10,5 +10,7 @@ export type extratoPontosModel = {
     origem_indicacao_id?:number|null;
     motivo?:string|null;
     cupom_codigo:string|null;
+    cupom_usado?:boolean;
+    cupom_usado_em?:string|null;
     criado_em?:string;
 }

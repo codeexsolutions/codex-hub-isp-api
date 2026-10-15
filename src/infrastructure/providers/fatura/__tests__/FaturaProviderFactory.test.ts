@@ -3,12 +3,14 @@ import FaturaProviderFactory from "../FaturaProviderFactory";
 import ReceitaNetFaturaProvider from "../ReceitaNetFaturaProvider";
 import IxcFaturaProvider from "../IxcFaturaProvider";
 import MkAuthFaturaProvider from "../MkAuthFaturaProvider";
+import SgpFaturaProvider from "../SgpFaturaProvider";
 
 describe("FaturaProviderFactory", () => {
     const receitaNetProvider = new ReceitaNetFaturaProvider({} as any);
     const ixcProvider = new IxcFaturaProvider({} as any);
     const mkAuthProvider = new MkAuthFaturaProvider({} as any);
-    const factory = new FaturaProviderFactory(receitaNetProvider, ixcProvider, mkAuthProvider);
+    const sgpProvider = new SgpFaturaProvider({} as any);
+    const factory = new FaturaProviderFactory(receitaNetProvider, ixcProvider, mkAuthProvider, sgpProvider);
 
     it("devolve o provider do IXC quando gerenciador é IXCSOFT", () => {
         expect(factory.criar("IXCSOFT")).toBe(ixcProvider);
@@ -16,6 +18,10 @@ describe("FaturaProviderFactory", () => {
 
     it("devolve o provider do MK-Auth quando gerenciador é MKAUTH", () => {
         expect(factory.criar("MKAUTH")).toBe(mkAuthProvider);
+    });
+
+    it("devolve o provider do SGP quando gerenciador é SGP", () => {
+        expect(factory.criar("SGP")).toBe(sgpProvider);
     });
 
     it("devolve o provider do ReceitaNet pra qualquer outro valor (mesmo comportamento do else implícito de antes)", () => {

@@ -3,4 +3,5 @@ export type payloadToken = {
     codigoProvedor:string;
     role?:string;
     parceiroId?:string;
+    revendedorId?:string;
 }

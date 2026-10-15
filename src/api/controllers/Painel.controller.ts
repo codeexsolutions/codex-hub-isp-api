@@ -27,6 +27,7 @@ import { lpVantagemModel } from "../../core/models/lpVantagemModel";
 import { lpAppModel } from "../../core/models/lpAppModel";
 import INotificacaoPainelServices from "../../application/interfaces/INotificacaoPainelServices";
 import { pushSubscriptionPainelDto } from "../../application/Dtos/pushSubscriptionPainelDto";
+import IIxcSoftServices from "../../application/interfaces/IIxcSoftServices";
 
 @injectable()
 export default class PainelController {
@@ -35,15 +36,34 @@ export default class PainelController {
     private readonly _tokenService: ITokenService;
     private readonly _painelService:IPainelServices;
     private readonly _notificacaoPainelService:INotificacaoPainelServices;
+    private readonly _ixcSoftServices:IIxcSoftServices;
     constructor(@inject("IProvedorServices")provedorServices:IProvedorServices,
                 @inject("ITokenService")tokenService:ITokenService,
                 @inject("IPainelServices")paineService:IPainelServices,
-                @inject("INotificacaoPainelServices")notificacaoPainelService:INotificacaoPainelServices
+                @inject("INotificacaoPainelServices")notificacaoPainelService:INotificacaoPainelServices,
+                @inject("IIxcSoftServices")ixcSoftServices:IIxcSoftServices
             ){
         this._provedorService = provedorServices;
         this._tokenService = tokenService;
         this._painelService = paineService;
         this._notificacaoPainelService = notificacaoPainelService;
+        this._ixcSoftServices = ixcSoftServices;
+    }
+
+    // Testa se a credencial de API do IXC salva pro provedor ainda é aceita
+    // pelo servidor dele — avisa na hora quando a credencial cai (revogada,
+    // trocada no painel IXC etc.), em vez de só descobrir quando um cliente
+    // reclama que o app parou de mostrar os dados.
+    async TestarConexaoIxc(req:AuthRequest, res:Response){
+
+        const codigoProvedor = req.usuario?.codigoProvedor as string;
+
+        try {
+            await this._ixcSoftServices.TestarConexao(codigoProvedor);
+            return res.json({ data: { ok: true } });
+        } catch (error:any) {
+            return res.status(200).json({ data: { ok: false, message: error.message || "Não foi possível conectar ao IXC." } });
+        }
     }
 
     // CENTRAL DE NOTIFICAÇÕES DO PAINEL (sino do provedor) — separada da
@@ -886,6 +906,21 @@ export default class PainelController {
         }
     }
 
+    // O provedor digita o cupom que o cliente recebeu ao resgatar uma recompensa,
+    // na hora de entregar o benefício, pra confirmar e marcar o cupom como usado.
+    async ValidarCupomPontos(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const cupom = req.params.cupom as string;
+
+        try {
+            const extrato = await this._painelService.ValidarCupomPontos(codigoProvedor, cupom);
+            return res.status(200).json({ data: extrato });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
     async CriarParceiroAdmin(req:AuthRequest, res:Response){
 
         const data = req.body as parceiroModel;
@@ -1282,6 +1317,37 @@ export default class PainelController {
             return res.json({data: licenca})
         } catch (error: any) {
             return res.status(400).json({ message: error.message })
+        }
+    }
+
+    // REVENDEDOR DE IPTV — contas criadas só pelo admin Synk (painel básico,
+    // separado de Admin/Provedor/Parceiro; ver Revendedor.controller.ts).
+    async CriarRevendedorAdmin(req:AuthRequest, res:Response){
+
+        const { nome, usuario, senha } = req.body || {};
+        try {
+            const revendedor = await this._painelService.CriarRevendedor(nome, usuario, senha);
+            return res.status(201).json({ data: revendedor });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
+
+    async ListarRevendedoresAdmin(req:AuthRequest, res:Response){
+
+        const revendedores = await this._painelService.ListarRevendedores();
+        return res.json({ data: revendedores });
+    }
+
+    async DefinirStatusRevendedorAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const { ativo } = req.body;
+        try {
+            const revendedor = await this._painelService.DefinirStatusRevendedor(id, !!ativo);
+            return res.json({ data: revendedor });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
         }
     }
 

@@ -23,6 +23,7 @@ import { ixcContratoConfigModel } from "../models/ixcContratoConfigModel";
 import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../models/licencaTvModel";
+import { revendedorModel } from "../models/revendedorModel";
 import { planoInternetModel } from "../models/planoInternetModel";
 import { lpConfigModel } from "../models/lpConfigModel";
 import { lpVantagemModel } from "../models/lpVantagemModel";
@@ -101,6 +102,7 @@ export default interface IPainelRepository {
     // PONTOS MANUAIS (pagamento em dia / indicação efetivada)
     ConcederPontosManual(codigoProvedor:number, clienteCpfCnpj:string, clienteNome:string, pontos:number, motivo:string) : Promise<extratoPontosModel>
     MarcarIndicacaoEfetivada(idIndicacao:number, codigoProvedor:number) : Promise<{ indicacao:any; extrato:extratoPontosModel }>
+    ValidarCupomPontos(codigoProvedor:number, cupom:string) : Promise<extratoPontosModel>
 
     // MODULOS
     ObterModulosAtivos(codigoProvedor:number) : Promise<string[]>
@@ -153,6 +155,9 @@ export default interface IPainelRepository {
     AprovarLicencaTv(id:number) : Promise<licencaTvModel>
     CancelarLicencaTv(id:number) : Promise<licencaTvModel>
     DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel>
+    CriarRevendedor(nome:string, usuario:string, senha:string) : Promise<revendedorModel>
+    ListarRevendedores() : Promise<revendedorModel[]>
+    DefinirStatusRevendedor(id:number, status:string) : Promise<revendedorModel>
     VencerLicencasTvExpiradas() : Promise<void>
 
     // HOME CONFIGURÁVEL (blocos ativos/ocultos na tela inicial do app)

@@ -18,6 +18,7 @@ export type provedorModel = {
     dominio_ixc?:string;
     dominio_mkauth?:string;
     mkauth_client_id?:string;
+    dominio_sgp?:string;
     usuario:string;
     senha:string;
 }

@@ -39,6 +39,8 @@ import crypto from "crypto";
 import IProvedorRepository from "../../core/interfaces/IProvedorRepository";
 import IIxcSoftServices from "../interfaces/IIxcSoftServices";
 import { eGerenciador } from "../../common/enuns/egerenciador";
+import { revendedorModel } from "../../core/models/revendedorModel";
+import { gerarChaveLicenca } from "../../common/utilities/chaveLicenca";
 
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
@@ -435,6 +437,12 @@ export default class PainelService implements IPainelServices {
         return await this._painelRepository.MarcarIndicacaoEfetivada(idIndicacao, codigoProvedor);
     }
 
+    async ValidarCupomPontos(codigoProvedor:number, cupom:string) : Promise<extratoPontosModel> {
+        if(!cupom?.trim())
+            throw new Error("Informe o código do cupom.");
+        return await this._painelRepository.ValidarCupomPontos(codigoProvedor, cupom.trim().toUpperCase());
+    }
+
     async ObterRelatorioComprasAdmin() {
         const [resumo, compras] = await Promise.all([
             this._painelRepository.ObterResumoComprasGlobal(),
@@ -800,11 +808,6 @@ export default class PainelService implements IPainelServices {
         });
     }
 
-    private gerarChaveLicenca(): string {
-        const bloco = () => crypto.randomBytes(3).toString("hex").toUpperCase();
-        return `SYNK-${bloco()}-${bloco()}`;
-    }
-
     // PIX próprio da licença (config_licenca_tv) — deliberadamente separado
     // do synk_pix_config usado em Faturamento/Comissão do provedor.
     private async gerarPixLicenca(licenca: licencaTvModel) {
@@ -827,7 +830,7 @@ export default class PainelService implements IPainelServices {
             throw new Error("Informe nome e telefone.");
 
         const config = await this._painelRepository.ObterConfigLicencaTv();
-        const chave = this.gerarChaveLicenca();
+        const chave = gerarChaveLicenca();
         const licenca = await this._painelRepository.CriarLicencaTv(chave, nome.trim(), telefone.trim(), Number(config.valor_anual));
         const pix = await this.gerarPixLicenca(licenca);
 
@@ -862,6 +865,25 @@ export default class PainelService implements IPainelServices {
 
     async DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel> {
         return await this._painelRepository.DefinirLinkPagamentoListaLicencaTv(id, link?.trim() || null);
+    }
+
+    // REVENDEDOR DE IPTV (painel básico, separado de Admin/Provedor/Parceiro)
+    // Conta criada só pelo admin Synk — sem auto-cadastro público.
+    async CriarRevendedor(nome:string, usuario:string, senha:string) : Promise<revendedorModel> {
+        if (!nome?.trim() || !usuario?.trim() || !senha?.trim())
+            throw new Error("Informe nome, usuário e senha.");
+        if (senha.trim().length < 4)
+            throw new Error("A senha precisa ter pelo menos 4 caracteres.");
+
+        return await this._painelRepository.CriarRevendedor(nome.trim(), usuario.trim(), senha.trim());
+    }
+
+    async ListarRevendedores() : Promise<revendedorModel[]> {
+        return await this._painelRepository.ListarRevendedores();
+    }
+
+    async DefinirStatusRevendedor(id:number, ativo:boolean) : Promise<revendedorModel> {
+        return await this._painelRepository.DefinirStatusRevendedor(id, ativo ? "ATIVO" : "INATIVO");
     }
 
     async ObterHomeConfig(codigoProvedor:number) : Promise<homeConfigModel> {

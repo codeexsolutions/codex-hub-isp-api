@@ -421,4 +421,8 @@ export default class IxcSoftServices implements IIxcSoftServices{
         await this._apiIxcSoft.AtualizarLogin(login.id, dados, codigoProvedor);
     }
 
+    async TestarConexao(codigoProvedor: string): Promise<void> {
+        await this._apiIxcSoft.TestarConexao(codigoProvedor);
+    }
+
 }

@@ -61,11 +61,12 @@ export default class ProvedorRepository implements IProvedorRepository{
             gerenciador = COALESCE($8, gerenciador),
             dominio_ixc = COALESCE($9, dominio_ixc),
             dominio_mkauth = COALESCE($10, dominio_mkauth),
-            mkauth_client_id = COALESCE($11, mkauth_client_id)
+            mkauth_client_id = COALESCE($11, mkauth_client_id),
+            dominio_sgp = COALESCE($12, dominio_sgp)
             WHERE codigo_provedor = $7
             RETURNING id`
 
-        const alterado = await this._db.Execulte(update, [provedorEdite.nome_fantasia, provedorEdite.nome_administrador, provedorEdite.codigo_api_gerenciador, provedorEdite.chave_api_gerenciador, provedorEdite.usuario, provedorEdite.senha, provedorEdite.codigo_provedor, provedorEdite.gerenciador, provedorEdite.dominio_ixc, provedorEdite.dominio_mkauth, provedorEdite.mkauth_client_id])
+        const alterado = await this._db.Execulte(update, [provedorEdite.nome_fantasia, provedorEdite.nome_administrador, provedorEdite.codigo_api_gerenciador, provedorEdite.chave_api_gerenciador, provedorEdite.usuario, provedorEdite.senha, provedorEdite.codigo_provedor, provedorEdite.gerenciador, provedorEdite.dominio_ixc, provedorEdite.dominio_mkauth, provedorEdite.mkauth_client_id, provedorEdite.dominio_sgp])
         
         if(alterado.length == 0)
             throw new Error("Não foi possivel cadastrar o provedor.")
@@ -95,7 +96,8 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.usuario,
             provedor.senha,
             provedor.dominio_mkauth,
-            provedor.mkauth_client_id
+            provedor.mkauth_client_id,
+            provedor.dominio_sgp
         );
     }
 
@@ -121,7 +123,8 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.usuario,
             provedor.senha,
             provedor.dominio_mkauth,
-            provedor.mkauth_client_id
+            provedor.mkauth_client_id,
+            provedor.dominio_sgp
         );
     }
 
@@ -146,7 +149,8 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.usuario,
             provedor.senha,
             provedor.dominio_mkauth,
-            provedor.mkauth_client_id
+            provedor.mkauth_client_id,
+            provedor.dominio_sgp
         );
     }
 
@@ -491,7 +495,8 @@ export default class ProvedorRepository implements IProvedorRepository{
             provedor.usuario,
             provedor.senha,
             provedor.dominio_mkauth,
-            provedor.mkauth_client_id
+            provedor.mkauth_client_id,
+            provedor.dominio_sgp
         );
     }
 

@@ -18,10 +18,11 @@ export default class Provedor {
     public DominioIxc?:string;
     public DominioMkAuth?:string;
     public MkAuthClientId?:string;
+    public DominioSgp?:string;
     public Usuario:string;
     private _Senha:string;
 
-    constructor(empresa:string, nomeFantasia:string, codigoProvedor:number, status:estatus, gerenciador:eGerenciador, codigoApiGerenciador:number, chaveApiGerenciador:string, nomeAdministrador:string, cpfcnpj:string, dominio:string = "", usuario:string, senha:string, dominioMkAuth:string = "", mkAuthClientId:string = ""){
+    constructor(empresa:string, nomeFantasia:string, codigoProvedor:number, status:estatus, gerenciador:eGerenciador, codigoApiGerenciador:number, chaveApiGerenciador:string, nomeAdministrador:string, cpfcnpj:string, dominio:string = "", usuario:string, senha:string, dominioMkAuth:string = "", mkAuthClientId:string = "", dominioSgp:string = ""){
         this.Id = uuidv4();
         this.Codigo = this.Id.toString().substring(0,7).toUpperCase();
         this.Empresa = empresa;
@@ -36,6 +37,7 @@ export default class Provedor {
         this.DominioIxc = dominio;
         this.DominioMkAuth = dominioMkAuth;
         this.MkAuthClientId = mkAuthClientId;
+        this.DominioSgp = dominioSgp;
         this.Usuario = usuario
         this._Senha = senha;
     }

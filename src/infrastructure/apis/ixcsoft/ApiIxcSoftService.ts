@@ -796,6 +796,34 @@ export default class ApiIxcSoftService implements IApiIxcSoftService {
 
     public Token(provedor:Provedor): string {
         return  Buffer.from(`${provedor.ObterCodigoApiGerenciador()}:${provedor.ObterChaveApiGerenciador()}`).toString("base64");
-    } 
+    }
+
+    async TestarConexao(codigoProvedor: string): Promise<void> {
+
+        const provedor = await this._provedorRepository.ObterProvedor(codigoProvedor);
+        if (!provedor.DominioIxc)
+            throw new Error("Domínio do IXC não configurado.");
+
+        const urlBase = `https://${provedor.DominioIxc}/webservice/v1/`;
+        const service = new RequestService(urlBase);
+
+        // rp=1 e um filtro que não depende de nenhum dado existir (id > 0) —
+        // o objetivo é só confirmar que a credencial é aceita, não buscar
+        // nada de verdade. RequestService.Requst já lança erro se a resposta
+        // não for 2xx (é exatamente esse erro que avisa credencial revogada).
+        const configRequest: configRequest = {
+            method: emethodHttp.POST,
+            resource: "cliente",
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Basic ${this.Token(provedor)}`,
+                'ixcsoft': 'listar'
+            },
+            body: { qtype: "cliente.id", query: "0", oper: operadores.MAIOR, page: 1, rp: 1 }
+        }
+
+        await service.Requst(configRequest);
+    }
 
 }

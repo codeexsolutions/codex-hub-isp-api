@@ -27,6 +27,7 @@ import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
+import { revendedorModel } from "../../core/models/revendedorModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
 import { lpConfigModel } from "../../core/models/lpConfigModel";
 import { lpVantagemModel } from "../../core/models/lpVantagemModel";
@@ -551,7 +552,7 @@ export default class PainelRepository implements IPainelRepository {
         const configPontos = await this.ObterConfigPontos();
         const pontos = configPontos?.pontos_indicacao_efetivada ?? 50;
 
-        const update = `UPDATE indicacoes SET status = 'efetivada', pontos_creditados = true WHERE id = $1 RETURNING *;`;
+        const update = `UPDATE indicacoes SET status = 'efetivada', pontos_creditados = true, efetivado_em = now() WHERE id = $1 RETURNING *;`;
         const atualizada = await this._db.Execulte<any>(update, [idIndicacao]);
 
         const insertExtrato = `INSERT INTO pontos_extrato
@@ -562,6 +563,24 @@ export default class PainelRepository implements IPainelRepository {
         ]);
 
         return { indicacao: atualizada[0], extrato: extrato[0] };
+    }
+
+    // Validação do cupom que o cliente recebe ao resgatar uma recompensa (pontos_extrato,
+    // tipo 'resgate') — o provedor digita o código aqui na hora de entregar o benefício
+    // pro cliente, pra não correr o risco de aceitar o mesmo cupom duas vezes.
+    async ValidarCupomPontos(codigoProvedor:number, cupom:string) : Promise<extratoPontosModel> {
+        const select = `SELECT * FROM pontos_extrato WHERE cupom_codigo = $1 AND codigo_provedor_fk = $2 AND tipo = 'resgate';`;
+        const rows = await this._db.Execulte<extratoPontosModel>(select, [cupom, codigoProvedor]);
+        const extrato = rows[0];
+
+        if (!extrato)
+            throw new Error("Cupom não encontrado.");
+        if (extrato.cupom_usado)
+            throw new Error(`Esse cupom já foi validado em ${new Date(extrato.cupom_usado_em as any).toLocaleString("pt-BR")}.`);
+
+        const update = `UPDATE pontos_extrato SET cupom_usado = true, cupom_usado_em = now() WHERE id = $1 RETURNING *;`;
+        const atualizado = await this._db.Execulte<extratoPontosModel>(update, [extrato.id]);
+        return atualizado[0];
     }
 
     // MODULOS
@@ -1051,6 +1070,27 @@ export default class PainelRepository implements IPainelRepository {
     async DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel> {
         const update = `UPDATE licencas_tv SET link_pagamento_lista = $1 WHERE id = $2 RETURNING *;`;
         const result = await this._db.Execulte<licencaTvModel>(update, [link, id]);
+        return result[0];
+    }
+
+    // REVENDEDOR DE IPTV — gestão de contas pelo admin (mesmo padrão de
+    // CriarLicencaTv/ListarLicencasTv acima, só que pra quem vai gerenciar as
+    // próprias licenças depois, via painel próprio — ver RevendedorRepository).
+    async CriarRevendedor(nome:string, usuario:string, senha:string) : Promise<revendedorModel> {
+        const insert = `INSERT INTO revendedores (nome, usuario, senha) VALUES ($1,$2,$3)
+            RETURNING id, nome, usuario, status, criado_em;`;
+        const result = await this._db.Execulte<revendedorModel>(insert, [nome, usuario, senha]);
+        return result[0];
+    }
+
+    async ListarRevendedores() : Promise<revendedorModel[]> {
+        const select = `SELECT id, nome, usuario, status, criado_em FROM revendedores ORDER BY criado_em DESC;`;
+        return await this._db.Execulte<revendedorModel>(select, []);
+    }
+
+    async DefinirStatusRevendedor(id:number, status:string) : Promise<revendedorModel> {
+        const update = `UPDATE revendedores SET status = $1 WHERE id = $2 RETURNING id, nome, usuario, status, criado_em;`;
+        const result = await this._db.Execulte<revendedorModel>(update, [status, id]);
         return result[0];
     }
 

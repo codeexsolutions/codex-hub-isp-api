@@ -17,6 +17,7 @@ const painelController = container.resolve(PainelController);
 painelRouter.post('/login', painelController.LoginPainel.bind(painelController))
 painelRouter.post('/provedor/cadastrar', painelController.CadastrarProvedor.bind(painelController))
 painelRouter.patch('/provedor/atualizar', authMiddleware, painelController.AtualizarProvedor.bind(painelController))
+painelRouter.post('/provedor/ixc/testar-conexao', authMiddleware, painelController.TestarConexaoIxc.bind(painelController))
 painelRouter.get('/provedor/temas', authMiddleware, painelController.ObterTema.bind(painelController));
 painelRouter.put('/provedor/temas', authMiddleware, uploadMiddleware, painelController.AtualizarTema.bind(painelController));
 
@@ -59,6 +60,7 @@ painelRouter.get('/provedor/pontos/recompensas', authMiddleware, moduloMiddlewar
 painelRouter.patch('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("recompensas"), painelController.EditarRecompensa.bind(painelController));
 painelRouter.delete('/provedor/pontos/recompensas/:id', authMiddleware, moduloMiddleware("recompensas"), painelController.ExcluirRecompensa.bind(painelController));
 painelRouter.post('/provedor/pontos/conceder', authMiddleware, moduloMiddleware("recompensas"), painelController.ConcederPontos.bind(painelController));
+painelRouter.patch('/provedor/pontos/cupom/:cupom/validar', authMiddleware, moduloMiddleware("recompensas"), painelController.ValidarCupomPontos.bind(painelController));
 
 // PLANOS DE INTERNET MÓVEL
 painelRouter.post('/provedor/planos-moveis', authMiddleware, moduloMiddleware("planos_moveis"), painelController.GravarPlanoMovel.bind(painelController));
@@ -191,5 +193,8 @@ painelRouter.post('/admin/licencas-tv', authMiddleware, adminMiddleware, painelC
 painelRouter.patch('/admin/licencas-tv/:id/aprovar', authMiddleware, adminMiddleware, painelController.AprovarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/cancelar', authMiddleware, adminMiddleware, painelController.CancelarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/link-lista', authMiddleware, adminMiddleware, painelController.DefinirLinkPagamentoListaLicencaTvAdmin.bind(painelController));
+painelRouter.post('/admin/revendedores', authMiddleware, adminMiddleware, painelController.CriarRevendedorAdmin.bind(painelController));
+painelRouter.get('/admin/revendedores', authMiddleware, adminMiddleware, painelController.ListarRevendedoresAdmin.bind(painelController));
+painelRouter.patch('/admin/revendedores/:id/status', authMiddleware, adminMiddleware, painelController.DefinirStatusRevendedorAdmin.bind(painelController));
 
 export default painelRouter;

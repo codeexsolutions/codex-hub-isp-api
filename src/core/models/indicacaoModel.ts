@@ -9,4 +9,5 @@ export type indicacaoModel = {
     status?:"pendente"|"efetivada";
     pontos_creditados?:boolean;
     criado_em?:string;
+    efetivado_em?:string|null;
 }
