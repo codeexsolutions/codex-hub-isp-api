@@ -1,12 +1,8 @@
 import Provedor from "../../../../core/domains/Provedor";
 
-// Contrato da API do SGP (TSMX) — espelha IApiMkAuthService/IApiIxcSoftService,
-// mas ainda SEM implementação real (ver ApiSgpService.ts). O SGP tem API
-// documentada publicamente via Postman (sgp.net.br redireciona pra
-// https://documenter.getpostman.com/view/6682240/2sB34hHg2V), mas a doc é
-// renderizada via JS e ainda não foi extraída/confirmada — os métodos abaixo
-// só podem ser implementados de verdade depois de ter em mãos a collection
-// real (auth, nomes de endpoint, formato de resposta).
+// Contrato da API do SGP — espelha IApiMkAuthService/IApiIxcSoftService.
+// Implementação real em ApiSgpService.ts, baseada na collection oficial do
+// Postman do SGP (auth via App+Token, endpoints /api/ura/*, /api/central/*).
 export default interface IApiSgpService {
     Token(provedor: Provedor, cpf?: string): Promise<any>;
     TokenPorContrato(provedor: Provedor, cpf: string, idContrato: string): Promise<any>;

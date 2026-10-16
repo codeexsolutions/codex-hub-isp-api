@@ -15,5 +15,6 @@ export type cadastroProvedorModel = {
     dominio_mkauth?:string;
     mkauth_client_id?:string;
     dominio_sgp?:string;
+    sgp_app?:string;
 
 }

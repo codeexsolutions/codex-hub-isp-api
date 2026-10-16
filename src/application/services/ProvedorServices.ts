@@ -58,6 +58,8 @@ export default class ProvedorServices implements IProvedorServices {
                 dominio_ixc: provedor.DominioIxc,
                 dominio_mkauth: provedor.DominioMkAuth,
                 mkauth_client_id: provedor.MkAuthClientId,
+                dominio_sgp: provedor.DominioSgp,
+                sgp_app: provedor.SgpApp,
                 senha: provedor?.Senha()
             }
         }
@@ -79,6 +81,8 @@ export default class ProvedorServices implements IProvedorServices {
             dominio_ixc: novoProvedor.DominioIxc,
             dominio_mkauth: novoProvedor.DominioMkAuth,
             mkauth_client_id: novoProvedor.MkAuthClientId,
+            dominio_sgp: novoProvedor.DominioSgp,
+            sgp_app: novoProvedor.SgpApp,
             senha: novoProvedor.Senha()
         }
     }
@@ -97,7 +101,9 @@ export default class ProvedorServices implements IProvedorServices {
                 gerenciador: update.gerenciador,
                 dominio_ixc: update.dominio_ixc,
                 dominio_mkauth: update.dominio_mkauth,
-                mkauth_client_id: update.mkauth_client_id
+                mkauth_client_id: update.mkauth_client_id,
+                dominio_sgp: update.dominio_sgp,
+                sgp_app: update.sgp_app
 
             })
 
@@ -116,6 +122,8 @@ export default class ProvedorServices implements IProvedorServices {
             dominio_ixc: provedorAtualizado.DominioIxc,
             dominio_mkauth: provedorAtualizado.DominioMkAuth,
             mkauth_client_id: provedorAtualizado.MkAuthClientId,
+            dominio_sgp: provedorAtualizado.DominioSgp,
+            sgp_app: provedorAtualizado.SgpApp,
             senha: provedorAtualizado.Senha()
         }
     }

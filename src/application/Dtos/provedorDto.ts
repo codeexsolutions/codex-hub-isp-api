@@ -41,6 +41,8 @@ export type provedorPainelDto = {
     dominio_ixc?:string;
     dominio_mkauth?:string;
     mkauth_client_id?:string;
+    dominio_sgp?:string;
+    sgp_app?:string;
     usuario:string;
     senha?: string;
 }
