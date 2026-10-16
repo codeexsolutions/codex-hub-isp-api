@@ -5,6 +5,7 @@ import IptvProxyController from "../controllers/IptvProxy.controller";
 const iptvProxyRoute = Router();
 const iptvProxyController = container.resolve(IptvProxyController);
 
+iptvProxyRoute.post('/chamar', iptvProxyController.Chamar.bind(iptvProxyController));
 iptvProxyRoute.post('/autenticar', iptvProxyController.Autenticar.bind(iptvProxyController));
 iptvProxyRoute.post('/categorias', iptvProxyController.Categorias.bind(iptvProxyController));
 iptvProxyRoute.post('/canais', iptvProxyController.Canais.bind(iptvProxyController));

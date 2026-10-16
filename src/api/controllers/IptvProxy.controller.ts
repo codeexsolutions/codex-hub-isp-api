@@ -18,8 +18,70 @@ function normalizarServidor(url: string): string {
     return s.replace(/\/+$/, "");
 }
 
+// Faixas de IP privadas/loopback — nunca deixa o proxy alcançar a rede
+// interna do servidor a partir de um "servidor" IPTV controlado pelo
+// usuário (SSRF). Cobre só os casos óbvios (IPv4 privado/loopback/link-local
+// e IPv6 loopback/link-local/ULA); não tenta blindar contra DNS rebinding —
+// suficiente pro risco real aqui (servidor de IPTV de terceiro).
+function enderecoProibido(hostname: string): boolean {
+    const h = hostname.toLowerCase();
+    if (h === "localhost" || h === "::1" || h === "0.0.0.0") return true;
+
+    const partesIpv4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (partesIpv4) {
+        const [a, b] = [Number(partesIpv4[1]), Number(partesIpv4[2])];
+        if (a === 127) return true;
+        if (a === 10) return true;
+        if (a === 172 && b >= 16 && b <= 31) return true;
+        if (a === 192 && b === 168) return true;
+        if (a === 169 && b === 254) return true;
+        if (a === 100 && b >= 64 && b <= 127) return true;
+        return false;
+    }
+
+    return h.startsWith("fe80:") || h.startsWith("fc") || h.startsWith("fd");
+}
+
 @injectable()
 export default class IptvProxyController {
+
+    // Relay genérico pro player_api.php — cobre as ações que Autenticar/
+    // Categorias/Canais (abaixo) não cobrem: filmes, séries e seus detalhes
+    // (get_vod_categories, get_vod_streams, get_series_categories,
+    // get_series, get_vod_info, get_series_info). Usado pelo app Synk TV
+    // (webOS/Tizen) pra TODAS as chamadas de API Xtream — alguns servidores
+    // (proteção anti-bot tipo Cloudflare) bloqueiam a chamada quando ela
+    // parte direto do navegador da TV, mas respondem normal quando parte do
+    // backend (confirmado manualmente contra um servidor real). `params` é
+    // repassado como querystring adicional pro player_api.php (ex.:
+    // "action=get_vod_streams&category_id=5").
+    async Chamar(req: Request, res: Response) {
+        const { servidor, usuario, senha, params } = req.body as { servidor: string; usuario: string; senha: string; params?: string };
+
+        const base = normalizarServidor(servidor);
+        if (!base) return res.status(400).json({ statusCode: 400, message: "Parâmetro 'servidor' é obrigatório.", data: null });
+
+        let alvo: URL;
+        try {
+            alvo = new URL(`${base}/player_api.php?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}${params ? `&${params}` : ""}`);
+        } catch {
+            return res.status(400).json({ statusCode: 400, message: "Servidor inválido.", data: null });
+        }
+        if (alvo.protocol !== "http:" && alvo.protocol !== "https:")
+            return res.status(400).json({ statusCode: 400, message: "Servidor precisa usar http ou https.", data: null });
+        if (enderecoProibido(alvo.hostname))
+            return res.status(400).json({ statusCode: 400, message: "Servidor não permitido.", data: null });
+
+        try {
+            const upstream = await fetch(alvo.toString(), { signal: AbortSignal.timeout(20000) });
+            const texto = await upstream.text();
+            res.status(upstream.ok ? 200 : upstream.status);
+            res.type("application/json");
+            return res.send(texto);
+        } catch (error: any) {
+            return res.status(502).json({ statusCode: 502, message: error?.message || "Não foi possível alcançar o servidor IPTV.", data: null });
+        }
+    }
 
     async Autenticar(req: Request, res: Response) {
         try {
