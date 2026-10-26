@@ -580,10 +580,10 @@ export default class ProvedorRepository implements IProvedorRepository{
         return await this._db.Execulte("SELECT * FROM avaliacao_app WHERE codigo_provedor_fk = $1", [codigoProvedor])
     }
 
-    async CriarAtivacaoTv(codigo:string, codigoProvedor:number, clienteNome:string | null) : Promise<ativacaoTvModel> {
-        const insert = `INSERT INTO ativacoes_tv (codigo, codigo_provedor_fk, cliente_nome)
-                        VALUES ($1, $2, $3) RETURNING *;`;
-        const result = await this._db.Execulte<ativacaoTvModel>(insert, [codigo, codigoProvedor, clienteNome]);
+    async CriarAtivacaoTv(codigo:string, codigoProvedor:number, clienteNome:string | null, valor:number | null) : Promise<ativacaoTvModel> {
+        const insert = `INSERT INTO ativacoes_tv (codigo, codigo_provedor_fk, cliente_nome, valor)
+                        VALUES ($1, $2, $3, $4) RETURNING *;`;
+        const result = await this._db.Execulte<ativacaoTvModel>(insert, [codigo, codigoProvedor, clienteNome, valor]);
         return result[0];
     }
 

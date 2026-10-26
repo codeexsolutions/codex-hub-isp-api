@@ -728,13 +728,14 @@ export default class PainelRepository implements IPainelRepository {
         return result[0] ?? null;
     }
 
-    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null) : Promise<assinaturaModel> {
-        const upsert = `INSERT INTO provedor_assinaturas (codigo_provedor_fk, valor_mensalidade, data_adesao, plano_id, ativo)
-            VALUES ($1, $2, $3, $4, true)
+    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, somarAtivacaoTv:boolean) : Promise<assinaturaModel> {
+        const upsert = `INSERT INTO provedor_assinaturas (codigo_provedor_fk, valor_mensalidade, data_adesao, plano_id, somar_ativacao_tv, ativo)
+            VALUES ($1, $2, $3, $4, $5, true)
             ON CONFLICT (codigo_provedor_fk)
-            DO UPDATE SET valor_mensalidade = EXCLUDED.valor_mensalidade, data_adesao = EXCLUDED.data_adesao, plano_id = EXCLUDED.plano_id
+            DO UPDATE SET valor_mensalidade = EXCLUDED.valor_mensalidade, data_adesao = EXCLUDED.data_adesao,
+                plano_id = EXCLUDED.plano_id, somar_ativacao_tv = EXCLUDED.somar_ativacao_tv
             RETURNING *;`;
-        const result = await this._db.Execulte<assinaturaModel>(upsert, [codigoProvedor, valorMensalidade, dataAdesao, planoId]);
+        const result = await this._db.Execulte<assinaturaModel>(upsert, [codigoProvedor, valorMensalidade, dataAdesao, planoId, somarAtivacaoTv]);
         return result[0];
     }
 
@@ -867,22 +868,40 @@ export default class PainelRepository implements IPainelRepository {
         return { competencia, vencimento };
     }
 
+    // Soma, pro mês da competência, o valor de acesso (ativacoes_tv.valor) de todo
+    // código usado (usado_em) nesse mês pra esse provedor — só quando o admin ligou
+    // somar_ativacao_tv na assinatura dele (ver AdminFaturamentoPage/ConfigurarAssinaturaAdmin).
+    private async SomaAtivacaoTvDoMes(codigoProvedor:number, competencia:string) : Promise<number> {
+        const select = `SELECT COALESCE(SUM(valor), 0) AS total FROM ativacoes_tv
+            WHERE codigo_provedor_fk = $1 AND status = 'ativo' AND valor IS NOT NULL
+                AND usado_em >= $2::date AND usado_em < ($2::date + INTERVAL '1 month');`;
+        const result = await this._db.Execulte<{ total:string }>(select, [codigoProvedor, competencia]);
+        return Number(result[0]?.total ?? 0);
+    }
+
     async GarantirFaturaDoMes(codigoProvedor:number) : Promise<void> {
         const assinatura = await this.ObterAssinatura(codigoProvedor);
         if (!assinatura || !assinatura.ativo) return;
 
         const { competencia, vencimento } = this.calcularCompetenciaEVencimento(assinatura.data_adesao);
 
+        let valor = Number(assinatura.valor_mensalidade);
+        if (assinatura.somar_ativacao_tv) {
+            valor += await this.SomaAtivacaoTvDoMes(codigoProvedor, competencia);
+        }
+
         // Se a fatura do mês já existe e ainda está pendente, sincroniza valor/vencimento
         // com a assinatura atual — sem isso, mudar o plano/valor no admin nunca refletia
-        // numa fatura já gerada (nem no PIX, que é montado a partir do valor dela).
+        // numa fatura já gerada (nem no PIX, que é montado a partir do valor dela). O mesmo
+        // vale pro total de ativações TV do mês: ele é recalculado a cada varredura até a
+        // fatura ser paga, pra acompanhar código usado depois da fatura já existir.
         // Fatura já paga ou cancelada nunca é tocada (é histórico).
         const insert = `INSERT INTO provedor_faturas (codigo_provedor_fk, competencia, vencimento, valor)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (codigo_provedor_fk, competencia) DO UPDATE SET
                 valor = EXCLUDED.valor, vencimento = EXCLUDED.vencimento
             WHERE provedor_faturas.status = 'pendente';`;
-        await this._db.Execulte<any>(insert, [codigoProvedor, competencia, vencimento, assinatura.valor_mensalidade]);
+        await this._db.Execulte<any>(insert, [codigoProvedor, competencia, vencimento, valor]);
     }
 
     async GarantirFaturasTodos() : Promise<void> {

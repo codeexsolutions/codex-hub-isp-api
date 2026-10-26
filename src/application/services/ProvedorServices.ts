@@ -636,9 +636,10 @@ export default class ProvedorServices implements IProvedorServices {
     // ATIVAÇÃO TV — código gerado pelo provedor e enviado pro cliente. É o que
     // realmente autoriza pular a licença paga do synk-tv; o codigo_provedor
     // sozinho não basta (é público, usado só pra tema/branding).
-    async GerarAtivacaoTv(codigoProvedor: number, clienteNome?: string): Promise<ativacaoTvModel> {
+    async GerarAtivacaoTv(codigoProvedor: number, clienteNome?: string, valor?: number | null): Promise<ativacaoTvModel> {
         const codigo = gerarCupom();
-        return await this._provedorRepository.CriarAtivacaoTv(codigo, codigoProvedor, clienteNome?.trim() || null);
+        const valorAcesso = valor != null && Number(valor) > 0 ? Number(valor) : null;
+        return await this._provedorRepository.CriarAtivacaoTv(codigo, codigoProvedor, clienteNome?.trim() || null, valorAcesso);
     }
 
     async ListarAtivacoesTv(codigoProvedor: number): Promise<ativacaoTvModel[]> {

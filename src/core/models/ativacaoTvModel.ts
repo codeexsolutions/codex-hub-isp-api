@@ -3,6 +3,7 @@ export type ativacaoTvModel = {
     codigo: string;
     codigo_provedor_fk: number;
     cliente_nome: string | null;
+    valor: number | null;
     status: "ativo" | "revogado";
     criado_em: string;
     usado_em: string | null;

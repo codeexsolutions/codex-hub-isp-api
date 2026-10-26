@@ -66,7 +66,7 @@ export default interface IProvedorRepository{
     ObterProvedorPorCpfCnpj(cnpj: string): Promise<Provedor | null>
     ObterManifest(codigo:string) : Promise<any>
     // ATIVAÇÃO TV (código por cliente — ver 2026_08_ativacao_tv.sql)
-    CriarAtivacaoTv(codigo:string, codigoProvedor:number, clienteNome:string | null) : Promise<ativacaoTvModel>
+    CriarAtivacaoTv(codigo:string, codigoProvedor:number, clienteNome:string | null, valor:number | null) : Promise<ativacaoTvModel>
     ListarAtivacoesTv(codigoProvedor:number) : Promise<ativacaoTvModel[]>
     ObterAtivacaoTvAtiva(codigo:string, codigoProvedor:string) : Promise<ativacaoTvModel | null>
     MarcarAtivacaoTvUsada(id:number) : Promise<void>
