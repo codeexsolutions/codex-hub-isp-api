@@ -2,6 +2,7 @@ import { Router } from "express";
 import { container } from "tsyringe";
 import NotificationsController from "../controllers/Notifications.controller";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { adminMiddleware } from "../middleware/adminMiddleware";
 
 const notificationRoute = Router();
 const controller = container.resolve(NotificationsController);
@@ -11,6 +12,12 @@ notificationRoute.get('/public-key', controller.ObterPublicKey.bind(controller))
 notificationRoute.post('/notificar', authMiddleware, controller.EnviarNotificacao.bind(controller));
 notificationRoute.get('/buscarTodos', authMiddleware, controller.OberTodos.bind(controller));
 notificationRoute.get('/buscarPorCpf', authMiddleware, controller.OberPorCpf.bind(controller));
+
+// ADMIN SYNK — mesmo envio de push pros assinantes, mas o admin escolhe o
+// codigoProvedor explicitamente no lugar de ler do token do provedor logado
+// (ex.: avisar "lista de IPTV em manutenção" pros clientes de um provedor).
+notificationRoute.get('/admin/assinantes', authMiddleware, adminMiddleware, controller.ListarAssinantesAdmin.bind(controller));
+notificationRoute.post('/admin/notificar', authMiddleware, adminMiddleware, controller.EnviarNotificacaoAdmin.bind(controller));
 
 // CENTRAL DE NOTIFICAÇÕES DO CLIENTE (sino do app) — sem authMiddleware, mesmo
 // padrão das demais rotas de cliente (identidade vem de cpf+codigoProvedor)

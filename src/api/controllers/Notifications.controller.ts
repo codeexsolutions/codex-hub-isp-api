@@ -69,6 +69,34 @@ export default class NotificationsController {
 
     }
 
+    // ADMIN SYNK — mesma lógica de EnviarNotificacao/OberTodos, mas o
+    // codigoProvedor vem explícito no request (admin não está logado como
+    // um provedor específico, então não tem req.usuario.codigoProvedor).
+
+    async ListarAssinantesAdmin(req: AuthRequest, res: Response){
+
+        const codigoProvedor = req.query.codigoProvedor as string;
+        if (!codigoProvedor)
+            return res.status(400).json({ message: "Informe o codigoProvedor." });
+
+        const assinantes = await this._service.ListarAssinantes(codigoProvedor)
+        return res.json({ data: assinantes })
+    }
+
+    async EnviarNotificacaoAdmin(req: AuthRequest, res: Response){
+
+        const { codigoProvedor, cpfs, ...data } = req.body as notificacaoDto & { codigoProvedor?:string; cpfs?:string[] };
+        if (!codigoProvedor)
+            return res.status(400).json({ message: "Informe o codigoProvedor." });
+
+        if (Array.isArray(cpfs) && cpfs.length > 0)
+            await this._service.NotificarClientes(cpfs, codigoProvedor, data);
+        else
+            await this._service.Notificar(codigoProvedor, data);
+
+        return res.status(201).json({})
+    }
+
     // CENTRAL DE NOTIFICAÇÕES DO CLIENTE (sino do app)
 
     async ListarMinhasNotificacoes(req: Request, res: Response){
