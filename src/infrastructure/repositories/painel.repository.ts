@@ -728,14 +728,14 @@ export default class PainelRepository implements IPainelRepository {
         return result[0] ?? null;
     }
 
-    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, somarAtivacaoTv:boolean) : Promise<assinaturaModel> {
-        const upsert = `INSERT INTO provedor_assinaturas (codigo_provedor_fk, valor_mensalidade, data_adesao, plano_id, somar_ativacao_tv, ativo)
-            VALUES ($1, $2, $3, $4, $5, true)
+    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, valorLista:number|null, desconto:number|null) : Promise<assinaturaModel> {
+        const upsert = `INSERT INTO provedor_assinaturas (codigo_provedor_fk, valor_mensalidade, data_adesao, plano_id, valor_lista, desconto, ativo)
+            VALUES ($1, $2, $3, $4, $5, $6, true)
             ON CONFLICT (codigo_provedor_fk)
             DO UPDATE SET valor_mensalidade = EXCLUDED.valor_mensalidade, data_adesao = EXCLUDED.data_adesao,
-                plano_id = EXCLUDED.plano_id, somar_ativacao_tv = EXCLUDED.somar_ativacao_tv
+                plano_id = EXCLUDED.plano_id, valor_lista = EXCLUDED.valor_lista, desconto = EXCLUDED.desconto
             RETURNING *;`;
-        const result = await this._db.Execulte<assinaturaModel>(upsert, [codigoProvedor, valorMensalidade, dataAdesao, planoId, somarAtivacaoTv]);
+        const result = await this._db.Execulte<assinaturaModel>(upsert, [codigoProvedor, valorMensalidade, dataAdesao, planoId, valorLista, desconto]);
         return result[0];
     }
 
@@ -868,13 +868,14 @@ export default class PainelRepository implements IPainelRepository {
         return { competencia, vencimento };
     }
 
-    // Soma, pro mês da competência, o valor de acesso (ativacoes_tv.valor) de todo
-    // código usado (usado_em) nesse mês pra esse provedor — só quando o admin ligou
-    // somar_ativacao_tv na assinatura dele (ver AdminFaturamentoPage/ConfigurarAssinaturaAdmin).
-    private async SomaAtivacaoTvDoMes(codigoProvedor:number, competencia:string) : Promise<number> {
-        const select = `SELECT COALESCE(SUM(valor), 0) AS total FROM ativacoes_tv
-            WHERE codigo_provedor_fk = $1 AND status = 'ativo' AND valor IS NOT NULL
-                AND usado_em >= $2::date AND usado_em < ($2::date + INTERVAL '1 month');`;
+    // Conta, pro mês da competência, quantos códigos de Ativação TV o provedor gerou
+    // (1 código = 1 cliente novo) — usado pra aplicar valor_lista por unidade abaixo.
+    // Conta todo código gerado no mês, revogado ou não: revogar depois não desfaz o
+    // cliente que ele já representou naquele mês.
+    private async ContarAtivacoesTvDoMes(codigoProvedor:number, competencia:string) : Promise<number> {
+        const select = `SELECT COUNT(*) AS total FROM ativacoes_tv
+            WHERE codigo_provedor_fk = $1
+                AND criado_em >= $2::date AND criado_em < ($2::date + INTERVAL '1 month');`;
         const result = await this._db.Execulte<{ total:string }>(select, [codigoProvedor, competencia]);
         return Number(result[0]?.total ?? 0);
     }
@@ -885,16 +886,21 @@ export default class PainelRepository implements IPainelRepository {
 
         const { competencia, vencimento } = this.calcularCompetenciaEVencimento(assinatura.data_adesao);
 
-        let valor = Number(assinatura.valor_mensalidade);
-        if (assinatura.somar_ativacao_tv) {
-            valor += await this.SomaAtivacaoTvDoMes(codigoProvedor, competencia);
+        // valor_lista (definido pelo admin, por provedor) é cobrado por código gerado no
+        // mês; desconto (parceria diferenciada) abate direto da mensalidade. Nunca deixa
+        // o total negativo.
+        let valor = Number(assinatura.valor_mensalidade) - Number(assinatura.desconto ?? 0);
+        if (assinatura.valor_lista) {
+            const quantidade = await this.ContarAtivacoesTvDoMes(codigoProvedor, competencia);
+            valor += Number(assinatura.valor_lista) * quantidade;
         }
+        valor = Math.max(valor, 0);
 
         // Se a fatura do mês já existe e ainda está pendente, sincroniza valor/vencimento
         // com a assinatura atual — sem isso, mudar o plano/valor no admin nunca refletia
         // numa fatura já gerada (nem no PIX, que é montado a partir do valor dela). O mesmo
-        // vale pro total de ativações TV do mês: ele é recalculado a cada varredura até a
-        // fatura ser paga, pra acompanhar código usado depois da fatura já existir.
+        // vale pra contagem de ativações TV do mês: ela é recalculada a cada varredura até
+        // a fatura ser paga, pra acompanhar código gerado depois da fatura já existir.
         // Fatura já paga ou cancelada nunca é tocada (é histórico).
         const insert = `INSERT INTO provedor_faturas (codigo_provedor_fk, competencia, vencimento, valor)
             VALUES ($1, $2, $3, $4)
@@ -985,7 +991,7 @@ export default class PainelRepository implements IPainelRepository {
         const select = `
             SELECT p.codigo_provedor, COALESCE(p.nome_fantasia, p.empresa) AS provedor_nome,
                    p.cnpj AS provedor_cnpj, p.status AS provedor_status,
-                   pa.id AS assinatura_id, pa.valor_mensalidade, pa.data_adesao, pa.plano_id,
+                   pa.id AS assinatura_id, pa.valor_mensalidade, pa.data_adesao, pa.plano_id, pa.valor_lista, pa.desconto,
                    uf.id AS fatura_id, uf.competencia, uf.vencimento, uf.valor AS fatura_valor,
                    uf.status AS fatura_status, uf.pago_em,
                    (SELECT COUNT(*) FROM provedor_faturas WHERE codigo_provedor_fk = p.codigo_provedor AND status = 'pendente') AS faturas_pendentes

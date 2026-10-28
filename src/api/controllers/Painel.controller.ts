@@ -261,8 +261,8 @@ export default class PainelController {
     async GerarAtivacaoTv(req:AuthRequest, res:Response){
 
         const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
-        const { clienteNome, valor } = req.body as { clienteNome?: string; valor?: number | string };
-        const ativacao = await this._provedorService.GerarAtivacaoTv(codigoProvedor, clienteNome, valor != null && valor !== "" ? Number(valor) : null);
+        const { clienteNome } = req.body as { clienteNome?: string };
+        const ativacao = await this._provedorService.GerarAtivacaoTv(codigoProvedor, clienteNome);
 
         return res.status(201).json({ data: ativacao });
     }
@@ -1035,10 +1035,11 @@ export default class PainelController {
         const valorMensalidade = Number.parseFloat(req.body?.valor_mensalidade);
         const dataAdesao = req.body?.data_adesao as string;
         const planoId = req.body?.plano_id ? Number.parseInt(req.body.plano_id) : null;
-        const somarAtivacaoTv = req.body?.somar_ativacao_tv === true || req.body?.somar_ativacao_tv === "true";
+        const valorLista = req.body?.valor_lista != null && req.body.valor_lista !== "" ? Number.parseFloat(req.body.valor_lista) : null;
+        const desconto = req.body?.desconto != null && req.body.desconto !== "" ? Number.parseFloat(req.body.desconto) : null;
 
         try {
-            const assinatura = await this._painelService.CriarOuEditarAssinatura(codigoProvedor, valorMensalidade, dataAdesao, planoId, somarAtivacaoTv);
+            const assinatura = await this._painelService.CriarOuEditarAssinatura(codigoProvedor, valorMensalidade, dataAdesao, planoId, valorLista, desconto);
             return res.status(200).json({data: assinatura})
         } catch (error: any) {
             return res.status(400).json({ message: error.message })

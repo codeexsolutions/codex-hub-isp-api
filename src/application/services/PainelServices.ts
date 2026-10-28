@@ -601,7 +601,7 @@ export default class PainelService implements IPainelServices {
         return { assinatura, faturas, modulosAtivos, pixCopiaCola, pixQrCode };
     }
 
-    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, somarAtivacaoTv:boolean) : Promise<assinaturaModel> {
+    async CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, valorLista:number|null, desconto:number|null) : Promise<assinaturaModel> {
         if (!dataAdesao)
             throw new Error("Informe a data de adesão.");
 
@@ -625,7 +625,7 @@ export default class PainelService implements IPainelServices {
         if (!(valor > 0))
             throw new Error("Informe um valor de mensalidade válido.");
 
-        const assinatura = await this._painelRepository.CriarOuEditarAssinatura(codigoProvedor, valor, dataAdesao, planoId, somarAtivacaoTv);
+        const assinatura = await this._painelRepository.CriarOuEditarAssinatura(codigoProvedor, valor, dataAdesao, planoId, valorLista, desconto);
         await this._painelRepository.GarantirFaturaDoMes(codigoProvedor);
         return assinatura;
     }

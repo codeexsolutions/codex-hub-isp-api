@@ -124,7 +124,7 @@ export default interface IPainelRepository {
 
     // FATURAMENTO SYNK (mensalidade do provedor pra Synk)
     ObterAssinatura(codigoProvedor:number) : Promise<assinaturaModel|null>
-    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, somarAtivacaoTv:boolean) : Promise<assinaturaModel>
+    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, valorLista:number|null, desconto:number|null) : Promise<assinaturaModel>
     ListarPlanos() : Promise<planoModel[]>
     ObterPlano(id:number) : Promise<planoModel|null>
     CriarPlano(nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>

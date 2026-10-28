@@ -55,7 +55,7 @@ export default interface IProvedorServices {
     ObterAvaliacoesApp(codigoProvedor:string) : Promise<any>
     ObterManifest(codigo:string) : Promise<any>
     // ATIVAÇÃO TV
-    GerarAtivacaoTv(codigoProvedor:number, clienteNome?:string, valor?:number|null) : Promise<ativacaoTvModel>
+    GerarAtivacaoTv(codigoProvedor:number, clienteNome?:string) : Promise<ativacaoTvModel>
     ListarAtivacoesTv(codigoProvedor:number) : Promise<ativacaoTvModel[]>
     RevogarAtivacaoTv(codigoProvedor:number, id:number) : Promise<ativacaoTvModel>
     ValidarAtivacaoTv(codigoProvedor:string, codigo:string) : Promise<{ valido:boolean }>

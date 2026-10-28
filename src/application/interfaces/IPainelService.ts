@@ -129,7 +129,7 @@ export default interface IPainelServices {
         pixCopiaCola: string|null;
         pixQrCode: string|null;
     }>
-    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, somarAtivacaoTv:boolean) : Promise<assinaturaModel>
+    CriarOuEditarAssinatura(codigoProvedor:number, valorMensalidade:number, dataAdesao:string, planoId:number|null, valorLista:number|null, desconto:number|null) : Promise<assinaturaModel>
     ListarPlanos() : Promise<planoModel[]>
     CriarPlano(nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
     EditarPlano(id:number, nome:string, valorMensalidade:number, modulos:string[], ordem:number) : Promise<planoModel>
