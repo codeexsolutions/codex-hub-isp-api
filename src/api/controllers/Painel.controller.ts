@@ -284,6 +284,16 @@ export default class PainelController {
         return res.json({ data: ativacao });
     }
 
+    async RenomearAtivacaoTv(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.usuario?.codigoProvedor as string);
+        const id = Number.parseInt(req.params.id as string);
+        const { clienteNome, clienteUsuario } = req.body as { clienteNome?: string | null; clienteUsuario?: string | null };
+        const ativacao = await this._provedorService.RenomearAtivacaoTv(codigoProvedor, id, clienteNome ?? null, clienteUsuario ?? null);
+
+        return res.json({ data: ativacao });
+    }
+
     async SalvarIndicacao(req:AuthRequest, res:Response){
         
         const data = req.body as indicacaoModel

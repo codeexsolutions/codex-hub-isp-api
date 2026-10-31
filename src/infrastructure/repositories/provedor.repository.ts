@@ -612,4 +612,12 @@ export default class ProvedorRepository implements IProvedorRepository{
             throw new Error("Código de ativação não encontrado.");
         return result[0];
     }
+
+    async RenomearAtivacaoTv(id:number, codigoProvedor:number, clienteNome:string | null, clienteUsuario:string | null) : Promise<ativacaoTvModel> {
+        const update = `UPDATE ativacoes_tv SET cliente_nome = $3, cliente_usuario = $4 WHERE id = $1 AND codigo_provedor_fk = $2 RETURNING *;`;
+        const result = await this._db.Execulte<ativacaoTvModel>(update, [id, codigoProvedor, clienteNome, clienteUsuario]);
+        if (!result[0])
+            throw new Error("Código de ativação não encontrado.");
+        return result[0];
+    }
 }

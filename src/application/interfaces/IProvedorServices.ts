@@ -58,5 +58,6 @@ export default interface IProvedorServices {
     GerarAtivacaoTv(codigoProvedor:number, clienteNome?:string) : Promise<ativacaoTvModel>
     ListarAtivacoesTv(codigoProvedor:number) : Promise<ativacaoTvModel[]>
     RevogarAtivacaoTv(codigoProvedor:number, id:number) : Promise<ativacaoTvModel>
+    RenomearAtivacaoTv(codigoProvedor:number, id:number, clienteNome:string | null, clienteUsuario:string | null) : Promise<ativacaoTvModel>
     ValidarAtivacaoTv(codigoProvedor:string, codigo:string) : Promise<{ valido:boolean }>
 }

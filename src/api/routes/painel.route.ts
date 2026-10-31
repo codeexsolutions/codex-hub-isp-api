@@ -25,6 +25,7 @@ painelRouter.put('/provedor/temas', authMiddleware, uploadMiddleware, painelCont
 painelRouter.post('/provedor/tv-ativacoes', authMiddleware, painelController.GerarAtivacaoTv.bind(painelController));
 painelRouter.get('/provedor/tv-ativacoes', authMiddleware, painelController.ListarAtivacoesTv.bind(painelController));
 painelRouter.delete('/provedor/tv-ativacoes/:id', authMiddleware, painelController.RevogarAtivacaoTv.bind(painelController));
+painelRouter.put('/provedor/tv-ativacoes/:id', authMiddleware, painelController.RenomearAtivacaoTv.bind(painelController));
 
 
 // MARKETING - ALERTAS - INFORMATIVOS

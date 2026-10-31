@@ -649,6 +649,10 @@ export default class ProvedorServices implements IProvedorServices {
         return await this._provedorRepository.RevogarAtivacaoTv(id, codigoProvedor);
     }
 
+    async RenomearAtivacaoTv(codigoProvedor: number, id: number, clienteNome: string | null, clienteUsuario: string | null): Promise<ativacaoTvModel> {
+        return await this._provedorRepository.RenomearAtivacaoTv(id, codigoProvedor, clienteNome?.trim() || null, clienteUsuario?.trim() || null);
+    }
+
     // Público — chamado pelo app de TV. Não revela se o código existe pra outro
     // provedor nem se já foi usado: só "válido" ou "inválido" pra esse par.
     async ValidarAtivacaoTv(codigoProvedor: string, codigo: string): Promise<{ valido: boolean }> {
