@@ -868,15 +868,14 @@ export default class PainelRepository implements IPainelRepository {
         return { competencia, vencimento };
     }
 
-    // Conta, pro mês da competência, quantos códigos de Ativação TV o provedor gerou
-    // (1 código = 1 cliente novo) — usado pra aplicar valor_lista por unidade abaixo.
-    // Conta todo código gerado no mês, revogado ou não: revogar depois não desfaz o
-    // cliente que ele já representou naquele mês.
-    private async ContarAtivacoesTvDoMes(codigoProvedor:number, competencia:string) : Promise<number> {
+    // Conta quantos códigos de Ativação TV o provedor tem ATIVOS agora (não importa
+    // em que mês foram gerados) — usado pra aplicar valor_lista por unidade abaixo.
+    // É uma cobrança recorrente: enquanto o código estiver ativo, entra na fatura de
+    // todo mês; ao revogar, sai da contagem (e some da fatura seguinte).
+    private async ContarAtivacoesTvAtivas(codigoProvedor:number) : Promise<number> {
         const select = `SELECT COUNT(*) AS total FROM ativacoes_tv
-            WHERE codigo_provedor_fk = $1
-                AND criado_em >= $2::date AND criado_em < ($2::date + INTERVAL '1 month');`;
-        const result = await this._db.Execulte<{ total:string }>(select, [codigoProvedor, competencia]);
+            WHERE codigo_provedor_fk = $1 AND status = 'ativo';`;
+        const result = await this._db.Execulte<{ total:string }>(select, [codigoProvedor]);
         return Number(result[0]?.total ?? 0);
     }
 
@@ -886,12 +885,12 @@ export default class PainelRepository implements IPainelRepository {
 
         const { competencia, vencimento } = this.calcularCompetenciaEVencimento(assinatura.data_adesao);
 
-        // valor_lista (definido pelo admin, por provedor) é cobrado por código gerado no
-        // mês; desconto (parceria diferenciada) abate direto da mensalidade. Nunca deixa
-        // o total negativo.
+        // valor_lista (definido pelo admin, por provedor) é cobrado por código ainda
+        // ativo, todo mês; desconto (parceria diferenciada) abate direto da
+        // mensalidade. Nunca deixa o total negativo.
         let valor = Number(assinatura.valor_mensalidade) - Number(assinatura.desconto ?? 0);
         if (assinatura.valor_lista) {
-            const quantidade = await this.ContarAtivacoesTvDoMes(codigoProvedor, competencia);
+            const quantidade = await this.ContarAtivacoesTvAtivas(codigoProvedor);
             valor += Number(assinatura.valor_lista) * quantidade;
         }
         valor = Math.max(valor, 0);
