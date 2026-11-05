@@ -993,7 +993,8 @@ export default class PainelRepository implements IPainelRepository {
                    pa.id AS assinatura_id, pa.valor_mensalidade, pa.data_adesao, pa.plano_id, pa.valor_lista, pa.desconto,
                    uf.id AS fatura_id, uf.competencia, uf.vencimento, uf.valor AS fatura_valor,
                    uf.status AS fatura_status, uf.pago_em,
-                   (SELECT COUNT(*) FROM provedor_faturas WHERE codigo_provedor_fk = p.codigo_provedor AND status = 'pendente') AS faturas_pendentes
+                   (SELECT COUNT(*) FROM provedor_faturas WHERE codigo_provedor_fk = p.codigo_provedor AND status = 'pendente') AS faturas_pendentes,
+                   (SELECT COUNT(*) FROM provedor_faturas WHERE codigo_provedor_fk = p.codigo_provedor AND status = 'pendente' AND vencimento < CURRENT_DATE) AS faturas_atrasadas
             FROM provedores p
             LEFT JOIN provedor_assinaturas pa ON pa.codigo_provedor_fk = p.codigo_provedor
             LEFT JOIN LATERAL (
@@ -1007,9 +1008,27 @@ export default class PainelRepository implements IPainelRepository {
                          pf.competencia DESC
                 LIMIT 1
             ) uf ON true
+            WHERE p.excluido_em IS NULL
             ORDER BY provedor_nome ASC;
         `;
         return await this._db.Execulte<any>(select, []);
+    }
+
+    // Exclusão lógica — só permitida com 3+ faturas em aberto vencidas (inadimplência
+    // comprovada). Não apaga nada em cascata: marca excluido_em e desativa o acesso
+    // (status = 'INATIVO'), e o provedor some da listagem de faturamento acima.
+    async ExcluirProvedorLogico(codigoProvedor:number) : Promise<void> {
+        const update = `
+            UPDATE provedores SET excluido_em = NOW(), status = 'INATIVO'
+            WHERE codigo_provedor = $1
+              AND excluido_em IS NULL
+              AND (SELECT COUNT(*) FROM provedor_faturas
+                   WHERE codigo_provedor_fk = $1 AND status = 'pendente' AND vencimento < CURRENT_DATE) >= 3
+            RETURNING codigo_provedor;
+        `;
+        const result = await this._db.Execulte<{ codigo_provedor:number }>(update, [codigoProvedor]);
+        if (!result[0])
+            throw new Error("Só é possível excluir provedores com 3 ou mais faturas em aberto vencidas.");
     }
 
     async ObterConfigPix() : Promise<pixConfigModel> {

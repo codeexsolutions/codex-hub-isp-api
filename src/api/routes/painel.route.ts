@@ -144,6 +144,7 @@ painelRouter.put('/admin/provedores/:codigoProvedor/temas', authMiddleware, admi
 painelRouter.post('/admin/provedores/:codigoProvedor/onboarding-rapido', authMiddleware, adminMiddleware, painelController.OnboardingRapidoAdmin.bind(painelController));
 painelRouter.patch('/admin/provedores/:codigoProvedor/modulos/:modulo', authMiddleware, adminMiddleware, painelController.DefinirModuloAdmin.bind(painelController));
 painelRouter.patch('/admin/provedores/:codigoProvedor/status', authMiddleware, adminMiddleware, painelController.DefinirStatusProvedorAdmin.bind(painelController));
+painelRouter.delete('/admin/provedores/:codigoProvedor', authMiddleware, adminMiddleware, painelController.ExcluirProvedorAdmin.bind(painelController));
 painelRouter.get('/admin/config-comissao', authMiddleware, adminMiddleware, painelController.ObterConfigComissaoAdmin.bind(painelController));
 painelRouter.put('/admin/config-comissao', authMiddleware, adminMiddleware, painelController.DefinirConfigComissaoAdmin.bind(painelController));
 painelRouter.get('/admin/compras', authMiddleware, adminMiddleware, painelController.ObterRelatorioComprasAdmin.bind(painelController));

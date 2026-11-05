@@ -843,6 +843,18 @@ export default class PainelController {
         }
     }
 
+    async ExcluirProvedorAdmin(req:AuthRequest, res:Response){
+
+        const codigoProvedor = Number.parseInt(req.params.codigoProvedor as string);
+
+        try {
+            await this._painelService.ExcluirProvedorLogico(codigoProvedor);
+            return res.status(200).json({data: { codigoProvedor }})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
     async ObterConfigComissaoAdmin(req:AuthRequest, res:Response){
 
         const config = await this._painelService.ObterConfigComissao();

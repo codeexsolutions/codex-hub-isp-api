@@ -109,6 +109,7 @@ export default interface IPainelServices {
     ListarProvedoresComModulos() : Promise<any[]>
     DefinirModulo(codigoProvedor:number, modulo:string, ativo:boolean) : Promise<void>
     DefinirStatusProvedor(codigoProvedor:number, status:string) : Promise<void>
+    ExcluirProvedorLogico(codigoProvedor:number) : Promise<void>
 
     // PARCEIROS (admin)
     CriarParceiro(parceiro:parceiroModel) : Promise<parceiroModel>

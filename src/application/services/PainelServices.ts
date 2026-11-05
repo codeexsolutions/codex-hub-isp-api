@@ -518,6 +518,10 @@ export default class PainelService implements IPainelServices {
         await this._painelRepository.DefinirStatusProvedor(codigoProvedor, status);
     }
 
+    async ExcluirProvedorLogico(codigoProvedor:number) : Promise<void> {
+        await this._painelRepository.ExcluirProvedorLogico(codigoProvedor);
+    }
+
     async CriarParceiro(parceiro:parceiroModel) : Promise<parceiroModel> {
         if(!parceiro.nome || !parceiro.usuario || !parceiro.senha)
             throw new Error("Informe nome, usuário e senha do parceiro.");
