@@ -73,7 +73,7 @@ export default class IptvProxyController {
             return res.status(400).json({ statusCode: 400, message: "Servidor não permitido.", data: null });
 
         try {
-            const upstream = await fetch(alvo.toString(), { signal: AbortSignal.timeout(20000) });
+            const upstream = await fetch(alvo.toString(), { headers: { Connection: "close" }, signal: AbortSignal.timeout(20000) });
             const texto = await upstream.text();
             res.status(upstream.ok ? 200 : upstream.status);
             res.type("application/json");
@@ -88,7 +88,7 @@ export default class IptvProxyController {
             const { servidor, usuario, senha } = req.body;
             const base = normalizarServidor(servidor);
             const url = `${base}/player_api.php?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}`;
-            const upstream = await fetch(url);
+            const upstream = await fetch(url, { headers: { Connection: "close" }, signal: AbortSignal.timeout(20000) });
             if (!upstream.ok) return res.json({ data: { auth: false, mensagem: `Servidor respondeu ${upstream.status}` } });
 
             const json: any = await upstream.json().catch(() => null);
@@ -112,7 +112,7 @@ export default class IptvProxyController {
             const { servidor, usuario, senha } = req.body;
             const base = normalizarServidor(servidor);
             const url = `${base}/player_api.php?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}&action=get_live_categories`;
-            const upstream = await fetch(url);
+            const upstream = await fetch(url, { headers: { Connection: "close" }, signal: AbortSignal.timeout(20000) });
             const json = upstream.ok ? await upstream.json() : [];
             return res.json({ data: Array.isArray(json) ? json : [] });
         } catch {
@@ -125,7 +125,7 @@ export default class IptvProxyController {
             const { servidor, usuario, senha } = req.body;
             const base = normalizarServidor(servidor);
             const url = `${base}/player_api.php?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}&action=get_live_streams`;
-            const upstream = await fetch(url);
+            const upstream = await fetch(url, { headers: { Connection: "close" }, signal: AbortSignal.timeout(20000) });
             const json = upstream.ok ? await upstream.json() : [];
             return res.json({ data: Array.isArray(json) ? json : [] });
         } catch {
@@ -141,7 +141,7 @@ export default class IptvProxyController {
             const { servidor, usuario, senha, streamId } = req.query as Record<string, string>;
             const base = normalizarServidor(servidor);
             const url = `${base}/live/${encodeURIComponent(usuario)}/${encodeURIComponent(senha)}/${streamId}.m3u8`;
-            const upstream = await fetch(url);
+            const upstream = await fetch(url, { headers: { Connection: "close" }, signal: AbortSignal.timeout(15000) });
             if (!upstream.ok) return res.status(upstream.status).end();
 
             const texto = await upstream.text();
@@ -169,7 +169,7 @@ export default class IptvProxyController {
         try {
             const u = req.query.u as string;
             const upstreamUrl = Buffer.from(u, "base64").toString("utf-8");
-            const upstream = await fetch(upstreamUrl);
+            const upstream = await fetch(upstreamUrl, { headers: { Connection: "close" }, signal: AbortSignal.timeout(15000) });
             if (!upstream.ok || !upstream.body) return res.status(upstream.status || 502).end();
 
             res.set("Content-Type", upstream.headers.get("content-type") || "video/mp2t");
