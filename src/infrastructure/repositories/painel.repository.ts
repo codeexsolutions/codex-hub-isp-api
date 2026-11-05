@@ -1014,21 +1014,22 @@ export default class PainelRepository implements IPainelRepository {
         return await this._db.Execulte<any>(select, []);
     }
 
-    // Exclusão lógica — só permitida com 3+ faturas em aberto vencidas (inadimplência
-    // comprovada). Não apaga nada em cascata: marca excluido_em e desativa o acesso
-    // (status = 'INATIVO'), e o provedor some da listagem de faturamento acima.
+    // Exclusão lógica — só permitida com 3+ faturas em aberto (mesmo critério do selo
+    // "X em aberto" que já aparece na listagem — pendentes, vencidas ou não). Não apaga
+    // nada em cascata: marca excluido_em e desativa o acesso (status = 'INATIVO'), e o
+    // provedor some da listagem de faturamento acima.
     async ExcluirProvedorLogico(codigoProvedor:number) : Promise<void> {
         const update = `
             UPDATE provedores SET excluido_em = NOW(), status = 'INATIVO'
             WHERE codigo_provedor = $1
               AND excluido_em IS NULL
               AND (SELECT COUNT(*) FROM provedor_faturas
-                   WHERE codigo_provedor_fk = $1 AND status = 'pendente' AND vencimento < CURRENT_DATE) >= 3
+                   WHERE codigo_provedor_fk = $1 AND status = 'pendente') >= 3
             RETURNING codigo_provedor;
         `;
         const result = await this._db.Execulte<{ codigo_provedor:number }>(update, [codigoProvedor]);
         if (!result[0])
-            throw new Error("Só é possível excluir provedores com 3 ou mais faturas em aberto vencidas.");
+            throw new Error("Só é possível excluir provedores com 3 ou mais faturas em aberto.");
     }
 
     async ObterConfigPix() : Promise<pixConfigModel> {
