@@ -52,7 +52,8 @@ function escolherFfmpeg(): Promise<void> {
 const COMO_PLAYER = ["-user_agent", "VLC/3.0.20 LibVLC/3.0.20", "-multiple_requests", "1"];
 
 const MAX_SIMULTANEOS = 2;
-const MAX_CACHE = 400;
+// capas (~40 KB) + miniaturas da barra do player (~15 KB, ~120 por filme)
+const MAX_CACHE = 3000;
 const LIMITE_DURACAO_MS = 12000;
 const LIMITE_QUADRO_MS = 25000;
 
