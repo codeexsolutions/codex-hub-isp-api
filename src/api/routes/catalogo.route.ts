@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { UNIVERSOS, VERSAO_UNIVERSOS } from "../controllers/catalogo/universos";
-import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca } from "../controllers/catalogo/tmdb";
+import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo } from "../controllers/catalogo/tmdb";
 
 // Catálogo próprio do Synk TV (dados nossos, por cima da lista do IPTV).
 const catalogoRoute = Router();
@@ -50,6 +50,17 @@ catalogoRoute.get("/tmdb/colecao", async (req: Request, res: Response) => {
     const colecao = await colecaoPorBusca(busca);
     res.set("Cache-Control", "public, max-age=86400");
     res.json({ colecao });
+});
+
+// GET /catalogo/tmdb/parecidos?titulo=Matrix&ano=1999 → recomendações
+catalogoRoute.get("/tmdb/parecidos", async (req: Request, res: Response) => {
+    if (semTmdb(res)) return;
+    const titulo = String(req.query.titulo || "").trim().slice(0, 200);
+    const ano = Number(req.query.ano) || undefined;
+    if (!titulo) return res.status(400).json({ erro: "titulo obrigatório" });
+    const filmes = await parecidosPorTitulo(titulo, ano);
+    res.set("Cache-Control", "public, max-age=86400");
+    res.json({ filmes });
 });
 
 export default catalogoRoute;

@@ -125,3 +125,21 @@ export async function colecaoPorBusca(termo: string): Promise<ColecaoTmdb | null
     const primeira = r && r.results && r.results[0];
     return primeira ? colecaoPorId(primeira.id) : null;
 }
+
+// Filmes parecidos (recomendações do TMDB — "quem viu também viu" — e, se
+// vierem poucas, os "similares" por gênero/palavras-chave). Até 40.
+export async function parecidosPorTitulo(titulo: string, ano?: number): Promise<ParteColecao[]> {
+    const f = await filmePorTitulo(titulo, ano);
+    if (!f) return [];
+    const rec = await chamar<any>(`/movie/${f.tmdbId}/recommendations`, { language: "pt-BR" });
+    let lista: any[] = (rec && rec.results) || [];
+    if (lista.length < 12) {
+        const sim = await chamar<any>(`/movie/${f.tmdbId}/similar`, { language: "pt-BR" });
+        lista = lista.concat((sim && sim.results) || []);
+    }
+    const vistos = new Set<number>([f.tmdbId]);
+    return lista
+        .filter((r) => r && !r.adult && !vistos.has(r.id) && (vistos.add(r.id), true))
+        .slice(0, 40)
+        .map((r) => ({ tmdbId: r.id, titulo: r.title, tituloOriginal: r.original_title, ano: anoDe(r.release_date), poster: img(r.poster_path, "w342") }));
+}
