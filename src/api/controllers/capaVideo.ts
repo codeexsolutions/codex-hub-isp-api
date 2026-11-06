@@ -158,7 +158,15 @@ export function capaDoVideo(url: string, fracao: number): Promise<Buffer | null>
 
 // Diagnóstico (sem dados sensíveis): qual ffmpeg está sendo usado, se ele
 // roda, e qual commit está no ar — pra saber por que a capa falha em produção.
-export async function diagnosticoFfmpeg(): Promise<Record<string, unknown>> {
+export async function diagnosticoFfmpeg(urlTeste?: string): Promise<Record<string, unknown>> {
+    if (urlTeste) {
+        // Abre o vídeo como a rota de capa faz e devolve o fim da mensagem do ffmpeg.
+        if (!urlPermitida(urlTeste)) return { erro: "url não permitida" };
+        const t0 = Date.now();
+        const r = await rodar(["-hide_banner", "-nostdin", "-rw_timeout", "10000000", "-i", urlTeste], LIMITE_DURACAO_MS);
+        const total = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(r.erro);
+        return { ms: Date.now() - t0, duracao: total ? total[0] : null, fimDaMensagem: r.erro.slice(-700) };
+    }
     const { saida, erro } = await rodar(["-hide_banner", "-version"], 8000);
     const texto = (saida.toString() || erro).split(/\r?\n/)[0] || "";
     return {
