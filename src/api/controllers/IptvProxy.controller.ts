@@ -190,7 +190,8 @@ export default class IptvProxyController {
 
     async CapaDiagnostico(_req: Request, res: Response) {
         try {
-            return res.json(await diagnosticoFfmpeg());
+            const u = _req.query.u ? Buffer.from(String(_req.query.u), "base64").toString("utf-8") : undefined;
+            return res.json(await diagnosticoFfmpeg(u));
         } catch (e: any) {
             return res.status(500).json({ erro: String(e?.message || e) });
         }
