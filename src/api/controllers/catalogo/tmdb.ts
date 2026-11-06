@@ -83,7 +83,14 @@ export async function filmePorTitulo(titulo: string, ano?: number): Promise<Film
         const a = normalizar(r.title), b = normalizar(r.original_title);
         return (a === alvo || b === alvo ? 100 : a.indexOf(alvo) === 0 || alvo.indexOf(a) === 0 ? 40 : 0) + Math.min(30, (r.popularity || 0) / 10) + (r.vote_count > 50 ? 10 : 0);
     };
-    const melhor = resultados.slice(0, 8).sort((x, y) => pontua(y) - pontua(x))[0];
+    const ordenados = resultados.slice(0, 8).sort((x, y) => pontua(y) - pontua(x));
+    let melhor = ordenados[0];
+    // Título exato mas obscuro ("Os Vingadores" de 1998) e existe um
+    // "Título: Subtítulo" MUITO mais visto ("Os Vingadores: The Avengers",
+    // 2012) → os painéis quase sempre têm o famoso. Não troca quando o exato
+    // também é conhecido ("Batman" de 1989 continua Batman).
+    const famoso = resultados.find((r: any) => normalizar(r.title).indexOf(alvo + " ") === 0 && /:/.test(r.title) && (r.vote_count || 0) >= 10 * Math.max(1, melhor.vote_count || 0));
+    if (famoso && !ano) melhor = famoso;
     const d = await chamar<any>(`/movie/${melhor.id}`, { language: "pt-BR" });
     if (!d) return null;
     return {
