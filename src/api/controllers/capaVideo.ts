@@ -46,6 +46,11 @@ function escolherFfmpeg(): Promise<void> {
     return escolhido;
 }
 
+// Painéis IPTV costumam recusar quem não se apresenta como player (o ffmpeg
+// diz "Lavf/..."): entra como VLC. Segue os redirecionamentos do painel
+// (/movie/usuario/senha/ID → CDN) normalmente.
+const COMO_PLAYER = ["-user_agent", "VLC/3.0.20 LibVLC/3.0.20", "-multiple_requests", "1"];
+
 const MAX_SIMULTANEOS = 2;
 const MAX_CACHE = 400;
 const LIMITE_DURACAO_MS = 12000;
@@ -140,7 +145,7 @@ function rodarCom(binario: string, args: string[], limiteMs: number): Promise<Re
 
 async function duracaoSegundos(url: string): Promise<number> {
     // Sem arquivo de saída o ffmpeg só lê o cabeçalho e imprime "Duration:".
-    const { erro } = await rodar(["-hide_banner", "-nostdin", "-rw_timeout", "10000000", "-i", url], LIMITE_DURACAO_MS);
+    const { erro } = await rodar(["-hide_banner", "-nostdin", "-rw_timeout", "10000000", ...COMO_PLAYER, "-i", url], LIMITE_DURACAO_MS);
     const m = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(erro);
     return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : 0;
 }
@@ -150,6 +155,7 @@ async function quadroEm(url: string, segundos: number): Promise<Buffer | null> {
         [
             "-hide_banner", "-nostdin", "-loglevel", "error",
             "-rw_timeout", "15000000",
+            ...COMO_PLAYER,
             "-ss", String(Math.max(0, Math.floor(segundos))),
             "-i", url,
             "-frames:v", "1",
@@ -210,7 +216,7 @@ export async function diagnosticoFfmpeg(urlTeste?: string): Promise<Record<strin
         };
         if (urlTeste) {
             const t0 = Date.now();
-            const r = await rodarCom(c, ["-hide_banner", "-nostdin", "-rw_timeout", "10000000", "-i", urlTeste], LIMITE_DURACAO_MS);
+            const r = await rodarCom(c, ["-hide_banner", "-nostdin", "-rw_timeout", "10000000", ...COMO_PLAYER, "-i", urlTeste], LIMITE_DURACAO_MS);
             const total = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(r.erro);
             item.teste = { ms: Date.now() - t0, codigo: r.codigo, sinal: r.sinal, duracao: total ? total[0] : null, fim: r.erro.slice(-400) };
         }
