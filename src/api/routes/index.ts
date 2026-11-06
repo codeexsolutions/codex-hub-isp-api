@@ -10,6 +10,7 @@ import iptvRoute from "./iptv.route";
 import iptvProxyRoute from "./iptvProxy.route";
 import licencaTvRoute from "./licencaTv.route";
 import revendedorRoute from "./revendedor.route";
+import catalogoRoute from "./catalogo.route";
 
 const routes = Router();
 
@@ -24,5 +25,6 @@ routes.use('/iptv', iptvRoute)
 routes.use('/iptv/proxy', iptvProxyRoute)
 routes.use('/licenca-tv', licencaTvRoute)
 routes.use('/revendedores', revendedorRoute)
+routes.use('/catalogo', catalogoRoute)
 
 export default routes;
