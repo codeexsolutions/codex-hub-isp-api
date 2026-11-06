@@ -12,18 +12,38 @@ import { existsSync } from "fs";
 //   - cache em memória (os mais recentes) + Cache-Control longo na resposta;
 //   - só http(s) e nunca endereço interno (localhost, rede privada).
 
-// Qual ffmpeg usar: FFMPEG_PATH (se definido) → binário do pacote
-// ffmpeg-static (se o download dele rodou na instalação) → "ffmpeg" do
-// sistema (ex.: instalado via pacote apt no Railway).
-let caminhoFfmpeg = process.env.FFMPEG_PATH || "";
-if (!caminhoFfmpeg) {
+// Qual ffmpeg usar, em ordem: FFMPEG_PATH → "ffmpeg" do SISTEMA (apt, ver
+// railpack.json/nixpacks.toml) → binário do pacote ffmpeg-static. O do
+// sistema vem antes: no Railway o estático roda "-version" mas morre na hora
+// ao abrir uma URL (rede/DNS de binário estático dentro do container).
+function binarioDoPacote(): string | null {
     try {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const doPacote: string | null = require("ffmpeg-static");
-        caminhoFfmpeg = doPacote && existsSync(doPacote) ? doPacote : "ffmpeg";
+        const p: string | null = require("ffmpeg-static");
+        return p && existsSync(p) ? p : null;
     } catch {
-        caminhoFfmpeg = "ffmpeg";
+        return null;
     }
+}
+
+const CANDIDATOS = [process.env.FFMPEG_PATH || "", "ffmpeg", binarioDoPacote() || ""].filter(Boolean);
+let caminhoFfmpeg = CANDIDATOS[0] || "ffmpeg";
+let escolhido: Promise<void> | null = null;
+
+// Na primeira capa: fica com o primeiro candidato que roda.
+function escolherFfmpeg(): Promise<void> {
+    if (!escolhido) {
+        escolhido = (async () => {
+            for (const c of CANDIDATOS) {
+                const r = await rodarCom(c, ["-hide_banner", "-version"], 8000);
+                if (r.codigo === 0) {
+                    caminhoFfmpeg = c;
+                    return;
+                }
+            }
+        })();
+    }
+    return escolhido;
 }
 
 const MAX_SIMULTANEOS = 2;
@@ -82,22 +102,39 @@ export function urlPermitida(url: string): boolean {
     return true;
 }
 
-function rodar(args: string[], limiteMs: number): Promise<{ saida: Buffer; erro: string }> {
+type Resultado = { saida: Buffer; erro: string; codigo: number | null; sinal: string | null };
+
+function rodar(args: string[], limiteMs: number): Promise<Resultado> {
+    return rodarCom(caminhoFfmpeg, args, limiteMs);
+}
+
+function rodarCom(binario: string, args: string[], limiteMs: number): Promise<Resultado> {
     return new Promise((resolve) => {
-        const proc = spawn(caminhoFfmpeg, args, { stdio: ["ignore", "pipe", "pipe"] });
+        let proc: ReturnType<typeof spawn>;
+        try {
+            proc = spawn(binario, args, { stdio: ["ignore", "pipe", "pipe"] });
+        } catch (e: any) {
+            return resolve({ saida: Buffer.alloc(0), erro: String(e?.message || e), codigo: null, sinal: null });
+        }
         const partes: Buffer[] = [];
         let erro = "";
         const timer = setTimeout(() => proc.kill("SIGKILL"), limiteMs);
-        proc.stdout.on("data", (d: Buffer) => partes.push(d));
-        proc.stderr.on("data", (d: Buffer) => {
+        proc.stdout!.on("data", (d: Buffer) => partes.push(d));
+        proc.stderr!.on("data", (d: Buffer) => {
             if (erro.length < 20000) erro += d.toString();
         });
-        const fim = () => {
+        let terminou = false;
+        const fim = (codigo: number | null, sinal: string | null) => {
+            if (terminou) return;
+            terminou = true;
             clearTimeout(timer);
-            resolve({ saida: Buffer.concat(partes), erro });
+            resolve({ saida: Buffer.concat(partes), erro, codigo, sinal });
         };
-        proc.on("close", fim);
-        proc.on("error", fim);
+        proc.on("close", (codigo, sinal) => fim(codigo, sinal));
+        proc.on("error", (e) => {
+            erro += String(e?.message || e);
+            fim(null, null);
+        });
     });
 }
 
@@ -137,6 +174,7 @@ export function capaDoVideo(url: string, fracao: number): Promise<Buffer | null>
     if (andamento) return andamento;
 
     const p = naVez(async () => {
+        await escolherFfmpeg();
         const total = await duracaoSegundos(url);
         const pontos = total > 0 ? [fracao, fracao + 0.08, fracao - 0.08].map((f) => total * Math.min(0.95, Math.max(0.02, f))) : [60, 180];
         for (const t of pontos) {
@@ -159,20 +197,28 @@ export function capaDoVideo(url: string, fracao: number): Promise<Buffer | null>
 // Diagnóstico (sem dados sensíveis): qual ffmpeg está sendo usado, se ele
 // roda, e qual commit está no ar — pra saber por que a capa falha em produção.
 export async function diagnosticoFfmpeg(urlTeste?: string): Promise<Record<string, unknown>> {
-    if (urlTeste) {
-        // Abre o vídeo como a rota de capa faz e devolve o fim da mensagem do ffmpeg.
-        if (!urlPermitida(urlTeste)) return { erro: "url não permitida" };
-        const t0 = Date.now();
-        const r = await rodar(["-hide_banner", "-nostdin", "-rw_timeout", "10000000", "-i", urlTeste], LIMITE_DURACAO_MS);
-        const total = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(r.erro);
-        return { ms: Date.now() - t0, duracao: total ? total[0] : null, fimDaMensagem: r.erro.slice(-700) };
+    if (urlTeste && !urlPermitida(urlTeste)) return { erro: "url não permitida" };
+    await escolherFfmpeg();
+    const candidatos = [];
+    for (const c of CANDIDATOS) {
+        const v = await rodarCom(c, ["-hide_banner", "-version"], 8000);
+        const item: Record<string, unknown> = {
+            binario: c,
+            versao: (v.saida.toString() || v.erro).split(/\r?\n/)[0].slice(0, 100),
+            codigo: v.codigo,
+            sinal: v.sinal,
+        };
+        if (urlTeste) {
+            const t0 = Date.now();
+            const r = await rodarCom(c, ["-hide_banner", "-nostdin", "-rw_timeout", "10000000", "-i", urlTeste], LIMITE_DURACAO_MS);
+            const total = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(r.erro);
+            item.teste = { ms: Date.now() - t0, codigo: r.codigo, sinal: r.sinal, duracao: total ? total[0] : null, fim: r.erro.slice(-400) };
+        }
+        candidatos.push(item);
     }
-    const { saida, erro } = await rodar(["-hide_banner", "-version"], 8000);
-    const texto = (saida.toString() || erro).split(/\r?\n/)[0] || "";
     return {
-        ffmpeg: caminhoFfmpeg,
-        existe: caminhoFfmpeg === "ffmpeg" ? null : existsSync(caminhoFfmpeg),
-        versao: texto.slice(0, 120) || null,
+        emUso: caminhoFfmpeg,
+        candidatos,
         commit: (process.env.RAILWAY_GIT_COMMIT_SHA || "").slice(0, 7) || null,
     };
 }
