@@ -150,7 +150,7 @@ async function duracaoSegundos(url: string): Promise<number> {
     return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : 0;
 }
 
-async function quadroEm(url: string, segundos: number): Promise<Buffer | null> {
+async function quadroEm(url: string, segundos: number, largura = 480): Promise<Buffer | null> {
     const { saida } = await rodar(
         [
             "-hide_banner", "-nostdin", "-loglevel", "error",
@@ -159,7 +159,7 @@ async function quadroEm(url: string, segundos: number): Promise<Buffer | null> {
             "-ss", String(Math.max(0, Math.floor(segundos))),
             "-i", url,
             "-frames:v", "1",
-            "-vf", "scale=480:-2",
+            "-vf", `scale=${largura}:-2`,
             "-q:v", "6",
             "-f", "image2", "-c:v", "mjpeg",
             "pipe:1",
@@ -189,6 +189,31 @@ export function capaDoVideo(url: string, fracao: number): Promise<Buffer | null>
             if (jpg && jpg.length > 6000) return jpg;
         }
         return null;
+    })
+        .catch(() => null)
+        .then((r) => {
+            emAndamento.delete(chave);
+            guardar(chave, r);
+            return r;
+        });
+    emAndamento.set(chave, p);
+    return p;
+}
+
+// Miniatura da barra de progresso do player: quadro no SEGUNDO exato (o
+// app já sabe a duração — não precisa medir), menor (320px) e mais rápido.
+export function quadroNoSegundo(url: string, segundos: number): Promise<Buffer | null> {
+    const s = Math.max(0, Math.round(segundos));
+    const chave = `s${s}|${url}`;
+    const pronta = cache.get(chave);
+    if (pronta) return Promise.resolve(pronta);
+    const falhou = falhas.get(chave);
+    if (falhou && Date.now() - falhou < VALIDADE_FALHA_MS) return Promise.resolve(null);
+    const andamento = emAndamento.get(chave);
+    if (andamento) return andamento;
+    const p = naVez(async () => {
+        await escolherFfmpeg();
+        return quadroEm(url, s, 320);
     })
         .catch(() => null)
         .then((r) => {

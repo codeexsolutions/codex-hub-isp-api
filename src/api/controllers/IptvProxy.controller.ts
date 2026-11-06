@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import { Readable } from "stream";
-import { capaDoVideo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
+import { capaDoVideo, quadroNoSegundo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
 
 // O app central (synk-app) é servido em HTTPS — o navegador bloqueia qualquer
 // chamada pra um servidor Xtream em HTTP puro (comum nesse mercado) por
@@ -174,7 +174,9 @@ export default class IptvProxyController {
             const url = Buffer.from(u, "base64").toString("utf-8");
             const p = Math.min(0.9, Math.max(0.05, Number(req.query.p) || 0.2));
             if (!urlPermitida(url)) return res.status(400).end();
-            const jpg = await capaDoVideo(url, Math.round(p * 100) / 100);
+            // ?s=segundos → miniatura da barra de progresso (segundo exato)
+            const s = req.query.s !== undefined ? Number(req.query.s) : NaN;
+            const jpg = isFinite(s) && s >= 0 ? await quadroNoSegundo(url, s) : await capaDoVideo(url, Math.round(p * 100) / 100);
             if (!jpg) {
                 res.set("Cache-Control", "public, max-age=3600");
                 return res.status(404).end();
