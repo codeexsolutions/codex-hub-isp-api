@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import { Readable } from "stream";
-import { capaDoVideo, urlPermitida } from "./capaVideo";
+import { capaDoVideo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
 
 // O app central (synk-app) é servido em HTTPS — o navegador bloqueia qualquer
 // chamada pra um servidor Xtream em HTTP puro (comum nesse mercado) por
@@ -185,6 +185,14 @@ export default class IptvProxyController {
             return res.status(200).send(jpg);
         } catch {
             return res.status(502).end();
+        }
+    }
+
+    async CapaDiagnostico(_req: Request, res: Response) {
+        try {
+            return res.json(await diagnosticoFfmpeg());
+        } catch (e: any) {
+            return res.status(500).json({ erro: String(e?.message || e) });
         }
     }
 

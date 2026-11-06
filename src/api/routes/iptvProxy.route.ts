@@ -10,6 +10,7 @@ iptvProxyRoute.post('/autenticar', iptvProxyController.Autenticar.bind(iptvProxy
 iptvProxyRoute.post('/categorias', iptvProxyController.Categorias.bind(iptvProxyController));
 iptvProxyRoute.post('/canais', iptvProxyController.Canais.bind(iptvProxyController));
 iptvProxyRoute.get('/manifesto', iptvProxyController.Manifesto.bind(iptvProxyController));
+iptvProxyRoute.get('/capa-diag', iptvProxyController.CapaDiagnostico.bind(iptvProxyController));
 iptvProxyRoute.get('/capa', iptvProxyController.Capa.bind(iptvProxyController));
 iptvProxyRoute.get('/segmento', iptvProxyController.Segmento.bind(iptvProxyController));
 
