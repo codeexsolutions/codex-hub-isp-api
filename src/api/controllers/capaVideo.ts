@@ -155,3 +155,16 @@ export function capaDoVideo(url: string, fracao: number): Promise<Buffer | null>
     emAndamento.set(chave, p);
     return p;
 }
+
+// Diagnóstico (sem dados sensíveis): qual ffmpeg está sendo usado, se ele
+// roda, e qual commit está no ar — pra saber por que a capa falha em produção.
+export async function diagnosticoFfmpeg(): Promise<Record<string, unknown>> {
+    const { saida, erro } = await rodar(["-hide_banner", "-version"], 8000);
+    const texto = (saida.toString() || erro).split(/\r?\n/)[0] || "";
+    return {
+        ffmpeg: caminhoFfmpeg,
+        existe: caminhoFfmpeg === "ffmpeg" ? null : existsSync(caminhoFfmpeg),
+        versao: texto.slice(0, 120) || null,
+        commit: (process.env.RAILWAY_GIT_COMMIT_SHA || "").slice(0, 7) || null,
+    };
+}
