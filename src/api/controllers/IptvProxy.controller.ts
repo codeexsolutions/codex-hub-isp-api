@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import { Readable } from "stream";
+import { capaDoVideo, urlPermitida } from "./capaVideo";
 
 // O app central (synk-app) é servido em HTTPS — o navegador bloqueia qualquer
 // chamada pra um servidor Xtream em HTTP puro (comum nesse mercado) por
@@ -162,6 +163,28 @@ export default class IptvProxyController {
             return res.status(200).send(reescrito);
         } catch {
             return res.status(502).json({ message: "Não foi possível carregar o canal." });
+        }
+    }
+
+    // Capa de filme sem capa: um quadro do próprio vídeo (JPEG), tirado aqui
+    // com ffmpeg — ver capaVideo.ts. GET ?u=<url do vídeo em base64>&p=0.5
+    async Capa(req: Request, res: Response) {
+        try {
+            const u = String(req.query.u || "");
+            const url = Buffer.from(u, "base64").toString("utf-8");
+            const p = Math.min(0.9, Math.max(0.05, Number(req.query.p) || 0.2));
+            if (!urlPermitida(url)) return res.status(400).end();
+            const jpg = await capaDoVideo(url, Math.round(p * 100) / 100);
+            if (!jpg) {
+                res.set("Cache-Control", "public, max-age=3600");
+                return res.status(404).end();
+            }
+            res.set("Content-Type", "image/jpeg");
+            res.set("Cache-Control", "public, max-age=2592000, immutable");
+            res.set("Access-Control-Allow-Origin", "*");
+            return res.status(200).send(jpg);
+        } catch {
+            return res.status(502).end();
         }
     }
 
