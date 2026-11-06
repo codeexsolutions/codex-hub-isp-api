@@ -1,0 +1,3 @@
+# ffmpeg do sistema (rota /v1/iptv/proxy/capa — capa de filme tirada do vídeo).
+[phases.setup]
+aptPkgs = ["...", "ffmpeg"]

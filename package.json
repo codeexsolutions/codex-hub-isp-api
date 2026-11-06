@@ -7,7 +7,8 @@
     "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "node node_modules/ffmpeg-static/install.js || exit 0"
   },
   "repository": {
     "type": "git",
