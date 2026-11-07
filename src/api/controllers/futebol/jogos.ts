@@ -23,7 +23,7 @@ export const LIGAS: Liga[] = [
     { id: "arg.1", nome: "Liga Argentina", pais: "SA" },
 ];
 
-export type Time = { nome: string; curto: string; sigla: string; escudo?: string; cor?: string; corAlt?: string; placar?: number };
+export type Time = { id?: string; nome: string; curto: string; sigla: string; escudo?: string; cor?: string; corAlt?: string; placar?: number };
 export type Jogo = {
     id: string;
     liga: { id: string; nome: string; logo?: string };
@@ -42,6 +42,7 @@ const VALIDADE_MS = 60 * 1000;
 function time(c: any): Time {
     const t = c.team || {};
     return {
+        id: t.id ? String(t.id) : undefined,
         nome: t.displayName || t.name || "",
         curto: t.shortDisplayName || t.name || "",
         sigla: t.abbreviation || "",
