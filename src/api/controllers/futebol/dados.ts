@@ -305,3 +305,25 @@ export async function capaDoJogo(a: { escudo?: string; cor?: string }, b: { escu
     guardarCapa(chave, "capa-jogo", jpg);
     return { jpg };
 }
+
+/* ----------------------------- fundos da aba ----------------------------- */
+
+// Times queridos (Brasil primeiro) — as ARTES deles (fotos de jogadores,
+// torcida, estádio) viram o fundo animado da aba Futebol do app.
+const TIMES_FUNDO = [
+    "Flamengo", "Palmeiras", "Corinthians", "Sao Paulo", "Fluminense", "Gremio", "Internacional", "Atletico Mineiro",
+    "Santos", "Vasco da Gama", "Botafogo", "Cruzeiro", "Bahia", "Real Madrid", "Barcelona", "Manchester City", "Liverpool", "Boca Juniors",
+];
+
+export function fundosDaAba(): Promise<string[] | null> {
+    return comReserva("fundos-aba", 24 * 3600 * 1000, async () => {
+        const urls: string[] = [];
+        for (const nome of TIMES_FUNDO) {
+            const d = await json(`${TSDB}/searchteams.php?t=${encodeURIComponent(nome)}`);
+            const t = ((d && d.teams) || []).find((x: any) => x.strSport === "Soccer");
+            if (!t) continue;
+            [t.strFanart1, t.strFanart2, t.strFanart3, t.strFanart4].filter(Boolean).forEach((u: string) => urls.push(u));
+        }
+        return urls.length ? urls : null;
+    });
+}
