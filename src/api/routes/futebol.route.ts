@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { jogosDoDia } from "../controllers/futebol/jogos";
-import { tabela, timeDetalhe, jogoDetalhe, capaDoJogo } from "../controllers/futebol/dados";
+import { tabela, timeDetalhe, jogoDetalhe, capaDoJogo, fundosDaAba } from "../controllers/futebol/dados";
 
 // Futebol pro app Synk TV: jogos do dia com escudos, cores, placar e minuto.
 const futebolRoute = Router();
@@ -52,6 +52,13 @@ futebolRoute.get("/capa", async (req: Request, res: Response) => {
     if (r.redirect) return res.redirect(302, r.redirect);
     res.set("Content-Type", "image/jpeg");
     return res.send(r.jpg);
+});
+
+// GET /futebol/fundos → artes dos times (fundo animado da aba Futebol)
+futebolRoute.get("/fundos", async (_req: Request, res: Response) => {
+    const f = await fundosDaAba();
+    res.set("Cache-Control", "public, max-age=3600");
+    res.json({ fundos: f || [] });
 });
 
 export default futebolRoute;
