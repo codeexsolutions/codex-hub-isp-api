@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import { Readable } from "stream";
 import { capaDoVideo, quadroNoSegundo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
+import { capaGuardada, guardarCapa } from "./capasGuardadas";
 
 // O app central (synk-app) é servido em HTTPS — o navegador bloqueia qualquer
 // chamada pra um servidor Xtream em HTTP puro (comum nesse mercado) por
@@ -176,7 +177,18 @@ export default class IptvProxyController {
             if (!urlPermitida(url)) return res.status(400).end();
             // ?s=segundos → miniatura da barra de progresso (segundo exato)
             const s = req.query.s !== undefined ? Number(req.query.s) : NaN;
-            const jpg = isFinite(s) && s >= 0 ? await quadroNoSegundo(url, s) : await capaDoVideo(url, Math.round(p * 100) / 100);
+            const porSegundo = isFinite(s) && s >= 0;
+            const variante = porSegundo ? `s${Math.round(s)}` : `p${Math.round(p * 100)}`;
+            // Já tirada antes (por qualquer pessoa)? Vai direto pra foto
+            // guardada no Supabase — sem ffmpeg, sem abrir o IPTV.
+            const guardada = await capaGuardada(url, variante);
+            if (guardada) {
+                res.set("Cache-Control", "public, max-age=2592000, immutable");
+                res.set("Access-Control-Allow-Origin", "*");
+                return res.redirect(302, guardada);
+            }
+            const jpg = porSegundo ? await quadroNoSegundo(url, s) : await capaDoVideo(url, Math.round(p * 100) / 100);
+            if (jpg) guardarCapa(url, variante, jpg); // guarda de vez (segundo plano)
             if (!jpg) {
                 res.set("Cache-Control", "public, max-age=3600");
                 return res.status(404).end();
