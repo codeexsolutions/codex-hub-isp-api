@@ -319,6 +319,8 @@ export function fundosDaAba(): Promise<string[] | null> {
     return comReserva("fundos-aba", 24 * 3600 * 1000, async () => {
         const urls: string[] = [];
         for (const nome of TIMES_FUNDO) {
+            // a chave grátis limita a frequência: um respiro entre os pedidos
+            await new Promise((ok) => setTimeout(ok, 700));
             const d = await json(`${TSDB}/searchteams.php?t=${encodeURIComponent(nome)}`);
             const t = ((d && d.teams) || []).find((x: any) => x.strSport === "Soccer");
             if (!t) continue;
