@@ -12,6 +12,7 @@ import licencaTvRoute from "./licencaTv.route";
 import revendedorRoute from "./revendedor.route";
 import catalogoRoute from "./catalogo.route";
 import futebolRoute from "./futebol.route";
+import servidorParceiroRoute from "./servidorParceiro.route";
 
 const routes = Router();
 
@@ -28,5 +29,6 @@ routes.use('/licenca-tv', licencaTvRoute)
 routes.use('/revendedores', revendedorRoute)
 routes.use('/catalogo', catalogoRoute)
 routes.use('/futebol', futebolRoute)
+routes.use('/servidores-parceiros', servidorParceiroRoute)
 
 export default routes;

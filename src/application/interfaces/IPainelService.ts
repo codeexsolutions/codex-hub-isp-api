@@ -28,6 +28,7 @@ import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
 import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
+import { servidorParceiroModel } from "../../core/models/servidorParceiroModel";
 import { revendedorModel } from "../../core/models/revendedorModel";
 
 export default interface IPainelServices {
@@ -183,12 +184,18 @@ export default interface IPainelServices {
     // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
     ObterConfigLicencaTv() : Promise<configLicencaTvModel>
     DefinirConfigLicencaTv(config:configLicencaTvModel) : Promise<configLicencaTvModel>
-    SolicitarLicencaTv(nome:string, telefone:string) : Promise<{ chave:string; valor:number; status:string; vencimento:string|null; pixCopiaCola:string|null; pixQrCode:string|null; linkPagamentoLista:string|null }>
-    ObterStatusLicencaTv(chave:string) : Promise<{ chave:string; status:string; vencimento:string|null; valor:number; pixCopiaCola?:string|null; pixQrCode?:string|null; linkPagamentoLista?:string|null }>
+    SolicitarLicencaTv(nome:string, telefone:string, tier?: "normal" | "pro") : Promise<{ chave:string; valor:number; tier:string; status:string; vencimento:string|null; pixCopiaCola:string|null; pixQrCode:string|null; linkPagamentoLista:string|null }>
+    ObterStatusLicencaTv(chave:string) : Promise<{ chave:string; status:string; tier:string; vencimento:string|null; valor:number; pixCopiaCola?:string|null; pixQrCode?:string|null; linkPagamentoLista?:string|null }>
     ListarLicencasTv() : Promise<licencaTvModel[]>
     AprovarLicencaTv(id:number) : Promise<licencaTvModel>
     CancelarLicencaTv(id:number) : Promise<licencaTvModel>
     DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel>
+    ObterPerfilSyncTv(chave:string) : Promise<{ historico_filmes: unknown[]; historico_series: unknown[]; interacoes: unknown[]; atualizado_em: string | null }>
+    SalvarPerfilSyncTv(chave:string, dados: { historicoFilmes: unknown[]; historicoSeries: unknown[]; interacoes: unknown[]; atualizadoEm: string }) : Promise<{ historico_filmes: unknown[]; historico_series: unknown[]; interacoes: unknown[]; atualizado_em: string }>
+    CriarServidorParceiro(nomeServidor:string, urlServidor:string, valorMensal:number) : Promise<servidorParceiroModel>
+    ListarServidoresParceiros() : Promise<servidorParceiroModel[]>
+    AtualizarServidorParceiro(id:number, dados: { nomeServidor?:string; urlServidor?:string; valorMensal?:number; status?:string }) : Promise<servidorParceiroModel>
+    ValidarServidorParceiro(codigoParceiro:string) : Promise<{ valido: boolean; nomeServidor?: string; urlServidor?: string }>
     CriarRevendedor(nome:string, usuario:string, senha:string) : Promise<revendedorModel>
     ListarRevendedores() : Promise<revendedorModel[]>
     DefinirStatusRevendedor(id:number, ativo:boolean) : Promise<revendedorModel>

@@ -22,7 +22,8 @@ import { ixcOsConfigModel } from "../models/ixcOsConfigModel";
 import { ixcContratoConfigModel } from "../models/ixcContratoConfigModel";
 import { ixcAssuntoModel } from "../models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../models/clubeBeneficiosModel";
-import { licencaTvModel, configLicencaTvModel } from "../models/licencaTvModel";
+import { licencaTvModel, configLicencaTvModel, perfilTvSyncModel } from "../models/licencaTvModel";
+import { servidorParceiroModel } from "../models/servidorParceiroModel";
 import { revendedorModel } from "../models/revendedorModel";
 import { planoInternetModel } from "../models/planoInternetModel";
 import { lpConfigModel } from "../models/lpConfigModel";
@@ -150,12 +151,18 @@ export default interface IPainelRepository {
     // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor)
     ObterConfigLicencaTv() : Promise<configLicencaTvModel>
     DefinirConfigLicencaTv(config:configLicencaTvModel) : Promise<configLicencaTvModel>
-    CriarLicencaTv(chave:string, nome:string, telefone:string, valor:number) : Promise<licencaTvModel>
+    CriarLicencaTv(chave:string, nome:string, telefone:string, valor:number, tier?: "normal" | "pro") : Promise<licencaTvModel>
     ObterLicencaTvPorChave(chave:string) : Promise<licencaTvModel | null>
     ListarLicencasTv() : Promise<licencaTvModel[]>
     AprovarLicencaTv(id:number) : Promise<licencaTvModel>
     CancelarLicencaTv(id:number) : Promise<licencaTvModel>
     DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel>
+    ObterPerfilSyncTv(licencaTvId:number) : Promise<perfilTvSyncModel | null>
+    SalvarPerfilSyncTv(licencaTvId:number, dados: Omit<perfilTvSyncModel, "atualizado_em"> & { atualizado_em: string }) : Promise<perfilTvSyncModel>
+    CriarServidorParceiro(nomeServidor:string, codigoParceiro:string, urlServidor:string, valorMensal:number) : Promise<servidorParceiroModel>
+    ListarServidoresParceiros() : Promise<servidorParceiroModel[]>
+    ObterServidorParceiroPorCodigo(codigoParceiro:string) : Promise<servidorParceiroModel | null>
+    AtualizarServidorParceiro(id:number, dados: { nomeServidor?:string; urlServidor?:string; valorMensal?:number; status?:string }) : Promise<servidorParceiroModel>
     CriarRevendedor(nome:string, usuario:string, senha:string) : Promise<revendedorModel>
     ListarRevendedores() : Promise<revendedorModel[]>
     DefinirStatusRevendedor(id:number, status:string) : Promise<revendedorModel>

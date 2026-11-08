@@ -1273,11 +1273,12 @@ export default class PainelController {
 
     async DefinirConfigLicencaTvAdmin(req:AuthRequest, res:Response){
 
-        const { valor_anual, chave_pix, nome_recebedor, cidade } = req.body;
+        const { valor_anual, valor_anual_pro, chave_pix, nome_recebedor, cidade } = req.body;
 
         try {
             const atualizado = await this._painelService.DefinirConfigLicencaTv({
                 valor_anual: Number(valor_anual),
+                valor_anual_pro: Number(valor_anual_pro),
                 chave_pix,
                 nome_recebedor,
                 cidade,
@@ -1339,6 +1340,37 @@ export default class PainelController {
         try {
             const licenca = await this._painelService.DefinirLinkPagamentoListaLicencaTv(id, link ?? null);
             return res.json({data: licenca})
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    // SERVIDORES PARCEIROS — servidor de IPTV que paga mensalidade ao Synk;
+    // o cliente final dele usa o código parceiro no app e não paga licença.
+    async CriarServidorParceiroAdmin(req:AuthRequest, res:Response){
+
+        try {
+            const { nomeServidor, urlServidor, valorMensal } = req.body;
+            const resultado = await this._painelService.CriarServidorParceiro(nomeServidor, urlServidor, valorMensal);
+            return res.status(201).json({ data: resultado });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message })
+        }
+    }
+
+    async ListarServidoresParceirosAdmin(req:AuthRequest, res:Response){
+
+        const servidores = await this._painelService.ListarServidoresParceiros();
+        return res.json({data: servidores})
+    }
+
+    async AtualizarServidorParceiroAdmin(req:AuthRequest, res:Response){
+
+        const id = Number.parseInt(req.params.id as string);
+        const { nomeServidor, urlServidor, valorMensal, status } = req.body;
+        try {
+            const servidor = await this._painelService.AtualizarServidorParceiro(id, { nomeServidor, urlServidor, valorMensal, status });
+            return res.json({data: servidor})
         } catch (error: any) {
             return res.status(400).json({ message: error.message })
         }

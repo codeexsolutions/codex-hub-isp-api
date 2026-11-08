@@ -15,11 +15,41 @@ export default class LicencaTvController {
     // licença "pendente" com PIX pra pagar.
     async Solicitar(req:Request, res:Response){
         try {
-            const { nome, telefone } = req.body;
-            const resultado = await this._painelService.SolicitarLicencaTv(nome, telefone);
+            const { nome, telefone, tier } = req.body;
+            const resultado = await this._painelService.SolicitarLicencaTv(nome, telefone, tier === "pro" ? "pro" : undefined);
             return res.status(201).json({ data: resultado });
         } catch (error:any) {
             return res.status(400).json({ statusCode: 400, message: error.message, data: error.message });
+        }
+    }
+
+    // Público — exclusivo de licença tier "pro". Sync de histórico/perfil
+    // entre aparelhos (celular/TV), ver PainelServices.ObterPerfilSyncTv.
+    async ObterPerfilSync(req:Request, res:Response){
+        try {
+            const resultado = await this._painelService.ObterPerfilSyncTv(req.params.chave as string);
+            return res.json({ data: resultado });
+        } catch (error:any) {
+            if (String(error.message).startsWith("PRO_REQUIRED"))
+                return res.status(403).json({ statusCode: 403, message: error.message, data: error.message });
+            return res.status(404).json({ statusCode: 404, message: error.message, data: error.message });
+        }
+    }
+
+    async SalvarPerfilSync(req:Request, res:Response){
+        try {
+            const { historicoFilmes, historicoSeries, interacoes, atualizadoEm } = req.body;
+            const resultado = await this._painelService.SalvarPerfilSyncTv(req.params.chave as string, {
+                historicoFilmes: historicoFilmes ?? [],
+                historicoSeries: historicoSeries ?? [],
+                interacoes: interacoes ?? [],
+                atualizadoEm: atualizadoEm || new Date().toISOString(),
+            });
+            return res.json({ data: resultado });
+        } catch (error:any) {
+            if (String(error.message).startsWith("PRO_REQUIRED"))
+                return res.status(403).json({ statusCode: 403, message: error.message, data: error.message });
+            return res.status(404).json({ statusCode: 404, message: error.message, data: error.message });
         }
     }
 

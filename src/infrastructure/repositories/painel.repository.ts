@@ -26,7 +26,8 @@ import { ixcOsConfigModel } from "../../core/models/ixcOsConfigModel";
 import { ixcContratoConfigModel } from "../../core/models/ixcContratoConfigModel";
 import { ixcAssuntoModel } from "../../core/models/ixcAssuntoModel";
 import { clubeBeneficiosModel } from "../../core/models/clubeBeneficiosModel";
-import { licencaTvModel, configLicencaTvModel } from "../../core/models/licencaTvModel";
+import { licencaTvModel, configLicencaTvModel, perfilTvSyncModel } from "../../core/models/licencaTvModel";
+import { servidorParceiroModel } from "../../core/models/servidorParceiroModel";
 import { revendedorModel } from "../../core/models/revendedorModel";
 import { planoInternetModel } from "../../core/models/planoInternetModel";
 import { lpConfigModel } from "../../core/models/lpConfigModel";
@@ -1061,25 +1062,25 @@ export default class PainelRepository implements IPainelRepository {
     // LICENÇA ANUAL DO SYNK TV (venda avulsa, sem provedor) — PIX próprio,
     // separado do synk_pix_config usado em Faturamento/Comissão.
     async ObterConfigLicencaTv() : Promise<configLicencaTvModel> {
-        const select = `SELECT valor_anual, chave_pix, nome_recebedor, cidade FROM config_licenca_tv WHERE id = 1;`;
+        const select = `SELECT valor_anual, valor_anual_pro, chave_pix, nome_recebedor, cidade FROM config_licenca_tv WHERE id = 1;`;
         const result = await this._db.Execulte<configLicencaTvModel>(select, []);
         return result[0];
     }
 
     async DefinirConfigLicencaTv(config: configLicencaTvModel) : Promise<configLicencaTvModel> {
-        const update = `UPDATE config_licenca_tv SET valor_anual = $1, chave_pix = $2, nome_recebedor = $3, cidade = $4
-            WHERE id = 1 RETURNING valor_anual, chave_pix, nome_recebedor, cidade;`;
-        const result = await this._db.Execulte<configLicencaTvModel>(update, [config.valor_anual, config.chave_pix, config.nome_recebedor, config.cidade]);
+        const update = `UPDATE config_licenca_tv SET valor_anual = $1, valor_anual_pro = $2, chave_pix = $3, nome_recebedor = $4, cidade = $5
+            WHERE id = 1 RETURNING valor_anual, valor_anual_pro, chave_pix, nome_recebedor, cidade;`;
+        const result = await this._db.Execulte<configLicencaTvModel>(update, [config.valor_anual, config.valor_anual_pro, config.chave_pix, config.nome_recebedor, config.cidade]);
         return result[0];
     }
 
     // Já nasce em teste (7 dias liberados) — o cliente entra na hora, sem
     // esperar aprovação de pagamento; o PIX fica disponível durante o teste
     // pra converter em licença paga (ver AprovarLicencaTv).
-    async CriarLicencaTv(chave:string, nome:string, telefone:string, valor:number) : Promise<licencaTvModel> {
-        const insert = `INSERT INTO licencas_tv (chave, nome, telefone, valor, status, vencimento)
-            VALUES ($1,$2,$3,$4,'teste',(CURRENT_DATE + INTERVAL '7 days')::date) RETURNING *;`;
-        const result = await this._db.Execulte<licencaTvModel>(insert, [chave, nome, telefone, valor]);
+    async CriarLicencaTv(chave:string, nome:string, telefone:string, valor:number, tier: "normal" | "pro" = "normal") : Promise<licencaTvModel> {
+        const insert = `INSERT INTO licencas_tv (chave, nome, telefone, valor, tier, status, vencimento)
+            VALUES ($1,$2,$3,$4,$5,'teste',(CURRENT_DATE + INTERVAL '7 days')::date) RETURNING *;`;
+        const result = await this._db.Execulte<licencaTvModel>(insert, [chave, nome, telefone, valor, tier]);
         return result[0];
     }
 
@@ -1135,6 +1136,60 @@ export default class PainelRepository implements IPainelRepository {
     async DefinirStatusRevendedor(id:number, status:string) : Promise<revendedorModel> {
         const update = `UPDATE revendedores SET status = $1 WHERE id = $2 RETURNING id, nome, usuario, status, criado_em;`;
         const result = await this._db.Execulte<revendedorModel>(update, [status, id]);
+        return result[0];
+    }
+
+    async ObterPerfilSyncTv(licencaTvId: number) : Promise<perfilTvSyncModel | null> {
+        const select = `SELECT historico_filmes, historico_series, interacoes, atualizado_em FROM perfil_tv_sync WHERE licenca_tv_id = $1;`;
+        const result = await this._db.Execulte<perfilTvSyncModel>(select, [licencaTvId]);
+        return result[0] ?? null;
+    }
+
+    async SalvarPerfilSyncTv(licencaTvId: number, dados: Omit<perfilTvSyncModel, "atualizado_em"> & { atualizado_em: string }) : Promise<perfilTvSyncModel> {
+        const upsert = `INSERT INTO perfil_tv_sync (licenca_tv_id, historico_filmes, historico_series, interacoes, atualizado_em)
+            VALUES ($1,$2,$3,$4,$5)
+            ON CONFLICT (licenca_tv_id) DO UPDATE SET
+                historico_filmes = EXCLUDED.historico_filmes, historico_series = EXCLUDED.historico_series,
+                interacoes = EXCLUDED.interacoes, atualizado_em = EXCLUDED.atualizado_em
+            RETURNING historico_filmes, historico_series, interacoes, atualizado_em;`;
+        const result = await this._db.Execulte<perfilTvSyncModel>(upsert, [
+            licencaTvId,
+            JSON.stringify(dados.historico_filmes),
+            JSON.stringify(dados.historico_series),
+            JSON.stringify(dados.interacoes),
+            dados.atualizado_em,
+        ]);
+        return result[0];
+    }
+
+    // SERVIDORES PARCEIROS (IPTV que paga mensalidade ao Synk; cliente deles
+    // usa o app sem pagar licença — ver servidorParceiroModel).
+    async CriarServidorParceiro(nomeServidor:string, codigoParceiro:string, urlServidor:string, valorMensal:number) : Promise<servidorParceiroModel> {
+        const insert = `INSERT INTO servidores_parceiros (nome_servidor, codigo_parceiro, url_servidor, valor_mensal, status)
+            VALUES ($1,$2,$3,$4,'ativo') RETURNING *;`;
+        const result = await this._db.Execulte<servidorParceiroModel>(insert, [nomeServidor, codigoParceiro, urlServidor, valorMensal]);
+        return result[0];
+    }
+
+    async ListarServidoresParceiros() : Promise<servidorParceiroModel[]> {
+        const select = `SELECT * FROM servidores_parceiros ORDER BY criado_em DESC;`;
+        return await this._db.Execulte<servidorParceiroModel>(select, []);
+    }
+
+    async ObterServidorParceiroPorCodigo(codigoParceiro:string) : Promise<servidorParceiroModel | null> {
+        const select = `SELECT * FROM servidores_parceiros WHERE codigo_parceiro = $1;`;
+        const result = await this._db.Execulte<servidorParceiroModel>(select, [codigoParceiro]);
+        return result[0] ?? null;
+    }
+
+    async AtualizarServidorParceiro(id:number, dados: { nomeServidor?:string; urlServidor?:string; valorMensal?:number; status?:string }) : Promise<servidorParceiroModel> {
+        const update = `UPDATE servidores_parceiros SET
+                nome_servidor = COALESCE($2, nome_servidor),
+                url_servidor = COALESCE($3, url_servidor),
+                valor_mensal = COALESCE($4, valor_mensal),
+                status = COALESCE($5, status)
+            WHERE id = $1 RETURNING *;`;
+        const result = await this._db.Execulte<servidorParceiroModel>(update, [id, dados.nomeServidor ?? null, dados.urlServidor ?? null, dados.valorMensal ?? null, dados.status ?? null]);
         return result[0];
     }
 

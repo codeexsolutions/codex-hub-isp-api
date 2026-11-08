@@ -41,6 +41,8 @@ import IIxcSoftServices from "../interfaces/IIxcSoftServices";
 import { eGerenciador } from "../../common/enuns/egerenciador";
 import { revendedorModel } from "../../core/models/revendedorModel";
 import { gerarChaveLicenca } from "../../common/utilities/chaveLicenca";
+import { gerarCupom } from "../../common/utilities/cupom";
+import { servidorParceiroModel } from "../../core/models/servidorParceiroModel";
 
 // mesma lista usada pela tela de módulos do admin — plano sincroniza ativação
 // desses módulos, os demais (novos módulos ainda não incluídos em plano
@@ -802,10 +804,13 @@ export default class PainelService implements IPainelServices {
     async DefinirConfigLicencaTv(config: configLicencaTvModel) : Promise<configLicencaTvModel> {
         if (!(Number(config.valor_anual) > 0))
             throw new Error("Informe um valor anual válido.");
+        if (!(Number(config.valor_anual_pro) > 0))
+            throw new Error("Informe um valor anual válido pro plano Pro.");
         if (!config.chave_pix?.trim())
             throw new Error("Informe a chave PIX da licença.");
         return await this._painelRepository.DefinirConfigLicencaTv({
             valor_anual: Number(config.valor_anual),
+            valor_anual_pro: Number(config.valor_anual_pro),
             chave_pix: config.chave_pix.trim(),
             nome_recebedor: config.nome_recebedor?.trim() || "SYNK SOLUCOES",
             cidade: config.cidade?.trim() || "FORTALEZA",
@@ -829,16 +834,18 @@ export default class PainelService implements IPainelServices {
         return { pixCopiaCola, pixQrCode };
     }
 
-    async SolicitarLicencaTv(nome:string, telefone:string) {
+    async SolicitarLicencaTv(nome:string, telefone:string, tier?: "normal" | "pro") {
         if (!nome?.trim() || !telefone?.trim())
             throw new Error("Informe nome e telefone.");
 
+        const tierEscolhido = tier === "pro" ? "pro" : "normal";
         const config = await this._painelRepository.ObterConfigLicencaTv();
+        const valor = tierEscolhido === "pro" ? Number(config.valor_anual_pro) : Number(config.valor_anual);
         const chave = gerarChaveLicenca();
-        const licenca = await this._painelRepository.CriarLicencaTv(chave, nome.trim(), telefone.trim(), Number(config.valor_anual));
+        const licenca = await this._painelRepository.CriarLicencaTv(chave, nome.trim(), telefone.trim(), valor, tierEscolhido);
         const pix = await this.gerarPixLicenca(licenca);
 
-        return { chave: licenca.chave, valor: licenca.valor, status: licenca.status, vencimento: licenca.vencimento, linkPagamentoLista: licenca.link_pagamento_lista ?? null, ...pix };
+        return { chave: licenca.chave, valor: licenca.valor, tier: licenca.tier, status: licenca.status, vencimento: licenca.vencimento, linkPagamentoLista: licenca.link_pagamento_lista ?? null, ...pix };
     }
 
     async ObterStatusLicencaTv(chave:string) {
@@ -851,7 +858,39 @@ export default class PainelService implements IPainelServices {
         // perto do vencimento e "vencida" também precisam poder renovar (a
         // tela de perfil do app mostra o PIX de renovação nesses casos).
         const pix = await this.gerarPixLicenca(licenca);
-        return { chave: licenca.chave, status: licenca.status, vencimento: licenca.vencimento, valor: licenca.valor, linkPagamentoLista: licenca.link_pagamento_lista ?? null, ...pix };
+        return { chave: licenca.chave, status: licenca.status, tier: licenca.tier, vencimento: licenca.vencimento, valor: licenca.valor, linkPagamentoLista: licenca.link_pagamento_lista ?? null, ...pix };
+    }
+
+    // Sync de histórico/perfil entre aparelhos — exclusivo do tier "pro".
+    async ObterPerfilSyncTv(chave:string) {
+        const licenca = await this._painelRepository.ObterLicencaTvPorChave(chave?.trim() ?? "");
+        if (!licenca)
+            throw new Error("Licença não encontrada.");
+        if (licenca.tier !== "pro")
+            throw new Error("PRO_REQUIRED: recurso exclusivo do plano Pro.");
+        const perfil = await this._painelRepository.ObterPerfilSyncTv(licenca.id);
+        return perfil ?? { historico_filmes: [], historico_series: [], interacoes: [], atualizado_em: null };
+    }
+
+    async SalvarPerfilSyncTv(chave:string, dados: { historicoFilmes: unknown[]; historicoSeries: unknown[]; interacoes: unknown[]; atualizadoEm: string }) {
+        const licenca = await this._painelRepository.ObterLicencaTvPorChave(chave?.trim() ?? "");
+        if (!licenca)
+            throw new Error("Licença não encontrada.");
+        if (licenca.tier !== "pro")
+            throw new Error("PRO_REQUIRED: recurso exclusivo do plano Pro.");
+
+        const atual = await this._painelRepository.ObterPerfilSyncTv(licenca.id);
+        // "Mais novo ganha": nunca sobrescreve um perfil salvo mais recente
+        // com um payload desatualizado vindo de outro aparelho.
+        if (atual && new Date(atual.atualizado_em) >= new Date(dados.atualizadoEm))
+            return atual;
+
+        return await this._painelRepository.SalvarPerfilSyncTv(licenca.id, {
+            historico_filmes: dados.historicoFilmes ?? [],
+            historico_series: dados.historicoSeries ?? [],
+            interacoes: dados.interacoes ?? [],
+            atualizado_em: dados.atualizadoEm,
+        });
     }
 
     async ListarLicencasTv() : Promise<licencaTvModel[]> {
@@ -869,6 +908,34 @@ export default class PainelService implements IPainelServices {
 
     async DefinirLinkPagamentoListaLicencaTv(id:number, link:string|null) : Promise<licencaTvModel> {
         return await this._painelRepository.DefinirLinkPagamentoListaLicencaTv(id, link?.trim() || null);
+    }
+
+    // SERVIDORES PARCEIROS (IPTV que paga mensalidade ao Synk) — o cliente
+    // final digita só o código parceiro + usuário/senha Xtream; a URL do
+    // servidor vem daqui, sem o cliente nunca saber qual é.
+    async CriarServidorParceiro(nomeServidor:string, urlServidor:string, valorMensal:number) : Promise<servidorParceiroModel> {
+        if (!nomeServidor?.trim() || !urlServidor?.trim())
+            throw new Error("Informe o nome e a URL do servidor.");
+        if (!(Number(valorMensal) > 0))
+            throw new Error("Informe um valor mensal válido.");
+        const codigo = gerarCupom();
+        return await this._painelRepository.CriarServidorParceiro(nomeServidor.trim(), codigo, urlServidor.trim(), Number(valorMensal));
+    }
+
+    async ListarServidoresParceiros() : Promise<servidorParceiroModel[]> {
+        return await this._painelRepository.ListarServidoresParceiros();
+    }
+
+    async AtualizarServidorParceiro(id:number, dados: { nomeServidor?:string; urlServidor?:string; valorMensal?:number; status?:string }) : Promise<servidorParceiroModel> {
+        return await this._painelRepository.AtualizarServidorParceiro(id, dados);
+    }
+
+    // Público — chamado pelo app de TV na tela "Veio por uma revenda IPTV".
+    // Não revela nada além do necessário pra montar a tela de login.
+    async ValidarServidorParceiro(codigoParceiro:string) : Promise<{ valido: boolean; nomeServidor?: string; urlServidor?: string }> {
+        const servidor = await this._painelRepository.ObterServidorParceiroPorCodigo(codigoParceiro?.trim().toUpperCase() ?? "");
+        if (!servidor || servidor.status !== "ativo") return { valido: false };
+        return { valido: true, nomeServidor: servidor.nome_servidor, urlServidor: servidor.url_servidor };
     }
 
     // REVENDEDOR DE IPTV (painel básico, separado de Admin/Provedor/Parceiro)

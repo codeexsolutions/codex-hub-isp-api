@@ -195,6 +195,9 @@ painelRouter.post('/admin/licencas-tv', authMiddleware, adminMiddleware, painelC
 painelRouter.patch('/admin/licencas-tv/:id/aprovar', authMiddleware, adminMiddleware, painelController.AprovarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/cancelar', authMiddleware, adminMiddleware, painelController.CancelarLicencaTvAdmin.bind(painelController));
 painelRouter.patch('/admin/licencas-tv/:id/link-lista', authMiddleware, adminMiddleware, painelController.DefinirLinkPagamentoListaLicencaTvAdmin.bind(painelController));
+painelRouter.post('/admin/servidores-parceiros', authMiddleware, adminMiddleware, painelController.CriarServidorParceiroAdmin.bind(painelController));
+painelRouter.get('/admin/servidores-parceiros', authMiddleware, adminMiddleware, painelController.ListarServidoresParceirosAdmin.bind(painelController));
+painelRouter.patch('/admin/servidores-parceiros/:id', authMiddleware, adminMiddleware, painelController.AtualizarServidorParceiroAdmin.bind(painelController));
 painelRouter.post('/admin/revendedores', authMiddleware, adminMiddleware, painelController.CriarRevendedorAdmin.bind(painelController));
 painelRouter.get('/admin/revendedores', authMiddleware, adminMiddleware, painelController.ListarRevendedoresAdmin.bind(painelController));
 painelRouter.patch('/admin/revendedores/:id/status', authMiddleware, adminMiddleware, painelController.DefinirStatusRevendedorAdmin.bind(painelController));
