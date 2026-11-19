@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import { Readable } from "stream";
-import { capaDoVideo, quadroNoSegundo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
+import { quadroAoVivo, capaDoVideo, quadroNoSegundo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
 import { capaGuardada, guardarCapa } from "./capasGuardadas";
 
 // O app central (synk-app) é servido em HTTPS — o navegador bloqueia qualquer
@@ -196,6 +196,26 @@ export default class IptvProxyController {
             res.set("Content-Type", "image/jpeg");
             res.set("Cache-Control", "public, max-age=2592000, immutable");
             res.set("Access-Control-Allow-Origin", "*");
+            return res.status(200).send(jpg);
+        } catch {
+            return res.status(502).end();
+        }
+    }
+
+    // GET /iptv/proxy/ao-vivo?u=<url em base64> → JPEG de AGORA do canal
+    // ao vivo (prévia das câmeras no player). Guardado ~2 min no servidor.
+    async AoVivo(req: Request, res: Response) {
+        try {
+            const url = Buffer.from(String(req.query.u || ""), "base64").toString("utf-8");
+            if (!urlPermitida(url)) return res.status(400).end();
+            const jpg = await quadroAoVivo(url);
+            res.set("Access-Control-Allow-Origin", "*");
+            if (!jpg) {
+                res.set("Cache-Control", "public, max-age=30");
+                return res.status(404).end();
+            }
+            res.set("Content-Type", "image/jpeg");
+            res.set("Cache-Control", "public, max-age=60");
             return res.status(200).send(jpg);
         } catch {
             return res.status(502).end();
