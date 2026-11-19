@@ -228,6 +228,74 @@ export function quadroNoSegundo(url: string, segundos: number): Promise<Buffer |
     return p;
 }
 
+// Miniatura de CANAL AO VIVO (câmeras de reality, ex.: "A Fazenda Sinal
+// 01..06"): um quadro de AGORA. Diferente da capa de filme, não fica
+// guardada pra sempre: vale ~2 minutos em memória — quem pedir nesse tempo
+// (qualquer pessoa, qualquer TV) recebe a mesma foto, sem abrir o IPTV de
+// novo. Assim o servidor faz no máximo 1 ffmpeg por câmera a cada 2 min.
+const VALIDADE_AO_VIVO_MS = 2 * 60 * 1000;
+const MAX_AO_VIVO = 400;
+const cacheAoVivo = new Map<string, { jpg: Buffer; em: number }>();
+const aoVivoEmAndamento = new Map<string, Promise<Buffer | null>>();
+const falhasAoVivo = new Map<string, number>();
+
+export function quadroAoVivoGuardado(url: string): { jpg: Buffer; idadeMs: number } | null {
+    const c = cacheAoVivo.get(url);
+    if (!c) return null;
+    const idade = Date.now() - c.em;
+    return idade < VALIDADE_AO_VIVO_MS ? { jpg: c.jpg, idadeMs: idade } : null;
+}
+
+export function quadroAoVivo(url: string): Promise<Buffer | null> {
+    const guardado = quadroAoVivoGuardado(url);
+    if (guardado) return Promise.resolve(guardado.jpg);
+    const falhou = falhasAoVivo.get(url);
+    if (falhou && Date.now() - falhou < 60 * 1000) {
+        // falhou há pouco: devolve a última foto (mesmo velha) se tiver
+        const velha = cacheAoVivo.get(url);
+        return Promise.resolve(velha ? velha.jpg : null);
+    }
+    const andamento = aoVivoEmAndamento.get(url);
+    if (andamento) return andamento;
+    const p = naVez(async () => {
+        await escolherFfmpeg();
+        const { saida } = await rodar(
+            [
+                "-hide_banner", "-nostdin", "-loglevel", "error",
+                "-rw_timeout", "10000000",
+                ...COMO_PLAYER,
+                "-i", url,
+                "-frames:v", "1",
+                "-vf", "scale=416:-2",
+                "-q:v", "6",
+                "-f", "image2", "-c:v", "mjpeg",
+                "pipe:1",
+            ],
+            15000
+        );
+        return saida.length > 1000 ? saida : null;
+    })
+        .catch(() => null)
+        .then((jpg) => {
+            aoVivoEmAndamento.delete(url);
+            if (jpg) {
+                cacheAoVivo.delete(url);
+                cacheAoVivo.set(url, { jpg, em: Date.now() });
+                if (cacheAoVivo.size > MAX_AO_VIVO) {
+                    const velha = cacheAoVivo.keys().next().value;
+                    if (velha !== undefined) cacheAoVivo.delete(velha);
+                }
+                falhasAoVivo.delete(url);
+                return jpg;
+            }
+            falhasAoVivo.set(url, Date.now());
+            const velha = cacheAoVivo.get(url);
+            return velha ? velha.jpg : null;
+        });
+    aoVivoEmAndamento.set(url, p);
+    return p;
+}
+
 // Diagnóstico (sem dados sensíveis): qual ffmpeg está sendo usado, se ele
 // roda, e qual commit está no ar — pra saber por que a capa falha em produção.
 export async function diagnosticoFfmpeg(urlTeste?: string): Promise<Record<string, unknown>> {
