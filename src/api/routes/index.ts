@@ -14,6 +14,7 @@ import catalogoRoute from "./catalogo.route";
 import futebolRoute from "./futebol.route";
 import servidorParceiroRoute from "./servidorParceiro.route";
 import marcadoresRoute from "./marcadores.route";
+import esportesRoute from "./esportes.route";
 
 const routes = Router();
 
@@ -32,5 +33,6 @@ routes.use('/catalogo', catalogoRoute)
 routes.use('/futebol', futebolRoute)
 routes.use('/servidores-parceiros', servidorParceiroRoute)
 routes.use('/marcadores', marcadoresRoute)
+routes.use('/esportes', esportesRoute)
 
 export default routes;
