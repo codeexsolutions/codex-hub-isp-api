@@ -49,7 +49,7 @@ function escolherFfmpeg(): Promise<void> {
 // Painéis IPTV costumam recusar quem não se apresenta como player (o ffmpeg
 // diz "Lavf/..."): entra como VLC. Segue os redirecionamentos do painel
 // (/movie/usuario/senha/ID → CDN) normalmente.
-const COMO_PLAYER = ["-user_agent", "VLC/3.0.20 LibVLC/3.0.20", "-multiple_requests", "1"];
+export const COMO_PLAYER = ["-user_agent", "VLC/3.0.20 LibVLC/3.0.20", "-multiple_requests", "1"];
 
 const MAX_SIMULTANEOS = 2;
 // capas (~40 KB) + miniaturas da barra do player (~15 KB, ~120 por filme)
@@ -108,13 +108,15 @@ export function urlPermitida(url: string): boolean {
     return true;
 }
 
-type Resultado = { saida: Buffer; erro: string; codigo: number | null; sinal: string | null };
+export type Resultado = { saida: Buffer; erro: string; codigo: number | null; sinal: string | null };
 
 function rodar(args: string[], limiteMs: number): Promise<Resultado> {
     return rodarCom(caminhoFfmpeg, args, limiteMs);
 }
 
-function rodarCom(binario: string, args: string[], limiteMs: number): Promise<Resultado> {
+// limiteErro: quanto do stderr guardar (o detector de créditos lê o log
+// do filtro blackframe, que é bem mais longo que um erro comum).
+function rodarCom(binario: string, args: string[], limiteMs: number, limiteErro = 20000): Promise<Resultado> {
     return new Promise((resolve) => {
         let proc: ReturnType<typeof spawn>;
         try {
@@ -127,7 +129,7 @@ function rodarCom(binario: string, args: string[], limiteMs: number): Promise<Re
         const timer = setTimeout(() => proc.kill("SIGKILL"), limiteMs);
         proc.stdout!.on("data", (d: Buffer) => partes.push(d));
         proc.stderr!.on("data", (d: Buffer) => {
-            if (erro.length < 20000) erro += d.toString();
+            if (erro.length < limiteErro) erro += d.toString();
         });
         let terminou = false;
         const fim = (codigo: number | null, sinal: string | null) => {
@@ -253,4 +255,16 @@ export async function diagnosticoFfmpeg(urlTeste?: string): Promise<Record<strin
         candidatos,
         commit: (process.env.RAILWAY_GIT_COMMIT_SHA || "").slice(0, 7) || null,
     };
+}
+
+// Pra outros módulos (marcadores de abertura/créditos): mesmo ffmpeg
+// escolhido acima, sem a fila das capas — quem chama controla a própria vez.
+export async function rodarFfmpeg(args: string[], limiteMs: number, limiteErro?: number): Promise<Resultado> {
+    await escolherFfmpeg();
+    return rodarCom(caminhoFfmpeg, args, limiteMs, limiteErro);
+}
+
+export async function duracaoDoVideo(url: string): Promise<number> {
+    await escolherFfmpeg();
+    return duracaoSegundos(url);
 }
