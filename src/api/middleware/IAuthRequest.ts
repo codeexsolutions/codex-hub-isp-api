@@ -7,5 +7,6 @@ export interface AuthRequest extends Request {
         role?: string;
         parceiroId?: string;
         revendedorId?: string;
+        contaTvId?: string;
     };
 }

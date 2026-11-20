@@ -25,6 +25,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",
     "@supabase/supabase-js": "^2.110.8",
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -53,5 +55,8 @@
     "ts-node": "^10.9.2",
     "uuid": "^14.0.1",
     "vitest": "^5.0.1"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true
   }
 }

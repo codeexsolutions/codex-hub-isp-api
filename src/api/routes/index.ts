@@ -15,6 +15,9 @@ import futebolRoute from "./futebol.route";
 import servidorParceiroRoute from "./servidorParceiro.route";
 import marcadoresRoute from "./marcadores.route";
 import esportesRoute from "./esportes.route";
+import contaTvRoute from "./contaTv.route";
+import contaTvAdminRoute from "./contaTvAdmin.route";
+import linkTesteIptvAdminRoute from "./linkTesteIptvAdmin.route";
 
 const routes = Router();
 
@@ -34,5 +37,8 @@ routes.use('/futebol', futebolRoute)
 routes.use('/servidores-parceiros', servidorParceiroRoute)
 routes.use('/marcadores', marcadoresRoute)
 routes.use('/esportes', esportesRoute)
+routes.use('/synk-tv', contaTvRoute)
+routes.use('/painel/admin/synk-tv-clientes', contaTvAdminRoute)
+routes.use('/painel/admin/links-teste-iptv', linkTesteIptvAdminRoute)
 
 export default routes;

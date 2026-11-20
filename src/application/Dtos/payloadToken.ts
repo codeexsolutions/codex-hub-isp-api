@@ -4,4 +4,5 @@ export type payloadToken = {
     role?:string;
     parceiroId?:string;
     revendedorId?:string;
+    contaTvId?:string;
 }

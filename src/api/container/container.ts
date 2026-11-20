@@ -51,6 +51,14 @@ import IRevendedorRepository from "../../core/interfaces/IRevendedorRepository";
 import RevendedorRepository from "../../infrastructure/repositories/RevendedorRepository";
 import IRevendedorServices from "../../application/interfaces/IRevendedorServices";
 import RevendedorServices from "../../application/services/RevendedorServices";
+import ILinkTesteIptvRepository from "../../core/interfaces/ILinkTesteIptvRepository";
+import LinkTesteIptvRepository from "../../infrastructure/repositories/LinkTesteIptvRepository";
+import ILinkTesteIptvServices from "../../application/interfaces/ILinkTesteIptvServices";
+import LinkTesteIptvServices from "../../application/services/LinkTesteIptvServices";
+import IContaTvRepository from "../../core/interfaces/IContaTvRepository";
+import ContaTvRepository from "../../infrastructure/repositories/ContaTvRepository";
+import IContaTvServices from "../../application/interfaces/IContaTvServices";
+import ContaTvServices from "../../application/services/ContaTvServices";
 
 
 container.registerSingleton<IDBContext>("IDBContext", DBContext);
@@ -79,3 +87,9 @@ container.registerSingleton<INotificacaoParceiroRepository>("INotificacaoParceir
 container.registerSingleton<INotificacaoParceiroServices>("INotificacaoParceiroServices", NotificacaoParceiroServices);
 container.registerSingleton<IRevendedorRepository>("IRevendedorRepository", RevendedorRepository);
 container.registerSingleton<IRevendedorServices>("IRevendedorServices", RevendedorServices);
+container.registerSingleton<ILinkTesteIptvRepository>("ILinkTesteIptvRepository", LinkTesteIptvRepository);
+container.registerSingleton<ILinkTesteIptvServices>("ILinkTesteIptvServices", LinkTesteIptvServices);
+container.registerSingleton<IContaTvRepository>("IContaTvRepository", ContaTvRepository);
+container.registerSingleton<IContaTvServices>("IContaTvServices", ContaTvServices);
+// DeylerTrialService é injetado por referência de classe (@inject(DeylerTrialService))
+// — tsyringe resolve classes @injectable() direto, sem registro explícito.
