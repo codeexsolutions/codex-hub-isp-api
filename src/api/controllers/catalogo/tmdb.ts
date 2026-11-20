@@ -143,3 +143,54 @@ export async function parecidosPorTitulo(titulo: string, ano?: number): Promise<
         .slice(0, 40)
         .map((r) => ({ tmdbId: r.id, titulo: r.title, tituloOriginal: r.original_title, ano: anoDe(r.release_date), poster: img(r.poster_path, "w342") }));
 }
+
+// ---------------------------------------------------------------------------
+// Episódios de SÉRIE (nome, resumo, imagem e duração de cada episódio) — o
+// painel IPTV quase sempre manda só "Suits S01E01"; com isto o app mostra
+// "Piloto", como a Netflix. Português primeiro; episódio sem tradução no
+// TMDB ("Episódio 3") usa o nome em inglês.
+// ---------------------------------------------------------------------------
+export type EpisodioTmdb = { numero: number; nome?: string; sinopse?: string; imagem?: string; duracaoMin?: number };
+
+async function seriePorTitulo(titulo: string, ano?: number): Promise<number | null> {
+    const busca = await chamar<any>("/search/tv", { query: titulo, language: "pt-BR", first_air_date_year: ano ? String(ano) : undefined });
+    let lista: any[] = (busca && busca.results) || [];
+    if (!lista.length && ano) {
+        const sem = await chamar<any>("/search/tv", { query: titulo, language: "pt-BR" });
+        lista = (sem && sem.results) || [];
+    }
+    if (!lista.length) return null;
+    const alvo = normalizar(titulo);
+    const pontos = (r: any) => {
+        const nomes = [normalizar(r.name || ""), normalizar(r.original_name || "")];
+        let p = nomes.includes(alvo) ? 100 : nomes.some((n) => n.startsWith(alvo) || alvo.startsWith(n)) ? 40 : 0;
+        if (ano && anoDe(r.first_air_date) === ano) p += 50;
+        return p + Math.min(30, (r.popularity || 0) / 10);
+    };
+    return lista.slice().sort((a, b) => pontos(b) - pontos(a))[0].id || null;
+}
+
+const generico = (nome: string | undefined, n: number) => !nome || new RegExp(`^(epis[oó]dio|episode|cap[ií]tulo)\\s*${n}$`, "i").test(nome.trim());
+
+export async function episodiosPorTitulo(titulo: string, temporada: number, ano?: number): Promise<EpisodioTmdb[]> {
+    const id = await seriePorTitulo(titulo, ano);
+    if (!id) return [];
+    const pt = await chamar<any>(`/tv/${id}/season/${temporada}`, { language: "pt-BR" });
+    const eps: any[] = (pt && pt.episodes) || [];
+    if (!eps.length) return [];
+    // sem tradução? busca o inglês uma vez só pra completar
+    const faltaNome = eps.some((e) => generico(e.name, e.episode_number));
+    const en = faltaNome ? await chamar<any>(`/tv/${id}/season/${temporada}`, { language: "en-US" }) : null;
+    const porNumeroEn = new Map<number, any>(((en && en.episodes) || []).map((e: any) => [e.episode_number, e]));
+    return eps.map((e) => {
+        const ing = porNumeroEn.get(e.episode_number);
+        const nome = !generico(e.name, e.episode_number) ? e.name : ing && !generico(ing.name, e.episode_number) ? ing.name : undefined;
+        return {
+            numero: e.episode_number,
+            nome,
+            sinopse: e.overview || (ing && ing.overview) || undefined,
+            imagem: img(e.still_path, "w300"),
+            duracaoMin: e.runtime || undefined,
+        };
+    });
+}

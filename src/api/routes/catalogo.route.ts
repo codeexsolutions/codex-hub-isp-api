@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { UNIVERSOS, VERSAO_UNIVERSOS } from "../controllers/catalogo/universos";
-import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo } from "../controllers/catalogo/tmdb";
+import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo, episodiosPorTitulo } from "../controllers/catalogo/tmdb";
 
 // Catálogo próprio do Synk TV (dados nossos, por cima da lista do IPTV).
 const catalogoRoute = Router();
@@ -30,6 +30,19 @@ catalogoRoute.get("/tmdb/filme", async (req: Request, res: Response) => {
     const filme = await filmePorTitulo(titulo, ano);
     res.set("Cache-Control", "public, max-age=86400");
     res.json({ filme });
+});
+
+// GET /catalogo/tmdb/episodios?titulo=Suits&temporada=1&ano=2011 → nome,
+// resumo, imagem e duração de cada episódio da temporada
+catalogoRoute.get("/tmdb/episodios", async (req: Request, res: Response) => {
+    if (semTmdb(res)) return;
+    const titulo = String(req.query.titulo || "").trim().slice(0, 200);
+    const temporada = Number(req.query.temporada) || 1;
+    const ano = Number(req.query.ano) || undefined;
+    if (!titulo) return res.status(400).json({ erro: "titulo obrigatório" });
+    const episodios = await episodiosPorTitulo(titulo, temporada, ano);
+    res.set("Cache-Control", "public, max-age=86400");
+    res.json({ episodios });
 });
 
 // GET /catalogo/tmdb/colecao/1241  → saga em ordem de lançamento
