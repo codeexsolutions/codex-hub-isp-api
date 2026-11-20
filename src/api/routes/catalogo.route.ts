@@ -32,13 +32,22 @@ catalogoRoute.get("/tmdb/filme", async (req: Request, res: Response) => {
     res.json({ filme });
 });
 
+// Pistas opcionais do painel (anime=1|0, temps=N, eps=N) pra escolher a
+// série certa entre homônimas (One Piece anime x live action).
+function dicasDe(req: Request) {
+    const anime = req.query.anime === "1" ? true : req.query.anime === "0" ? false : undefined;
+    const temporadas = Number(req.query.temps) || undefined;
+    const episodios = Number(req.query.eps) || undefined;
+    return { anime, temporadas, episodios };
+}
+
 // GET /catalogo/tmdb/serie?titulo=Suits&ano=2011 → sinopse, nota, gêneros…
 catalogoRoute.get("/tmdb/serie", async (req: Request, res: Response) => {
     if (semTmdb(res)) return;
     const titulo = String(req.query.titulo || "").trim().slice(0, 200);
     const ano = Number(req.query.ano) || undefined;
     if (!titulo) return res.status(400).json({ erro: "titulo obrigatório" });
-    const serie = await seriePorTituloCompleta(titulo, ano);
+    const serie = await seriePorTituloCompleta(titulo, ano, dicasDe(req));
     res.set("Cache-Control", "public, max-age=86400");
     res.json({ serie });
 });
@@ -51,7 +60,7 @@ catalogoRoute.get("/tmdb/episodios", async (req: Request, res: Response) => {
     const temporada = Number(req.query.temporada) || 1;
     const ano = Number(req.query.ano) || undefined;
     if (!titulo) return res.status(400).json({ erro: "titulo obrigatório" });
-    const episodios = await episodiosPorTitulo(titulo, temporada, ano);
+    const episodios = await episodiosPorTitulo(titulo, temporada, ano, dicasDe(req));
     res.set("Cache-Control", "public, max-age=86400");
     res.json({ episodios });
 });
