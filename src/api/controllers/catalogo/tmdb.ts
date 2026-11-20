@@ -194,3 +194,30 @@ export async function episodiosPorTitulo(titulo: string, temporada: number, ano?
         };
     });
 }
+
+// Ficha da SÉRIE (sinopse, nota, gêneros, ano, temporadas, pôster e fundo)
+// — o painel muitas vezes manda a série sem sinopse nenhuma.
+export type SerieTmdb = { tmdbId: number; titulo: string; ano?: number; sinopse?: string; nota?: number; generos: string[]; temporadas?: number; poster?: string; fundo?: string };
+
+export async function seriePorTituloCompleta(titulo: string, ano?: number): Promise<SerieTmdb | null> {
+    const id = await seriePorTitulo(titulo, ano);
+    if (!id) return null;
+    const d = await chamar<any>(`/tv/${id}`, { language: "pt-BR" });
+    if (!d) return null;
+    let sinopse: string | undefined = d.overview || undefined;
+    if (!sinopse) {
+        const en = await chamar<any>(`/tv/${id}`, { language: "en-US" });
+        sinopse = (en && en.overview) || undefined;
+    }
+    return {
+        tmdbId: id,
+        titulo: d.name || titulo,
+        ano: anoDe(d.first_air_date),
+        sinopse,
+        nota: typeof d.vote_average === "number" && d.vote_count > 20 ? Math.round(d.vote_average * 10) / 10 : undefined,
+        generos: ((d.genres || []) as any[]).map((g) => g.name).filter(Boolean),
+        temporadas: d.number_of_seasons || undefined,
+        poster: img(d.poster_path, "w500"),
+        fundo: img(d.backdrop_path, "w1280"),
+    };
+}
