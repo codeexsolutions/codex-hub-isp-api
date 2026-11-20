@@ -152,7 +152,12 @@ export async function parecidosPorTitulo(titulo: string, ano?: number): Promise<
 // ---------------------------------------------------------------------------
 export type EpisodioTmdb = { numero: number; nome?: string; sinopse?: string; imagem?: string; duracaoMin?: number };
 
-async function seriePorTitulo(titulo: string, ano?: number): Promise<number | null> {
+// Pistas do painel pra escolher a série CERTA entre homônimas: "One Piece"
+// anime (1000+ episódios, animação, Japão) x "One Piece" live action (8
+// episódios); "Suits" (2011) x outras. Sem pista, vale nome + ano + fama.
+export type DicasSerie = { anime?: boolean; temporadas?: number; episodios?: number };
+
+async function seriePorTitulo(titulo: string, ano?: number, dicas: DicasSerie = {}): Promise<number | null> {
     const busca = await chamar<any>("/search/tv", { query: titulo, language: "pt-BR", first_air_date_year: ano ? String(ano) : undefined });
     let lista: any[] = (busca && busca.results) || [];
     if (!lista.length && ano) {
@@ -165,15 +170,39 @@ async function seriePorTitulo(titulo: string, ano?: number): Promise<number | nu
         const nomes = [normalizar(r.name || ""), normalizar(r.original_name || "")];
         let p = nomes.includes(alvo) ? 100 : nomes.some((n) => n.startsWith(alvo) || alvo.startsWith(n)) ? 40 : 0;
         if (ano && anoDe(r.first_air_date) === ano) p += 50;
+        // gênero 16 = animação
+        if (dicas.anime !== undefined) p += ((r.genre_ids || []).includes(16) === dicas.anime ? 70 : -40);
         return p + Math.min(30, (r.popularity || 0) / 10);
     };
-    return lista.slice().sort((a, b) => pontos(b) - pontos(a))[0].id || null;
+    const ordenados = lista.slice().sort((a, b) => pontos(b) - pontos(a));
+    // Com contagem de temporadas/episódios do painel: confere os 4 melhores
+    // na ficha completa e fica com o que mais bate (anime x live action).
+    if ((dicas.temporadas || dicas.episodios) && ordenados.length > 1) {
+        const top = ordenados.slice(0, 4);
+        const detalhes = await Promise.all(top.map((r) => chamar<any>(`/tv/${r.id}`, { language: "pt-BR" })));
+        const extra = (d: any): number => {
+            if (!d) return -999;
+            let p = 0;
+            if (dicas.temporadas && d.number_of_seasons) p -= Math.abs(d.number_of_seasons - dicas.temporadas) * 12;
+            if (dicas.episodios && d.number_of_episodes) {
+                // o painel pode ter menos (parcial); muito mais = outra série
+                const razao = dicas.episodios / d.number_of_episodes;
+                p -= razao > 1.15 ? 80 * Math.min(5, razao - 1) : razao < 0.2 ? 40 : 0;
+            }
+            return p;
+        };
+        const escolhido = top
+            .map((r, i) => ({ id: r.id, p: pontos(r) + extra(detalhes[i]) }))
+            .sort((a, b) => b.p - a.p)[0];
+        return escolhido ? escolhido.id : null;
+    }
+    return ordenados[0].id || null;
 }
 
 const generico = (nome: string | undefined, n: number) => !nome || new RegExp(`^(epis[oó]dio|episode|cap[ií]tulo)\\s*${n}$`, "i").test(nome.trim());
 
-export async function episodiosPorTitulo(titulo: string, temporada: number, ano?: number): Promise<EpisodioTmdb[]> {
-    const id = await seriePorTitulo(titulo, ano);
+export async function episodiosPorTitulo(titulo: string, temporada: number, ano?: number, dicas: DicasSerie = {}): Promise<EpisodioTmdb[]> {
+    const id = await seriePorTitulo(titulo, ano, dicas);
     if (!id) return [];
     const pt = await chamar<any>(`/tv/${id}/season/${temporada}`, { language: "pt-BR" });
     const eps: any[] = (pt && pt.episodes) || [];
@@ -199,8 +228,8 @@ export async function episodiosPorTitulo(titulo: string, temporada: number, ano?
 // — o painel muitas vezes manda a série sem sinopse nenhuma.
 export type SerieTmdb = { tmdbId: number; titulo: string; ano?: number; sinopse?: string; nota?: number; generos: string[]; temporadas?: number; poster?: string; fundo?: string };
 
-export async function seriePorTituloCompleta(titulo: string, ano?: number): Promise<SerieTmdb | null> {
-    const id = await seriePorTitulo(titulo, ano);
+export async function seriePorTituloCompleta(titulo: string, ano?: number, dicas: DicasSerie = {}): Promise<SerieTmdb | null> {
+    const id = await seriePorTitulo(titulo, ano, dicas);
     if (!id) return null;
     const d = await chamar<any>(`/tv/${id}`, { language: "pt-BR" });
     if (!d) return null;
