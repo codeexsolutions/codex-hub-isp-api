@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { UNIVERSOS, VERSAO_UNIVERSOS } from "../controllers/catalogo/universos";
-import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo, episodiosPorTitulo, seriePorTituloCompleta, SerieTmdb, EpisodioTmdb } from "../controllers/catalogo/tmdb";
+import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo, episodiosPorTitulo, seriePorTituloCompleta, capasPorTitulo, SerieTmdb, EpisodioTmdb, CapasTmdb } from "../controllers/catalogo/tmdb";
 import { lerFicha, salvarFicha, chaveFicha } from "../controllers/catalogo/fichasGuardadas";
 
 // Catálogo próprio do Synk TV (dados nossos, por cima da lista do IPTV).
@@ -79,6 +79,26 @@ catalogoRoute.get("/tmdb/episodios", async (req: Request, res: Response) => {
     }
     res.set("Cache-Control", "public, max-age=86400");
     res.json({ episodios });
+});
+
+// GET /catalogo/tmdb/capas?tipo=filme|serie&titulo=Suits&ano=2011 → capas
+// deitadas (cenas 16:9 + logo) — o app escolhe uma por perfil (estilo
+// Netflix). Guardadas de vez no banco depois da 1ª busca.
+catalogoRoute.get("/tmdb/capas", async (req: Request, res: Response) => {
+    if (semTmdb(res)) return;
+    const tipo = req.query.tipo === "serie" ? "serie" : "filme";
+    const titulo = String(req.query.titulo || "").trim().slice(0, 200);
+    const ano = Number(req.query.ano) || undefined;
+    if (!titulo) return res.status(400).json({ erro: "titulo obrigatório" });
+    const dicas = dicasDe(req);
+    const chave = chaveFicha("capas", titulo, ano, [tipo, dicas.anime]);
+    let capas = await lerFicha<CapasTmdb>(chave);
+    if (!capas) {
+        capas = (await capasPorTitulo(tipo, titulo, ano, tipo === "serie" ? dicas : {})) || undefined;
+        if (capas && capas.fundos.length) salvarFicha(chave, capas);
+    }
+    res.set("Cache-Control", "public, max-age=86400");
+    res.json({ capas: capas || null });
 });
 
 // GET /catalogo/tmdb/colecao/1241  → saga em ordem de lançamento

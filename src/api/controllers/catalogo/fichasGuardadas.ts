@@ -50,7 +50,7 @@ export async function salvarFicha(chave: string, valor: unknown): Promise<void> 
 }
 
 // Mesma busca, mesma chave: "Suits" e "suits " caem na mesma ficha.
-export function chaveFicha(tipo: "serie" | "episodios", titulo: string, ano?: number, extra: Array<string | number | boolean | undefined> = []): string {
+export function chaveFicha(tipo: "serie" | "episodios" | "capas", titulo: string, ano?: number, extra: Array<string | number | boolean | undefined> = []): string {
     const t = (titulo || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
     return [tipo, VERSAO_FICHAS, t, ano || "", ...extra.map((x) => (x === undefined ? "" : String(x)))].join("|");
 }

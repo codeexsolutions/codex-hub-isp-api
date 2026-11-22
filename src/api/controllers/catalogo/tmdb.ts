@@ -250,3 +250,36 @@ export async function seriePorTituloCompleta(titulo: string, ano?: number, dicas
         fundo: img(d.backdrop_path, "w1280"),
     };
 }
+
+// ---------------------------------------------------------------------------
+// CAPAS DEITADAS (estilo Netflix): o mesmo título tem várias capas — cada
+// perfil vê uma (o app escolhe). Vem das imagens oficiais do TMDB:
+//   - fundos: cenas 16:9. Primeiro as SEM texto (iso null — a "cena limpa"
+//     que a Netflix usa com o logo por cima); depois as com título (pt/en),
+//     marcadas com temTitulo (não leva logo por cima, já tem).
+//   - logo: o logotipo do título (PNG transparente), pt primeiro, senão en.
+// ---------------------------------------------------------------------------
+export type FundoCapa = { url: string; temTitulo: boolean };
+export type CapasTmdb = { tmdbId: number; fundos: FundoCapa[]; logo?: string };
+const MAX_FUNDOS = 6;
+
+export async function capasPorTitulo(tipo: "filme" | "serie", titulo: string, ano?: number, dicas: DicasSerie = {}): Promise<CapasTmdb | null> {
+    const id = tipo === "filme" ? ((await filmePorTitulo(titulo, ano)) || { tmdbId: 0 }).tmdbId : await seriePorTitulo(titulo, ano, dicas);
+    if (!id) return null;
+    const imgs = await chamar<any>(`/${tipo === "filme" ? "movie" : "tv"}/${id}/images`, { include_image_language: "pt,en,null" });
+    if (!imgs) return null;
+    const porVoto = (a: any, b: any) => (b.vote_average || 0) - (a.vote_average || 0) || (b.vote_count || 0) - (a.vote_count || 0);
+    const fundos: any[] = ((imgs.backdrops || []) as any[]).filter((b) => b.file_path && (b.width || 0) >= 1000);
+    const limpos = fundos.filter((b) => !b.iso_639_1).sort(porVoto);
+    const comTitulo = fundos.filter((b) => b.iso_639_1 === "pt" || b.iso_639_1 === "en").sort((a, b) => (a.iso_639_1 === "pt" ? -1 : 0) - (b.iso_639_1 === "pt" ? -1 : 0) || porVoto(a, b));
+    const logos: any[] = ((imgs.logos || []) as any[]).filter((l) => l.file_path && !/\.svg$/i.test(l.file_path));
+    const logo = logos.filter((l) => l.iso_639_1 === "pt").sort(porVoto)[0] || logos.filter((l) => l.iso_639_1 === "en").sort(porVoto)[0];
+    // com logo: cenas limpas primeiro (logo por cima); sem logo, as que já
+    // trazem o título escrito vêm na frente (senão o card fica sem nome)
+    const ordem = logo ? [...limpos, ...comTitulo] : [...comTitulo, ...limpos];
+    return {
+        tmdbId: id,
+        fundos: ordem.slice(0, MAX_FUNDOS).map((b) => ({ url: img(b.file_path, "w780") as string, temTitulo: !!b.iso_639_1 })),
+        logo: logo ? img(logo.file_path, "w300") : undefined,
+    };
+}
