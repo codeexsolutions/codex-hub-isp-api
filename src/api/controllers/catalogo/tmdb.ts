@@ -180,14 +180,18 @@ async function seriePorTitulo(titulo: string, ano?: number, dicas: DicasSerie = 
     if ((dicas.temporadas || dicas.episodios) && ordenados.length > 1) {
         const top = ordenados.slice(0, 4);
         const detalhes = await Promise.all(top.map((r) => chamar<any>(`/tv/${r.id}`, { language: "pt-BR" })));
+        // Contagem do painel = MÍNIMO: o painel quase nunca tem a série inteira
+        // (ter MENOS não diz nada — Suits com 1 temporada no painel), mas nunca
+        // pode ter MAIS do que a série real. Só pune quem tem menos temporadas/
+        // episódios do que o painel já tem ("One Piece" com 1000 eps no painel
+        // não é o live action de 8, mesmo com o ano errado da ficha do painel).
         const extra = (d: any): number => {
             if (!d) return -999;
             let p = 0;
-            if (dicas.temporadas && d.number_of_seasons) p -= Math.abs(d.number_of_seasons - dicas.temporadas) * 12;
+            if (dicas.temporadas && d.number_of_seasons && dicas.temporadas > d.number_of_seasons) p -= (dicas.temporadas - d.number_of_seasons) * 30;
             if (dicas.episodios && d.number_of_episodes) {
-                // o painel pode ter menos (parcial); muito mais = outra série
                 const razao = dicas.episodios / d.number_of_episodes;
-                p -= razao > 1.15 ? 80 * Math.min(5, razao - 1) : razao < 0.2 ? 40 : 0;
+                if (razao > 1.15) p -= 80 * Math.min(5, razao - 1);
             }
             return p;
         };

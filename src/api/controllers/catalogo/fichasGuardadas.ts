@@ -14,7 +14,9 @@ const DDL = `CREATE TABLE IF NOT EXISTS tmdb_fichas (
 
 // Sobe quando a regra de escolha da série mudar (as fichas antigas deixam
 // de valer sem precisar apagar nada).
-export const VERSAO_FICHAS = "v1";
+// v2: contagem do painel passou a valer como MÍNIMO (fichas antigas podem
+// ter escolhido a série errada — One Piece anime x live action)
+export const VERSAO_FICHAS = "v2";
 
 const db = () => container.resolve<IDBContext>("IDBContext");
 let pronta: Promise<void> | null = null;
