@@ -103,3 +103,8 @@ export async function subirArquivo(path: string, arquivo: Buffer, tipo: string):
     const ok = await subir(path, arquivo, tipo).catch(() => false);
     return ok ? urlPublica(path) : null;
 }
+
+// Existe no Storage? Devolve a URL pública (lembra o resultado como as capas).
+export function arquivoGuardado(path: string): Promise<string | null> {
+    return existeGuardado(path);
+}

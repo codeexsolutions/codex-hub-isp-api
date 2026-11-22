@@ -4,6 +4,7 @@ import { Readable } from "stream";
 import { quadroAoVivo, capaDoVideo, quadroNoSegundo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
 import { capaGuardada, guardarCapa, trechoGuardado, ehVideoDoPainel } from "./capasGuardadas";
 import { pedirTrecho } from "./trechoVideo";
+import { verificarImagens } from "./imagensPainel";
 
 // O app central (synk-app) é servido em HTTPS — o navegador bloqueia qualquer
 // chamada pra um servidor Xtream em HTTP puro (comum nesse mercado) por
@@ -200,6 +201,20 @@ export default class IptvProxyController {
             return res.status(200).send(jpg);
         } catch {
             return res.status(502).end();
+        }
+    }
+
+    // Capas do painel guardadas no Storage (ver imagensPainel.ts).
+    // POST { itens: [{ u: "<url da imagem>", w: 320 }, ...] } (até 60)
+    //   → { guardadas: [true, false, ...] } — as que faltam entram na fila.
+    async Imagens(req: Request, res: Response) {
+        try {
+            const itens = Array.isArray(req.body && req.body.itens) ? req.body.itens.slice(0, 60) : [];
+            const guardadas = await verificarImagens(itens);
+            res.set("Cache-Control", "no-store");
+            return res.json({ guardadas });
+        } catch {
+            return res.status(502).json({ guardadas: [] });
         }
     }
 
