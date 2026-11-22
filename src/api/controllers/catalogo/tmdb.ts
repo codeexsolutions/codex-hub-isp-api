@@ -259,8 +259,10 @@ export async function seriePorTituloCompleta(titulo: string, ano?: number, dicas
 //     marcadas com temTitulo (não leva logo por cima, já tem).
 //   - logo: o logotipo do título (PNG transparente), pt primeiro, senão en.
 // ---------------------------------------------------------------------------
-export type FundoCapa = { url: string; temTitulo: boolean };
-export type CapasTmdb = { tmdbId: number; fundos: FundoCapa[]; logo?: string };
+// url: a cena (no nosso Storage depois de guardada — ver imagensCapas.ts);
+// grande: a mesma cena em 1280px (destaque do topo).
+export type FundoCapa = { url: string; temTitulo: boolean; grande?: string };
+export type CapasTmdb = { tmdbId: number; fundos: FundoCapa[]; logo?: string; guardadas?: boolean };
 const MAX_FUNDOS = 6;
 
 export async function capasPorTitulo(tipo: "filme" | "serie", titulo: string, ano?: number, dicas: DicasSerie = {}): Promise<CapasTmdb | null> {

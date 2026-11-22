@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { UNIVERSOS, VERSAO_UNIVERSOS } from "../controllers/catalogo/universos";
 import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo, episodiosPorTitulo, seriePorTituloCompleta, capasPorTitulo, SerieTmdb, EpisodioTmdb, CapasTmdb } from "../controllers/catalogo/tmdb";
 import { lerFicha, salvarFicha, chaveFicha } from "../controllers/catalogo/fichasGuardadas";
+import { guardarImagensCapas } from "../controllers/catalogo/imagensCapas";
 
 // Catálogo próprio do Synk TV (dados nossos, por cima da lista do IPTV).
 const catalogoRoute = Router();
@@ -95,9 +96,12 @@ catalogoRoute.get("/tmdb/capas", async (req: Request, res: Response) => {
     let capas = await lerFicha<CapasTmdb>(chave);
     if (!capas) {
         capas = (await capasPorTitulo(tipo, titulo, ano, tipo === "serie" ? dicas : {})) || undefined;
-        if (capas && capas.fundos.length) salvarFicha(chave, capas);
+        if (capas && capas.fundos.length) await salvarFicha(chave, capas);
     }
-    res.set("Cache-Control", "public, max-age=86400");
+    // imagens ainda no TMDB: guarda cópias no nosso Storage (segundo plano)
+    if (capas && !capas.guardadas) guardarImagensCapas(chave, capas);
+    // ainda não guardadas: o app pergunta de novo logo (cache curto)
+    res.set("Cache-Control", capas && capas.guardadas ? "public, max-age=86400" : "public, max-age=60");
     res.json({ capas: capas || null });
 });
 

@@ -97,3 +97,9 @@ export function trechoGuardado(url: string): Promise<string | null> {
 export function guardarTrecho(url: string, mp4: Buffer): Promise<boolean> {
     return subir(caminhoTrecho(url), mp4, "video/mp4").catch(() => false);
 }
+
+// Sobe um arquivo qualquer e devolve a URL pública (CDN) — null se não deu.
+export async function subirArquivo(path: string, arquivo: Buffer, tipo: string): Promise<string | null> {
+    const ok = await subir(path, arquivo, tipo).catch(() => false);
+    return ok ? urlPublica(path) : null;
+}
