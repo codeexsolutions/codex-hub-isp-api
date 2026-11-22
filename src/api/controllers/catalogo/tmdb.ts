@@ -158,11 +158,17 @@ export type EpisodioTmdb = { numero: number; nome?: string; sinopse?: string; im
 export type DicasSerie = { anime?: boolean; temporadas?: number; episodios?: number };
 
 async function seriePorTitulo(titulo: string, ano?: number, dicas: DicasSerie = {}): Promise<number | null> {
-    const busca = await chamar<any>("/search/tv", { query: titulo, language: "pt-BR", first_air_date_year: ano ? String(ano) : undefined });
-    let lista: any[] = (busca && busca.results) || [];
-    if (!lista.length && ano) {
-        const sem = await chamar<any>("/search/tv", { query: titulo, language: "pt-BR" });
-        lista = (sem && sem.results) || [];
+    // Busca SEM filtro de ano também: o ano da ficha do painel pode estar
+    // errado ("One Piece" anime com o ano 2023 do live action) — filtrando,
+    // a série certa nem entrava na lista. O ano vale só como pontuação.
+    const comAno = ano ? await chamar<any>("/search/tv", { query: titulo, language: "pt-BR", first_air_date_year: String(ano) }) : null;
+    const semAno = await chamar<any>("/search/tv", { query: titulo, language: "pt-BR" });
+    const vistos = new Set<number>();
+    const lista: any[] = [];
+    for (const r of [...((comAno && comAno.results) || []), ...((semAno && semAno.results) || [])]) {
+        if (!r || vistos.has(r.id)) continue;
+        vistos.add(r.id);
+        lista.push(r);
     }
     if (!lista.length) return null;
     const alvo = normalizar(titulo);
