@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import { injectable } from "tsyringe";
 import { Readable } from "stream";
 import { quadroAoVivo, capaDoVideo, quadroNoSegundo, urlPermitida, diagnosticoFfmpeg } from "./capaVideo";
-import { capaGuardada, guardarCapa } from "./capasGuardadas";
+import { capaGuardada, guardarCapa, trechoGuardado, ehVideoDoPainel } from "./capasGuardadas";
+import { pedirTrecho } from "./trechoVideo";
 
 // O app central (synk-app) é servido em HTTPS — o navegador bloqueia qualquer
 // chamada pra um servidor Xtream em HTTP puro (comum nesse mercado) por
@@ -199,6 +200,26 @@ export default class IptvProxyController {
             return res.status(200).send(jpg);
         } catch {
             return res.status(502).end();
+        }
+    }
+
+    // Trecho DEFINITIVO da prévia (ver trechoVideo.ts).
+    // GET ?u=<url do vídeo em base64>          → { url } se já guardado, senão { url: null }
+    // GET ?u=...&gerar=1 (a prévia tocou de verdade) → também põe na fila pra guardar
+    async Trecho(req: Request, res: Response) {
+        try {
+            const url = Buffer.from(String(req.query.u || ""), "base64").toString("utf-8");
+            if (!urlPermitida(url) || !ehVideoDoPainel(url)) return res.status(400).json({ url: null });
+            const guardado = await trechoGuardado(url);
+            if (guardado) {
+                res.set("Cache-Control", "public, max-age=2592000, immutable");
+                return res.json({ url: guardado });
+            }
+            const naFila = req.query.gerar === "1" ? pedirTrecho(url) : false;
+            res.set("Cache-Control", "no-store");
+            return res.json({ url: null, gerando: naFila });
+        } catch {
+            return res.status(502).json({ url: null });
         }
     }
 

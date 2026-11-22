@@ -24,9 +24,15 @@ function idDoVideo(url: string): string {
     return m ? `${m[1].toLowerCase()}|${m[2].toLowerCase()}|${m[3]}` : url;
 }
 
+// só vídeos de filme/série do painel (nada de URL qualquer)
+export function ehVideoDoPainel(url: string): boolean {
+    return /^https?:\/\/[^/]+\/(movie|series)\/[^/]+\/[^/]+\/\d+/i.test(url);
+}
+
+const hashDoVideo = (url: string) => createHash("sha1").update(idDoVideo(url)).digest("hex").slice(0, 24);
+
 function caminho(url: string, variante: string): string {
-    const h = createHash("sha1").update(idDoVideo(url)).digest("hex").slice(0, 24);
-    return `${PASTA}/${h}-${variante}.jpg`;
+    return `${PASTA}/${hashDoVideo(url)}-${variante}.jpg`;
 }
 
 function urlPublica(path: string): string | null {
@@ -39,7 +45,10 @@ const conhecidas = new Map<string, { existe: boolean; em: number }>();
 const VALIDADE_FALTA_MS = 10 * 60 * 1000;
 
 export async function capaGuardada(url: string, variante: string): Promise<string | null> {
-    const path = caminho(url, variante);
+    return existeGuardado(caminho(url, variante));
+}
+
+async function existeGuardado(path: string): Promise<string | null> {
     const pub = urlPublica(path);
     if (!pub) return null;
     const k = conhecidas.get(path);
@@ -57,14 +66,34 @@ export async function capaGuardada(url: string, variante: string): Promise<strin
 
 // Guarda (em segundo plano — a resposta não espera o upload).
 export function guardarCapa(url: string, variante: string, jpg: Buffer): void {
+    subir(caminho(url, variante), jpg, "image/jpeg").catch(() => {});
+}
+
+function subir(path: string, arquivo: Buffer, tipo: string): Promise<boolean> {
     const sb = storage();
-    if (!sb) return;
-    const path = caminho(url, variante);
-    sb.storage
+    if (!sb) return Promise.resolve(false);
+    return sb.storage
         .from(BUCKET)
-        .upload(path, jpg, { contentType: "image/jpeg", upsert: true, cacheControl: "31536000" })
+        .upload(path, arquivo, { contentType: tipo, upsert: true, cacheControl: "31536000" })
         .then(({ error }) => {
-            if (!error) conhecidas.set(path, { existe: true, em: Date.now() });
-        })
-        .catch(() => {});
+            if (error) return false;
+            conhecidas.set(path, { existe: true, em: Date.now() });
+            return true;
+        });
+}
+
+// ---------------------------------------------------------------------------
+// TRECHO da prévia (o "trailer" de ~45s cortado do próprio vídeo), guardado de
+// vez como MP4: trechos-video/<hash do vídeo>.mp4. Série usa o 1º episódio
+// (é ele que a prévia toca), então a chave continua sendo o vídeo.
+// ---------------------------------------------------------------------------
+const PASTA_TRECHOS = "trechos-video";
+const caminhoTrecho = (url: string) => `${PASTA_TRECHOS}/${hashDoVideo(url)}.mp4`;
+
+export function trechoGuardado(url: string): Promise<string | null> {
+    return existeGuardado(caminhoTrecho(url));
+}
+
+export function guardarTrecho(url: string, mp4: Buffer): Promise<boolean> {
+    return subir(caminhoTrecho(url), mp4, "video/mp4").catch(() => false);
 }

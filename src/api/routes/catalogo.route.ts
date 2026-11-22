@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { UNIVERSOS, VERSAO_UNIVERSOS } from "../controllers/catalogo/universos";
-import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo, episodiosPorTitulo, seriePorTituloCompleta } from "../controllers/catalogo/tmdb";
+import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo, episodiosPorTitulo, seriePorTituloCompleta, SerieTmdb, EpisodioTmdb } from "../controllers/catalogo/tmdb";
+import { lerFicha, salvarFicha, chaveFicha } from "../controllers/catalogo/fichasGuardadas";
 
 // Catálogo próprio do Synk TV (dados nossos, por cima da lista do IPTV).
 const catalogoRoute = Router();
@@ -47,9 +48,16 @@ catalogoRoute.get("/tmdb/serie", async (req: Request, res: Response) => {
     const titulo = String(req.query.titulo || "").trim().slice(0, 200);
     const ano = Number(req.query.ano) || undefined;
     if (!titulo) return res.status(400).json({ erro: "titulo obrigatório" });
-    const serie = await seriePorTituloCompleta(titulo, ano, dicasDe(req));
+    const dicas = dicasDe(req);
+    // ficha guardada de vez no banco (sinopse etc.) — o TMDB só na 1ª vez
+    const chave = chaveFicha("serie", titulo, ano, [dicas.anime, dicas.temporadas, dicas.episodios]);
+    let serie = await lerFicha<SerieTmdb>(chave);
+    if (!serie) {
+        serie = (await seriePorTituloCompleta(titulo, ano, dicas)) || undefined;
+        if (serie && serie.sinopse) salvarFicha(chave, serie);
+    }
     res.set("Cache-Control", "public, max-age=86400");
-    res.json({ serie });
+    res.json({ serie: serie || null });
 });
 
 // GET /catalogo/tmdb/episodios?titulo=Suits&temporada=1&ano=2011 → nome,
@@ -60,7 +68,15 @@ catalogoRoute.get("/tmdb/episodios", async (req: Request, res: Response) => {
     const temporada = Number(req.query.temporada) || 1;
     const ano = Number(req.query.ano) || undefined;
     if (!titulo) return res.status(400).json({ erro: "titulo obrigatório" });
-    const episodios = await episodiosPorTitulo(titulo, temporada, ano, dicasDe(req));
+    const dicas = dicasDe(req);
+    const chave = chaveFicha("episodios", titulo, ano, [dicas.anime, dicas.temporadas, dicas.episodios, temporada]);
+    let episodios = await lerFicha<EpisodioTmdb[]>(chave);
+    if (!episodios) {
+        episodios = await episodiosPorTitulo(titulo, temporada, ano, dicas);
+        // Só guarda de vez temporada COMPLETA (todo episódio com nome e
+        // resumo): temporada ainda passando ou sem tradução volta ao TMDB.
+        if (episodios.length && episodios.every((e) => e.nome && e.sinopse)) salvarFicha(chave, episodios);
+    }
     res.set("Cache-Control", "public, max-age=86400");
     res.json({ episodios });
 });

@@ -12,6 +12,7 @@ iptvProxyRoute.post('/canais', iptvProxyController.Canais.bind(iptvProxyControll
 iptvProxyRoute.get('/manifesto', iptvProxyController.Manifesto.bind(iptvProxyController));
 iptvProxyRoute.get('/capa-diag', iptvProxyController.CapaDiagnostico.bind(iptvProxyController));
 iptvProxyRoute.get('/capa', iptvProxyController.Capa.bind(iptvProxyController));
+iptvProxyRoute.get('/trecho', iptvProxyController.Trecho.bind(iptvProxyController));
 iptvProxyRoute.get('/ao-vivo', iptvProxyController.AoVivo.bind(iptvProxyController));
 iptvProxyRoute.get('/segmento', iptvProxyController.Segmento.bind(iptvProxyController));
 
