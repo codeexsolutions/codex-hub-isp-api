@@ -151,3 +151,34 @@ describe("créditos pela imagem", () => {
         expect(creditosValidos(1300, 1400)).toBe(true);
     });
 });
+
+// One Piece: abertura que começa em momentos diferentes (0 s, 1 min, 3 min),
+// músicas de durações diferentes e TROCA de abertura no meio da temporada.
+describe("aberturas variadas (anime)", () => {
+    it("acha cada abertura no lugar e com a duração certa, inclusive na troca", async () => {
+        const aberturaA = musica(100, 501); // 1:40
+        const aberturaB = musica(130, 777); // 2:10 — a abertura nova
+        const montar = (antes: number, ab: Float64Array, semente: number) =>
+            impressaoDoAudio(juntar([cena(Math.max(0.5, antes), semente), ab, cena(330 - antes - ab.length / SR, semente + 1)], 1, 0.005, semente + 2));
+        const plano = [
+            { id: "e1", antes: 0, ab: aberturaA },
+            { id: "e2", antes: 60, ab: aberturaA },
+            { id: "e3", antes: 180, ab: aberturaA },
+            { id: "e4", antes: 0, ab: aberturaB }, // troca de abertura
+            { id: "e5", antes: 60, ab: aberturaB },
+        ];
+        const eps: EpisodioAnalisado[] = plano.map((p, i) => ({
+            id: p.id, numero: i + 1, duracao: 1400,
+            fpInicio: montar(p.antes, p.ab, 1000 + i * 10), fpFim: null, fimInicio: 1100, creditosImagem: null,
+        }));
+        const r = await marcadoresDaTemporada(eps);
+        for (const p of plano) {
+            const m = r.get(p.id)!;
+            const dur = p.ab.length / SR;
+            const ini = p.antes < 1 ? 0.5 : p.antes; // (cena mínima de 0,5 s antes)
+            expect(m.aberturaInicio).not.toBeNull();
+            expect(Math.abs((m.aberturaInicio as number) - ini)).toBeLessThan(3);
+            expect(Math.abs((m.aberturaFim as number) - (ini + dur))).toBeLessThan(3);
+        }
+    }, 60000);
+});
