@@ -15,6 +15,18 @@ import { verificarImagens } from "./imagensPainel";
 // Escopo: só canais ao vivo (o único tipo de conteúdo do módulo IPTV no app
 // central — filme/série ficam só no app Synk TV nativo).
 
+// Limite de concorrência pro Manifesto/Segmento — não é abuso de UM IP (um
+// único espectador já gera várias chamadas simultâneas, é assim que HLS
+// funciona), é VOLUME total: muitos espectadores (ou vários travando e
+// tentando outra cópia ao mesmo tempo) derrubaram essa instância uma vez
+// (14h deployzada, Railway "Application failed to respond" até reiniciar na
+// mão). Acima do teto, devolve 503 rápido em vez de empilhar mais uma
+// chamada pro servidor IPTV de terceiro — o player tenta de novo sozinho.
+const MAX_SEGMENTOS_SIMULTANEOS = 40;
+let segmentosEmAndamento = 0;
+const MAX_MANIFESTOS_SIMULTANEOS = 80;
+let manifestosEmAndamento = 0;
+
 function normalizarServidor(url: string): string {
     let s = (url || "").trim();
     if (!s) return s;
@@ -141,6 +153,13 @@ export default class IptvProxyController {
     // pra passar de novo pelo nosso proxy (senão o navegador bloqueia eles,
     // já que apontam pro servidor HTTP original).
     async Manifesto(req: Request, res: Response) {
+        if (manifestosEmAndamento >= MAX_MANIFESTOS_SIMULTANEOS) {
+            res.set("Retry-After", "2");
+            return res.status(503).json({ message: "Servidor de proxy sobrecarregado, tente de novo em instantes." });
+        }
+        manifestosEmAndamento++;
+        res.on("close", () => { manifestosEmAndamento--; });
+
         try {
             const { servidor, usuario, senha, streamId } = req.query as Record<string, string>;
             const base = normalizarServidor(servidor);
@@ -278,6 +297,13 @@ export default class IptvProxyController {
     }
 
     async Segmento(req: Request, res: Response) {
+        if (segmentosEmAndamento >= MAX_SEGMENTOS_SIMULTANEOS) {
+            res.set("Retry-After", "2");
+            return res.status(503).end();
+        }
+        segmentosEmAndamento++;
+        res.on("close", () => { segmentosEmAndamento--; });
+
         try {
             const u = req.query.u as string;
             const upstreamUrl = Buffer.from(u, "base64").toString("utf-8");
