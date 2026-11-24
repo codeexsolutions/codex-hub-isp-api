@@ -281,12 +281,33 @@ export default class IptvProxyController {
         try {
             const u = req.query.u as string;
             const upstreamUrl = Buffer.from(u, "base64").toString("utf-8");
-            const upstream = await fetch(upstreamUrl, { headers: { Connection: "close" }, signal: AbortSignal.timeout(15000) });
+
+            let alvo: URL;
+            try {
+                alvo = new URL(upstreamUrl);
+            } catch {
+                return res.status(400).end();
+            }
+            if (alvo.protocol !== "http:" && alvo.protocol !== "https:") return res.status(400).end();
+            if (enderecoProibido(alvo.hostname)) return res.status(400).end();
+
+            // Timeout maior que o do Manifesto: aqui é o segmento de vídeo
+            // inteiro (alguns MB), não só o texto da playlist — servidor de
+            // teste mais lento já estourou os 15s antigos no meio do envio,
+            // deixando a resposta pela metade (ERR_HTTP2_PROTOCOL_ERROR no
+            // navegador em vez de um erro limpo).
+            const upstream = await fetch(upstreamUrl, { headers: { Connection: "close" }, signal: AbortSignal.timeout(30000) });
             if (!upstream.ok || !upstream.body) return res.status(upstream.status || 502).end();
 
             res.set("Content-Type", upstream.headers.get("content-type") || "video/mp2t");
             res.set("Cache-Control", "no-store");
-            Readable.fromWeb(upstream.body as any).pipe(res);
+            const leitura = Readable.fromWeb(upstream.body as any);
+            // Se o upstream cair no meio (abort do timeout, conexão
+            // derrubada), destrói a resposta em vez de deixá-la pendurada
+            // esperando um fim que nunca chega — é isso que gera o 200 OK
+            // seguido de ERR_HTTP2_PROTOCOL_ERROR no navegador.
+            leitura.on("error", () => res.destroy());
+            leitura.pipe(res);
         } catch {
             return res.status(502).end();
         }
