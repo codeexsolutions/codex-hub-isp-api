@@ -145,6 +145,16 @@ export default class IptvProxyController {
             const { servidor, usuario, senha, streamId } = req.query as Record<string, string>;
             const base = normalizarServidor(servidor);
             const url = `${base}/live/${encodeURIComponent(usuario)}/${encodeURIComponent(senha)}/${streamId}.m3u8`;
+
+            let alvo: URL;
+            try {
+                alvo = new URL(url);
+            } catch {
+                return res.status(400).json({ message: "Servidor inválido." });
+            }
+            if (alvo.protocol !== "http:" && alvo.protocol !== "https:") return res.status(400).json({ message: "Servidor precisa usar http ou https." });
+            if (enderecoProibido(alvo.hostname)) return res.status(400).json({ message: "Servidor não permitido." });
+
             const upstream = await fetch(url, { headers: { Connection: "close" }, signal: AbortSignal.timeout(15000) });
             if (!upstream.ok) return res.status(upstream.status).end();
 
