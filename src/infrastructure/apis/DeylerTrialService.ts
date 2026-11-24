@@ -29,12 +29,24 @@ export default class DeylerTrialService {
         if (!json?.username || !json?.password || !json?.dns)
             throw new Error("Resposta inesperada do link de teste — faltam usuário/senha/dns.");
 
+        const DURACAO_PADRAO_MS = 3 * 60 * 60 * 1000;
+        const MARGEM_MINIMA_MS = 5 * 60 * 1000;
+
+        // Já aconteceu de o bot devolver expiresAt praticamente igual ao
+        // instante da chamada (teste "nascendo vencido") — provavelmente uma
+        // falha pontual do lado do provedor. Nesses casos ignora o valor dele
+        // e usa a duração padrão, em vez de entregar um teste já expirado.
+        const vencimentoProvedor = json.expiresAt ? new Date(json.expiresAt) : null;
+        const vencimento = vencimentoProvedor && vencimentoProvedor.getTime() - Date.now() >= MARGEM_MINIMA_MS
+            ? vencimentoProvedor
+            : new Date(Date.now() + DURACAO_PADRAO_MS);
+
         return {
             usuario: json.username,
             senha: json.password,
             dns: json.dns,
             pacote: json.package ?? "",
-            vencimento: json.expiresAt ? new Date(json.expiresAt) : new Date(Date.now() + 3 * 60 * 60 * 1000),
+            vencimento,
             linkPagamento: json.payUrl ?? "",
         };
     }
