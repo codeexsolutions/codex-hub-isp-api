@@ -61,4 +61,8 @@ export default class ContaTvRepository implements IContaTvRepository {
     async MarcarNotificada(id: number): Promise<void> {
         await this._db.Execulte(`UPDATE contas_tv SET notificado = true WHERE id = $1;`, [id]);
     }
+
+    async Excluir(id: number): Promise<void> {
+        await this._db.Execulte(`DELETE FROM contas_tv WHERE id = $1;`, [id]);
+    }
 }

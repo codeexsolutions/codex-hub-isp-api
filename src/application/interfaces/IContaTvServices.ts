@@ -15,4 +15,5 @@ export default interface IContaTvServices {
     DefinirIptv(id: number, usuario: string, senha: string, dns: string, vencimento: string | null): Promise<contaTvModel>;
     ContarNaoNotificadas(): Promise<number>;
     MarcarNotificada(id: number): Promise<void>;
+    Excluir(id: number): Promise<void>;
 }

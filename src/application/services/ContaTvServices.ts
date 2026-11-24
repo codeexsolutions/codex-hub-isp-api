@@ -91,4 +91,8 @@ export default class ContaTvServices implements IContaTvServices {
     async MarcarNotificada(id: number): Promise<void> {
         await this._contaTvRepository.MarcarNotificada(id);
     }
+
+    async Excluir(id: number): Promise<void> {
+        await this._contaTvRepository.Excluir(id);
+    }
 }

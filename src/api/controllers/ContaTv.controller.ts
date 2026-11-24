@@ -106,4 +106,15 @@ export default class ContaTvController {
         await this._contaTvService.MarcarNotificada(id);
         return res.json({ data: { ok: true } });
     }
+
+    async Excluir(req: Request, res: Response) {
+        const id = Number.parseInt(req.params.id as string);
+
+        try {
+            await this._contaTvService.Excluir(id);
+            return res.json({ data: { ok: true } });
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
 }

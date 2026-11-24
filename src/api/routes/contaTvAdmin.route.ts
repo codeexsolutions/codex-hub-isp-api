@@ -12,5 +12,6 @@ contaTvAdminRoute.patch('/:id/status', authMiddleware, adminMiddleware, contaTvC
 contaTvAdminRoute.patch('/:id/iptv', authMiddleware, adminMiddleware, contaTvController.DefinirIptv.bind(contaTvController));
 contaTvAdminRoute.get('/nao-lidos/contar', authMiddleware, adminMiddleware, contaTvController.ContarNaoNotificadas.bind(contaTvController));
 contaTvAdminRoute.patch('/:id/marcar-lido', authMiddleware, adminMiddleware, contaTvController.MarcarNotificada.bind(contaTvController));
+contaTvAdminRoute.delete('/:id', authMiddleware, adminMiddleware, contaTvController.Excluir.bind(contaTvController));
 
 export default contaTvAdminRoute;
