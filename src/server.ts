@@ -9,6 +9,7 @@ import app from "./app";
 import IPainelServices from "./application/interfaces/IPainelService";
 import INotificacaoFaturaServices from "./application/interfaces/INotificacaoFaturaServices";
 import { errorHandler } from "./api/middleware/errorHandler";
+import { criarServidorSalas } from "./salas/servidorSalas";
 
 app.get('/hub-api-isp', (req, res) => res.json({"message":"Check"}))
 app.use('/v1', routes)
@@ -17,9 +18,12 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT || 3010;
 
-app.listen(PORT, () => {
+const servidorHttp = app.listen(PORT, () => {
     console.log(`Servidor iniciado na porta ${PORT}`);
 });
+
+// Salas "assistir junto" do Synk TV (WebSocket no mesmo servidor/porta).
+criarServidorSalas(servidorHttp);
 
 // Varredura periódica de faturamento: gera a fatura do mês pra quem ainda não tem e
 // inativa provedor com 7+ dias de atraso — roda de tempos em tempos pra não depender
