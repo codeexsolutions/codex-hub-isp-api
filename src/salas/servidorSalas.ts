@@ -6,7 +6,7 @@ import { WebSocketServer, WebSocket } from "ws";
 // cada um toca o filme com a PRÓPRIA conta IPTV (a sala só carrega QUAL
 // filme e EM QUE PONTO — nunca usuário/senha nem a URL de ninguém).
 //
-// Tudo em memória (salas são passageiras: somem 10 min depois de ficarem
+// Tudo em memória (salas são passageiras: somem 3 h depois de ficarem
 // vazias). Protocolo JSON, uma mensagem por frame:
 //
 //  app → servidor
@@ -36,8 +36,8 @@ const MAX_MEMBROS = 12;
 const MAX_SALAS = 2000;
 const MAX_BYTES = 4096;
 const MAX_TEXTO = 300;
-const HISTORICO_CHAT = 50;
-const SALA_VAZIA_MS = 10 * 60 * 1000;
+const HISTORICO_CHAT = 100;
+const SALA_VAZIA_MS = 3 * 60 * 60 * 1000; // vazia: dura 3h (quem saiu do player ou fechou o app ainda volta)
 const LIMITE_MSGS = 30; // por membro, a cada 10s
 const JANELA_MS = 10 * 1000;
 const REACOES = ["😂", "❤️", "😱", "👏", "🔥", "😢", "😮", "👍"];
@@ -103,7 +103,7 @@ function sairDaSala(sala: Sala, membroId: string) {
     else paraTodos(sala, { t: "membros", membros: listaMembros(sala) });
 }
 
-// Varredura: apaga salas vazias há mais de 10 min.
+// Varredura: apaga salas vazias há mais de 3 h.
 function varrer() {
     const agora = Date.now();
     salas.forEach((sala, codigo) => {
