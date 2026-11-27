@@ -56,3 +56,42 @@ export function chaveFicha(tipo: "serie" | "episodios" | "capas", titulo: string
     const t = (titulo || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
     return [tipo, VERSAO_FICHAS, t, ano || "", ...extra.map((x) => (x === undefined ? "" : String(x)))].join("|");
 }
+
+// ---------------------------------------------------------------------------
+// CÓDIGO DO PAINEL → capa deitada. Depois da 1ª busca pelo nome, o código do
+// título no painel ("servidor|f|123" filme, "servidor|s|45" série) fica
+// guardado apontando pra ficha das capas. O app pergunta a fileira inteira de
+// uma vez pelos códigos (1 pedido, 1 consulta) e nem precisa buscar pelo nome.
+// Aponta pra ficha (não copia): quando as imagens vão pro nosso Storage, a
+// ficha é atualizada e o código já enxerga as cópias.
+// ---------------------------------------------------------------------------
+const chaveCodigo = (codigo: string) => `codigo|${VERSAO_FICHAS}|${codigo}`.slice(0, 400);
+
+export function codigoValido(codigo: unknown): codigo is string {
+    return typeof codigo === "string" && /^[a-z0-9.\-:]{1,200}\|[fs]\|\d{1,12}$/i.test(codigo);
+}
+
+export async function vincularCodigo(codigo: string, chaveCapas: string): Promise<void> {
+    if (!codigoValido(codigo)) return;
+    await salvarFicha(chaveCodigo(codigo.toLowerCase()), { chave: chaveCapas });
+}
+
+export async function capasPorCodigos<T>(codigos: string[]): Promise<Record<string, T>> {
+    const validos = Array.from(new Set(codigos.filter(codigoValido).map((c) => c.toLowerCase())));
+    if (!validos.length) return {};
+    try {
+        await garantirTabela();
+        const linhas = await db().Execulte<{ chave: string; valor: T }>(
+            `SELECT c.chave, f.valor FROM tmdb_fichas c
+             JOIN tmdb_fichas f ON f.chave = c.valor->>'chave'
+             WHERE c.chave = ANY($1::varchar[])`,
+            [validos.map(chaveCodigo)]
+        );
+        const prefixo = chaveCodigo("");
+        const saida: Record<string, T> = {};
+        for (const l of linhas) saida[l.chave.slice(prefixo.length)] = l.valor;
+        return saida;
+    } catch {
+        return {};
+    }
+}

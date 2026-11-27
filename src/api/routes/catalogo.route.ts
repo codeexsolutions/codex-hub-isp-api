@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { UNIVERSOS, VERSAO_UNIVERSOS } from "../controllers/catalogo/universos";
 import { tmdbConfigurado, filmePorTitulo, colecaoPorId, colecaoPorBusca, parecidosPorTitulo, episodiosPorTitulo, seriePorTituloCompleta, capasPorTitulo, SerieTmdb, EpisodioTmdb, CapasTmdb } from "../controllers/catalogo/tmdb";
-import { lerFicha, salvarFicha, chaveFicha } from "../controllers/catalogo/fichasGuardadas";
+import { lerFicha, salvarFicha, chaveFicha, vincularCodigo, capasPorCodigos } from "../controllers/catalogo/fichasGuardadas";
 import { guardarImagensCapas } from "../controllers/catalogo/imagensCapas";
 
 // Catálogo próprio do Synk TV (dados nossos, por cima da lista do IPTV).
@@ -98,11 +98,25 @@ catalogoRoute.get("/tmdb/capas", async (req: Request, res: Response) => {
         capas = (await capasPorTitulo(tipo, titulo, ano, tipo === "serie" ? dicas : {})) || undefined;
         if (capas && capas.fundos.length) await salvarFicha(chave, capas);
     }
+    // &codigo=servidor|f|123 → guarda o código do painel junto (próxima vez
+    // o app acha a capa pelo código, em lote — ver /tmdb/capas/codigos)
+    const codigo = String(req.query.codigo || "");
+    if (codigo && capas && capas.fundos.length) vincularCodigo(codigo, chave).catch(() => {});
     // imagens ainda no TMDB: guarda cópias no nosso Storage (segundo plano)
     if (capas && !capas.guardadas) guardarImagensCapas(chave, capas);
     // ainda não guardadas: o app pergunta de novo logo (cache curto)
     res.set("Cache-Control", capas && capas.guardadas ? "public, max-age=86400" : "public, max-age=60");
     res.json({ capas: capas || null });
+});
+
+// POST /catalogo/tmdb/capas/codigos { codigos: ["servidor|f|123", ...] } (até 100)
+//   → { capas: { "servidor|f|123": {...} } } — só os que já têm capa guardada;
+//   os que faltam o app busca pelo nome (que passa a guardar o código).
+catalogoRoute.post("/tmdb/capas/codigos", async (req: Request, res: Response) => {
+    const codigos = Array.isArray(req.body && req.body.codigos) ? req.body.codigos.slice(0, 100) : [];
+    const capas = await capasPorCodigos<CapasTmdb>(codigos);
+    res.set("Cache-Control", "no-store");
+    res.json({ capas });
 });
 
 // GET /catalogo/tmdb/colecao/1241  → saga em ordem de lançamento
